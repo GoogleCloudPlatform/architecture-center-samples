@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.terraform/
-.terraform.lock.hcl
-terraform.tfstate*
+output "result" {
+  value = <<-EOF
+
+  Add data to the ingest bucket ${google_storage_bucket.ingest.name}"
+
+  Launch the front end application: ${google_cloud_run_v2_service.serving.uri}
+
+  EOF
+}

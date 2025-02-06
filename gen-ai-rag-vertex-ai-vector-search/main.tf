@@ -12,6 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.terraform/
-.terraform.lock.hcl
-terraform.tfstate*
+
+resource "random_id" "default" {
+  byte_length = 2
+}
+
+locals {
+  unique_str = "${random_id.default.hex}"
+}
+
+data "google_project" "default" {}
