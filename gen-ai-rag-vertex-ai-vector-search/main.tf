@@ -18,7 +18,7 @@ resource "random_id" "default" {
 }
 
 locals {
-  unique_str = "${random_id.default.hex}"
+  unique_str = random_id.default.hex
 }
 
 data "google_project" "default" {}

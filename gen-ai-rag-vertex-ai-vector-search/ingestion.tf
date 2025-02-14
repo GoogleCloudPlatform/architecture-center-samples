@@ -65,7 +65,6 @@ resource "google_pubsub_subscription" "ingest-processing" {
 resource "google_cloud_run_v2_job" "ingest_job" {
   name     = "ingest-job"
   location = "us-central1"
-  deletion_protection = false
 
   template {
     template {
