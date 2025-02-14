@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.terraform/
-.terraform.lock.hcl
-terraform.tfstate*
+
+variable "project_id" {
+  type        = string
+  description = "Google Cloud Project ID"
+}
+
+variable "region" {
+  type        = string
+  description = "Google Cloud Region"
+  default     = "us-central1"
+}
