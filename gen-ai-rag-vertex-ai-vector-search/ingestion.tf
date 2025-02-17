@@ -78,4 +78,5 @@ resource "google_cloud_run_v2_job" "ingest_job" {
   }
 
   deletion_protection = false
+  depends_on          = [module.project_services]
 }

@@ -26,6 +26,7 @@ resource "google_cloud_run_v2_service" "serving" {
   }
 
   deletion_protection = false
+  depends_on          = [module.project_services]
 }
 
 # Allow front-end to be publicly accessible.
@@ -54,4 +55,5 @@ resource "google_cloud_run_v2_service" "backend" {
   }
 
   deletion_protection = false
+  depends_on          = [module.project_services]
 }

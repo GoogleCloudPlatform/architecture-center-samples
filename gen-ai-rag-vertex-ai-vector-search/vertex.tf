@@ -48,5 +48,7 @@ resource "google_vertex_ai_index_endpoint_deployed_index" "default" {
     }
     min_replica_count = 1
   }
+
+  depends_on = [module.project_services]
 }
 
