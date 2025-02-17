@@ -19,7 +19,6 @@ resource "google_storage_bucket" "ingest" {
   location = var.region
 }
 
-
 resource "google_pubsub_topic" "ingest" {
   name = "ingest-${local.unique_str}"
 
@@ -51,6 +50,7 @@ resource "google_pubsub_subscription" "ingest-processing" {
   topic = google_pubsub_topic.ingest.name
 
   push_config {
+    # Trigger a Cloud Run job via the Cloud Run REST API
     # https://cloud.google.com/run/docs/execute/jobs#rest-api
     push_endpoint = "https://run.googleapis.com/v2/projects/${google_cloud_run_v2_job.ingest_job.project}/locations/${google_cloud_run_v2_job.ingest_job.location}/jobs/${google_cloud_run_v2_job.ingest_job.name}:run"
 
@@ -69,7 +69,7 @@ resource "google_cloud_run_v2_job" "ingest_job" {
   template {
     template {
       containers {
-        # Replace with ingestion job container
+        # Note: Replace with ingestion job container
         image = "us-docker.pkg.dev/cloudrun/container/job"
       }
     }

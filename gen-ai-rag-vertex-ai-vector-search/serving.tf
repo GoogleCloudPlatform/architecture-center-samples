@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Front end interface serving
+### Frontend service
 
 resource "google_cloud_run_v2_service" "serving" {
   name     = "serving-${local.unique_str}"
@@ -20,7 +20,7 @@ resource "google_cloud_run_v2_service" "serving" {
 
   template {
     containers {
-      # Replace with backend container
+      # Note: Replace with the customized container image.
       image = "us-docker.pkg.dev/cloudrun/container/hello"
     }
   }
@@ -34,17 +34,19 @@ resource "google_cloud_run_v2_service_iam_member" "public" {
   member   = "allUsers"
 }
 
-# Processing backend
+
+### Backend service
 
 resource "google_cloud_run_v2_service" "backend" {
   name     = "backend-${local.unique_str}"
   location = var.region
 
-  # Ingress security (backend service)
+  # Design Consideration: Ingress security (backend service)
   ingress = "INGRESS_TRAFFIC_INTERNAL_ONLY"
+
   template {
     containers {
-      # Replace with backend container
+      # Note: Replace with the customized container image.
       image = "us-docker.pkg.dev/cloudrun/container/hello"
     }
   }

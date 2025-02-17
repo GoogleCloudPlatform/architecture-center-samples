@@ -23,3 +23,4 @@ variable "region" {
   description = "Google Cloud Region"
   default     = "us-central1"
 }
+

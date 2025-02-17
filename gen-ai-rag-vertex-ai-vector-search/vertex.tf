@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Generative AI through Vertex AI
 
 resource "google_vertex_ai_index" "default" {
   display_name = "index-${local.unique_str}"
   description  = "Index for storing document embeddings"
   metadata {
+
+    # Note: The index config should be customized based on your model.
     config {
       dimensions                  = 1536
       approximate_neighbors_count = 0
@@ -38,6 +39,9 @@ resource "google_vertex_ai_index_endpoint_deployed_index" "default" {
   index_endpoint    = google_vertex_ai_index_endpoint.default.id
   deployed_index_id = "deployed_endpoint_${local.unique_str}"
   index             = google_vertex_ai_index.default.id
+
+  # Note: The deployed index should be customized based on optimization
+  # and performance requirements.
   dedicated_resources {
     machine_spec {
       machine_type = "n1-standard-16"
