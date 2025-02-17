@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Aspects to setup ingestion from Cloud Storage bucket to processing job.
+## Ingest bucket
 
 resource "google_storage_bucket" "ingest" {
   name     = "ingest-${local.unique_str}"
   location = var.region
 }
+
+## Pub/Sub to trigger ingestion job
 
 resource "google_pubsub_topic" "ingest" {
   name = "ingest-${local.unique_str}"
@@ -36,14 +38,12 @@ resource "google_project_iam_member" "pubsub" {
   member  = "serviceAccount:service-${data.google_project.default.project_id}@gcp-sa-pubsub.iam.gserviceaccount.com"
 }
 
-
 # Allow the Pub/Sub service account permissions to access the bucket
 resource "google_storage_bucket_iam_member" "pubsub" {
   bucket = google_storage_bucket.ingest.name
   role   = "roles/storage.admin"
   member = "serviceAccount:service-${data.google_project.default.project_id}@gcp-sa-pubsub.iam.gserviceaccount.com"
 }
-
 
 resource "google_pubsub_subscription" "ingest-processing" {
   name  = "ingest-processing-${local.unique_str}"
@@ -61,6 +61,8 @@ resource "google_pubsub_subscription" "ingest-processing" {
 
   depends_on = [google_storage_bucket_iam_member.pubsub]
 }
+
+## Ingest Job
 
 resource "google_cloud_run_v2_job" "ingest_job" {
   name     = "ingest-job"
