@@ -24,6 +24,8 @@ resource "google_cloud_run_v2_service" "serving" {
       image = "us-docker.pkg.dev/cloudrun/container/hello"
     }
   }
+
+  deletion_protection = false
 }
 
 # Allow front-end to be publicly accessible.
@@ -50,4 +52,6 @@ resource "google_cloud_run_v2_service" "backend" {
       image = "us-docker.pkg.dev/cloudrun/container/hello"
     }
   }
+
+  deletion_protection = false
 }
