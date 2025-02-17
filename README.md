@@ -1,6 +1,13 @@
 # Architecture Center Samples
 
-Terraform samples for [Cloud Architecture Center](https://cloud.google.com/architecture/)
+Terraform samples for [Cloud Architecture
+Center](https://cloud.google.com/architecture/)
+
+
+# Running samples
+
+Each folder in this repo holds a self-contained sample, implemented in
+[Terraform](https://www.terraform.io/).
 
 ## Setup
 
@@ -12,26 +19,48 @@ To run a sample:
 
  1. Clone this repo:
 
-    ```bash
-    git clone https://github.com/GoogleCloudPlatform/architecture-center-samples
-    ```
+      ```bash
+      git clone https://github.com/GoogleCloudPlatform/architecture-center-samples
+      ```
 
- 1. Go to the sample directory
+ 1. Go to the sample directory:
 
-    ```
-    cd architecture-center-samples/[SAMPLE]/
-    ```
+      ```bash
+      cd architecture-center-samples/[SAMPLE]/
+      ```
 
- 1. [Review and apply the Terraform configuration](https://cloud.google.com/docs/terraform/basic-commands#apply-the-changes)
+ 1. Initialize and view the planned deployed resources:
 
-## Contributing
+      ```bash
+      terraform init
+      terraform plan
+      ```
+
+1. Apply the configuration, entering `yes` at the prompt:
+
+      ```bash
+      terraform apply
+      ```
+
+Learn more about [Terraform
+commands](https://cloud.google.com/docs/terraform/basic-commands).
+
+## Cleanup
+
+ * Remove the resources that were created, entering `yes` at the prompt:
+
+      ```bash
+      terraform destory
+      ```
+
+# Contributing
 
 See [CONTRIBUTING](CONTRIBUTING.md) for more information how to get started.
 
-Please note that this project is released with a Contributor Code of Conduct. By participating in
-this project you agree to abide by its terms. See [Code of Conduct](CODE_OF_CONDUCT.md) for more
-information.
+Please note that this project is released with a Contributor Code of Conduct.
+By participating in this project you agree to abide by its terms. See [Code of
+Conduct](CODE_OF_CONDUCT.md) for more information.
 
-## License
+# License
 
 Apache 2.0 - See [LICENSE](LICENSE) for more information.
