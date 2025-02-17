@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+data "google_project" "default" {}
+
 resource "random_id" "default" {
   byte_length = 2
 }
@@ -21,4 +23,19 @@ locals {
   unique_str = random_id.default.hex
 }
 
-data "google_project" "default" {}
+## Enable APIs
+
+module "project_services" {
+  source                      = "terraform-google-modules/project-factory/google//modules/project_services"
+  version                     = "~> 18.0"
+  disable_services_on_destroy = false
+  project_id                  = var.project_id
+
+  activate_apis = [
+    "run.googleapis.com",
+    "pubsub.googleapis.com",
+    "aiplatform.googleapis.com",
+    "iam.googleapis.com",
+    "storage.googleapis.com",
+  ]
+}
