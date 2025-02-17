@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Ignore local Terraform state files.
 .terraform/
 .terraform.lock.hcl
 terraform.tfstate*
+.terraform.tfstate.lock.info
