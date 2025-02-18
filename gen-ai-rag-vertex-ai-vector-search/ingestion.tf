@@ -63,6 +63,11 @@ resource "google_pubsub_subscription" "ingest-processing" {
     }
   }
 
+  # Design Consideration: Failure handling
+  retry_policy {
+    minimum_backoff = "10s"
+  }
+
   depends_on = [google_storage_bucket_iam_member.pubsub]
 }
 
