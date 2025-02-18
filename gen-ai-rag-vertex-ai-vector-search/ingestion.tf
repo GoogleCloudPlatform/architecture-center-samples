@@ -84,6 +84,15 @@ resource "google_cloud_run_v2_job" "ingest_job" {
       containers {
         # Note: Replace with ingestion job container
         image = "us-docker.pkg.dev/cloudrun/container/job"
+
+        # Note: The job resources should be customized based on optimization
+        #       and performance requirements.
+        resources {
+          limits = {
+            cpu    = "2"
+            memory = "1024Mi"
+          }
+        }
       }
     }
   }
