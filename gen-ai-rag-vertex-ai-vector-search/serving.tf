@@ -30,7 +30,7 @@ resource "google_cloud_run_v2_service" "serving" {
   depends_on          = [module.project_services]
 }
 
-# Allow front-end to be publicly accessible.
+# Design consideration: Allow front-end to be publicly accessible.
 resource "google_cloud_run_v2_service_iam_member" "public" {
   location = google_cloud_run_v2_service.serving.location
   name     = google_cloud_run_v2_service.serving.name

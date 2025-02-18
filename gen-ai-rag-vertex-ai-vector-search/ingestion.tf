@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-## Ingest bucket
+### Ingest bucket
 
 resource "google_storage_bucket" "ingest" {
   name = "ingest-${local.unique_str}"
@@ -21,7 +21,7 @@ resource "google_storage_bucket" "ingest" {
   location = var.region
 }
 
-## Pub/Sub to trigger ingestion job
+### Pub/Sub to trigger ingestion job
 
 resource "google_pubsub_topic" "ingest" {
   name = "ingest-${local.unique_str}"
@@ -73,7 +73,7 @@ resource "google_pubsub_subscription" "ingest-processing" {
   depends_on = [google_storage_bucket_iam_member.pubsub]
 }
 
-## Ingest Job
+### Ingest job
 
 resource "google_cloud_run_v2_job" "ingest_job" {
   name     = "ingest-job"

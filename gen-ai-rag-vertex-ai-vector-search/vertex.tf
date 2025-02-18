@@ -41,7 +41,7 @@ resource "google_vertex_ai_index_endpoint_deployed_index" "default" {
   index             = google_vertex_ai_index.default.id
 
   # Note: The deployed index should be customized based on optimization
-  # and performance requirements.
+  #       and performance requirements.
   dedicated_resources {
     machine_spec {
       machine_type = "n1-standard-16"
