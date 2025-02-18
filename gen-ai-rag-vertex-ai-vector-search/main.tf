@@ -16,7 +16,7 @@
 data "google_project" "default" {}
 
 # Cloud Pub/Sub service account email identifier
-locals { pubsub_service_account = "service-${data.google_project.default.number}@gcp-sa-pubsub.iam.gserviceaccount.com"}
+locals { pubsub_service_account = "service-${data.google_project.default.number}@gcp-sa-pubsub.iam.gserviceaccount.com" }
 
 # Cloud Storage service account email identifier
 data "google_storage_project_service_account" "gcs_account" {}

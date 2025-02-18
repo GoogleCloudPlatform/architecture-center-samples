@@ -32,7 +32,7 @@ resource "google_pubsub_topic" "ingest" {
     }
   }
 
-  depends_on = [ google_storage_bucket_iam_member.pubsub ]
+  #depends_on = [ google_storage_bucket_iam_member.pubsub ]
 }
 
 # Allow the Pub/Sub service account the ability to publish messages
