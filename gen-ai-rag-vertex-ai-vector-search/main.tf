@@ -15,9 +15,8 @@
 # Used to get Google Cloud project number
 data "google_project" "default" {}
 
-# Cloud Storage service account
-data "google_storage_project_service_account" "gcs" {}
-
+# Cloud Pub/Sub service account
+locals { pubsub_service_account = "service-${data.google_project.default.number}@gcp-sa-pubsub.iam.gserviceaccount.com"}
 
 ## Enable APIs
 
