@@ -15,7 +15,7 @@
 ## Ingest bucket
 
 resource "google_storage_bucket" "ingest" {
-  name     = "ingest-${local.unique_str}"
+  name = "ingest-${local.unique_str}"
 
   # Design consideration: Data availability
   location = var.region
@@ -37,7 +37,7 @@ resource "google_pubsub_topic" "ingest" {
 resource "google_project_iam_member" "pubsub" {
   project = var.project_id
   role    = "roles/pubsub.publisher"
-  member = "serviceAccount:${data.google_storage_project_service_account.gcs.email_address}"
+  member  = "serviceAccount:${data.google_storage_project_service_account.gcs.email_address}"
 
   depends_on = [module.project_services]
 }
