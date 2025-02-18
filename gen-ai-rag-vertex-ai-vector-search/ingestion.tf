@@ -36,6 +36,8 @@ resource "google_project_iam_member" "pubsub" {
   project = var.project_id
   role    = "roles/pubsub.publisher"
   member  = "serviceAccount:service-${data.google_project.default.project_id}@gcp-sa-pubsub.iam.gserviceaccount.com"
+
+  depends_on = [module.project_services]
 }
 
 # Allow the Pub/Sub service account permissions to access the bucket
@@ -43,6 +45,8 @@ resource "google_storage_bucket_iam_member" "pubsub" {
   bucket = google_storage_bucket.ingest.name
   role   = "roles/storage.admin"
   member = "serviceAccount:service-${data.google_project.default.project_id}@gcp-sa-pubsub.iam.gserviceaccount.com"
+
+  depends_on = [module.project_services]
 }
 
 resource "google_pubsub_subscription" "ingest-processing" {
