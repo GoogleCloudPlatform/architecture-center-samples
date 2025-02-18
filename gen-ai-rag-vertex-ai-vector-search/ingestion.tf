@@ -78,7 +78,7 @@ resource "google_pubsub_subscription" "ingest-processing" {
 ### Ingest job
 
 resource "google_cloud_run_v2_job" "ingest_job" {
-  name     = "ingest-job"
+  name     = "ingest-job-${local.unique_str}"
   location = "us-central1"
 
   template {
