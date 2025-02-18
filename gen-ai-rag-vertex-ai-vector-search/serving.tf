@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 ### Frontend service
 
 resource "google_cloud_run_v2_service" "serving" {
@@ -44,7 +45,7 @@ resource "google_cloud_run_v2_service" "backend" {
   name     = "backend-${local.unique_str}"
   location = var.region
 
-  # Design Consideration: Ingress security (backend service)
+  # Design Consideration: Ingress security
   ingress = "INGRESS_TRAFFIC_INTERNAL_ONLY"
 
   template {
