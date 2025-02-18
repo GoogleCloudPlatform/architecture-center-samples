@@ -10,12 +10,12 @@ organization.
 Note: this cannot be run by accounts that do not have organizations.
 
 Invocation from the base of the git repo, specifying the sample folder to be
-tested.
+tested:
 
-    ```bash
-    cd /path/to/git
-    gcloud builds submit --config test/cloudbuild.yaml \
-        --substitutions _TERRAFORM_SAMPLE=example_sample,\
-            _BILLING_ACCOUNT=...,\
-            _ORG_ID=...
-    ```
+```bash
+cd /path/to/git
+gcloud builds submit --config test/cloudbuild.yaml \
+    --substitutions _TERRAFORM_SAMPLE=example_sample,\
+        _BILLING_ACCOUNT=...,\
+        _ORG_ID=...
+```
