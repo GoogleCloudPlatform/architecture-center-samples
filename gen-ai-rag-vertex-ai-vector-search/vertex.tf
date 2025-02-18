@@ -50,9 +50,9 @@ resource "google_vertex_ai_index_endpoint_deployed_index" "default" {
   }
 
   # Design consideration: Query scaling
-  automatic_resources {
-    max_replica_count = 2
-  }
+  #automatic_resources {
+  #  max_replica_count = 2
+  #}
 
   depends_on = [module.project_services]
 }
