@@ -15,8 +15,13 @@
 # Used to get Google Cloud project number
 data "google_project" "default" {}
 
-# Cloud Pub/Sub service account
+# Cloud Pub/Sub service account email identifier
 locals { pubsub_service_account = "service-${data.google_project.default.number}@gcp-sa-pubsub.iam.gserviceaccount.com"}
+
+# Cloud Storage service account email identifier
+data "google_storage_project_service_account" "gcs_account" {}
+locals { gcs_service_account = data.google_storage_project_service_account.gcs_account.email_address }
+
 
 ## Enable APIs
 
