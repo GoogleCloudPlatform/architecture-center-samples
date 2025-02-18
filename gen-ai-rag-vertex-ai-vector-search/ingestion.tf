@@ -63,7 +63,7 @@ resource "google_pubsub_subscription" "ingest-processing" {
     push_endpoint = "https://run.googleapis.com/v2/projects/${google_cloud_run_v2_job.ingest_job.project}/locations/${google_cloud_run_v2_job.ingest_job.location}/jobs/${google_cloud_run_v2_job.ingest_job.name}:run"
 
     oidc_token {
-      service_account_email = "${data.google_project.default.project_id}-compute@developer.gserviceaccount.com"
+      service_account_email = "${data.google_project.default.number}-compute@developer.gserviceaccount.com"
     }
   }
 
