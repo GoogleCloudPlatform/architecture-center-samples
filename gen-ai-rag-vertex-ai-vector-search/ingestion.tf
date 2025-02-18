@@ -16,6 +16,8 @@
 
 resource "google_storage_bucket" "ingest" {
   name     = "ingest-${local.unique_str}"
+
+  # Design consideration: Data availability
   location = var.region
 }
 
