@@ -13,11 +13,14 @@
 # limitations under the License.
 
 output "result" {
-  value = <<-EOF
+  value = <<-README
 
-  Add data to the ingest bucket ${google_storage_bucket.ingest.name}"
+  ### Deployment complete.
 
-  Launch the front end application: ${google_cloud_run_v2_service.serving.uri}
+  Next steps:
 
-  EOF
+    * Add data to the ingest bucket gs://${google_storage_bucket.ingest.name}"
+    * Launch the front end application: ${google_cloud_run_v2_service.serving.uri}
+
+  README
 }
