@@ -24,3 +24,10 @@ variable "region" {
   default     = "us-central1"
 }
 
+resource "random_id" "default" {
+  byte_length = 2
+}
+
+locals {
+  unique_str = random_id.default.hex
+}

@@ -12,16 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+# Used to get Google Cloud project number
 data "google_project" "default" {}
 
-resource "random_id" "default" {
-  byte_length = 2
-}
+# Cloud Storage service account
+data "google_storage_project_service_account" "gcs" {}
 
-locals {
-  unique_str = random_id.default.hex
-}
 
 ## Enable APIs
 

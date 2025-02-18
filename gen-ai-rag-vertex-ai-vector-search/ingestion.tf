@@ -37,7 +37,7 @@ resource "google_pubsub_topic" "ingest" {
 resource "google_project_iam_member" "pubsub" {
   project = var.project_id
   role    = "roles/pubsub.publisher"
-  member  = "serviceAccount:service-${data.google_project.default.project_id}@gcp-sa-pubsub.iam.gserviceaccount.com"
+  member = "serviceAccount:${data.google_storage_project_service_account.gcs.email_address}"
 
   depends_on = [module.project_services]
 }
@@ -46,7 +46,7 @@ resource "google_project_iam_member" "pubsub" {
 resource "google_storage_bucket_iam_member" "pubsub" {
   bucket = google_storage_bucket.ingest.name
   role   = "roles/storage.admin"
-  member = "serviceAccount:service-${data.google_project.default.project_id}@gcp-sa-pubsub.iam.gserviceaccount.com"
+  member = "serviceAccount:${data.google_storage_project_service_account.gcs.email_address}"
 
   depends_on = [module.project_services]
 }
