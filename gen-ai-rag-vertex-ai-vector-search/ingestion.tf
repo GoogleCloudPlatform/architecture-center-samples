@@ -22,83 +22,109 @@ resource "google_storage_bucket" "ingest" {
 }
 
 ### Pub/Sub to trigger ingestion job
+resource "google_storage_notification" "default" {
+  bucket         = google_storage_bucket.ingest.name
+  topic          = google_pubsub_topic.ingest.id
+  event_types    = ["OBJECT_FINALIZE"]
+  payload_format = "JSON_API_V1"
+
+  #depends_on = [google_storage_bucket_iam_member.pubsub]
+}
+
+# Allow the Pub/Sub service account the ability to publish messages
+resource "google_pubsub_topic_iam_member" "gcs" {
+  topic = google_pubsub_topic.ingest.id
+  role    = "roles/pubsub.publisher"
+  member  = "serviceAccount:${local.gcs_service_account}"
+
+  depends_on = [module.project_services]
+}
 
 resource "google_pubsub_topic" "ingest" {
   name = "ingest-${local.unique_str}"
-
-  ingestion_data_source_settings {
-    cloud_storage {
-      bucket = google_storage_bucket.ingest.name
-    }
-  }
 
   #depends_on = [ google_storage_bucket_iam_member.pubsub ]
 }
 
 # Allow the Pub/Sub service account the ability to publish messages
-resource "google_project_iam_member" "pubsub" {
-  project = var.project_id
-  role    = "roles/pubsub.publisher"
-  member  = "serviceAccount:${local.pubsub_service_account}"
-
-  depends_on = [module.project_services]
-}
+# TODO(glasnt): confirm if required
+#resource "google_project_iam_member" "pubsub" {
+#  project = var.project_id
+#  role    = "roles/pubsub.publisher"
+#  member  = "serviceAccount:${local.pubsub_service_account}"
+#  depends_on = [module.project_services]
+#}
 
 # Allow the Pub/Sub service account permissions to access the bucket
-resource "google_storage_bucket_iam_member" "pubsub" {
-  bucket = google_storage_bucket.ingest.name
-  role   = "roles/storage.admin"
-  member = "serviceAccount:${local.pubsub_service_account}"
+# TODO(glasnt): confirm if required
+#resource "google_storage_bucket_iam_member" "pubsub" {
+#  bucket = google_storage_bucket.ingest.name
+#  role   = "roles/storage.admin"
+#  member = "serviceAccount:${local.pubsub_service_account}"
+#
+#  depends_on = [module.project_services]
+#}
 
-  depends_on = [module.project_services]
+# Function source, taken from function-source
+
+resource "google_storage_bucket" "default" {
+  name                        = "gcf-source-${local.unique_str}-${var.project_id}"
+  location                    = "US"
+  uniform_bucket_level_access = true
 }
 
-resource "google_pubsub_subscription" "ingest-processing" {
-  name  = "ingest-processing-${local.unique_str}"
-  topic = google_pubsub_topic.ingest.name
-
-  push_config {
-    # Trigger a Cloud Run job via the Cloud Run REST API
-    # https://cloud.google.com/run/docs/execute/jobs#rest-api
-    push_endpoint = "https://run.googleapis.com/v2/projects/${google_cloud_run_v2_job.ingest_job.project}/locations/${google_cloud_run_v2_job.ingest_job.location}/jobs/${google_cloud_run_v2_job.ingest_job.name}:run"
-
-    oidc_token {
-      service_account_email = "${data.google_project.default.number}-compute@developer.gserviceaccount.com"
-    }
-  }
-
-  # Design Consideration: Failure handling
-  retry_policy {
-    minimum_backoff = "10s"
-  }
-
-  depends_on = [google_storage_bucket_iam_member.pubsub]
+data "archive_file" "default" {
+  type        = "zip"
+  output_path = "/tmp/function-source.zip"
+  source_dir  = "function-source/"
 }
 
-### Ingest job
+resource "google_storage_bucket_object" "default" {
+  name   = "function-source.zip"
+  bucket = google_storage_bucket.default.name
+  source = data.archive_file.default.output_path
+}
 
-resource "google_cloud_run_v2_job" "ingest_job" {
-  name     = "ingest-job-${local.unique_str}"
-  location = "us-central1"
+# Ingestion function
 
-  template {
-    template {
-      containers {
-        # Note: Replace with ingestion job container
-        image = "us-docker.pkg.dev/cloudrun/container/job"
+resource "google_cloudfunctions2_function" "default" {
+  name        = "ingestion-${local.unique_str}"
+  location    = "us-central1"
+  description = "Function to process Cloud Storage events"
 
-        # Note: The job resources should be customized based on optimization
-        #       and performance requirements.
-        resources {
-          limits = {
-            cpu    = "2"
-            memory = "1024Mi"
-          }
-        }
+  build_config {
+    runtime     = "nodejs22"
+    entry_point = "processPubSubData"
+
+    source {
+      storage_source {
+        bucket = google_storage_bucket.default.name
+        object = google_storage_bucket_object.default.name
       }
     }
   }
 
-  deletion_protection = false
-  depends_on          = [module.project_services]
+  service_config {
+    max_instance_count = 3
+    min_instance_count = 1
+    available_memory   = "256M"
+    timeout_seconds    = 60
+    environment_variables = {
+      SERVICE_CONFIG_TEST = "config_test"
+    }
+    ingress_settings               = "ALLOW_INTERNAL_ONLY"
+    all_traffic_on_latest_revision = true
+    service_account_email          = google_service_account.gcf.email
+  }
+
+  event_trigger {
+    trigger_region = "us-central1"
+    event_type     = "google.cloud.pubsub.topic.v1.messagePublished"
+    pubsub_topic   = google_pubsub_topic.ingest.id
+    retry_policy   = "RETRY_POLICY_RETRY"
+  }
+}
+
+resource "google_service_account" "gcf" {
+  account_id   = "function-service-account"
 }
