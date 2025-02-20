@@ -28,11 +28,15 @@ resource "google_vertex_ai_index" "default" {
       }
     }
   }
+
+  depends_on = [module.project_services]
 }
 
 resource "google_vertex_ai_index_endpoint" "default" {
   display_name = "Index endpoint"
   region       = var.region
+
+  depends_on = [module.project_services]
 }
 
 resource "google_vertex_ai_index_endpoint_deployed_index" "default" {

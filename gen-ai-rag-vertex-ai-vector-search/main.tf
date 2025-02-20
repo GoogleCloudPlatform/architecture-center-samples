@@ -37,5 +37,8 @@ module "project_services" {
     "aiplatform.googleapis.com",
     "iam.googleapis.com",
     "storage.googleapis.com",
+    "cloudfunctions.googleapis.com",
+    "eventarc.googleapis.com",
+    "cloudbuild.googleapis.com"
   ]
 }

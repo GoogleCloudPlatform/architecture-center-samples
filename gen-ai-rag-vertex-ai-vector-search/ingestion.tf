@@ -33,9 +33,9 @@ resource "google_storage_notification" "default" {
 
 # Allow the Pub/Sub service account the ability to publish messages
 resource "google_pubsub_topic_iam_member" "gcs" {
-  topic = google_pubsub_topic.ingest.id
-  role    = "roles/pubsub.publisher"
-  member  = "serviceAccount:${local.gcs_service_account}"
+  topic  = google_pubsub_topic.ingest.id
+  role   = "roles/pubsub.publisher"
+  member = "serviceAccount:${local.gcs_service_account}"
 
   depends_on = [module.project_services]
 }
@@ -47,13 +47,11 @@ resource "google_pubsub_topic" "ingest" {
 }
 
 # Allow the Pub/Sub service account the ability to publish messages
-# TODO(glasnt): confirm if required
-#resource "google_project_iam_member" "pubsub" {
-#  project = var.project_id
-#  role    = "roles/pubsub.publisher"
-#  member  = "serviceAccount:${local.pubsub_service_account}"
-#  depends_on = [module.project_services]
-#}
+resource "google_pubsub_topic_iam_member" "pubsub" {
+  topic  = google_pubsub_topic.ingest.id
+  role   = "roles/pubsub.publisher"
+  member = "serviceAccount:${local.pubsub_service_account}"
+}
 
 # Allow the Pub/Sub service account permissions to access the bucket
 # TODO(glasnt): confirm if required
@@ -61,7 +59,6 @@ resource "google_pubsub_topic" "ingest" {
 #  bucket = google_storage_bucket.ingest.name
 #  role   = "roles/storage.admin"
 #  member = "serviceAccount:${local.pubsub_service_account}"
-#
 #  depends_on = [module.project_services]
 #}
 
@@ -93,8 +90,8 @@ resource "google_cloudfunctions2_function" "default" {
   description = "Function to process Cloud Storage events"
 
   build_config {
-    runtime     = "nodejs22"
-    entry_point = "processPubSubData"
+    runtime     = "python312"
+    entry_point = "process_data"
 
     source {
       storage_source {
@@ -123,8 +120,10 @@ resource "google_cloudfunctions2_function" "default" {
     pubsub_topic   = google_pubsub_topic.ingest.id
     retry_policy   = "RETRY_POLICY_RETRY"
   }
+
+  depends_on = [module.project_services, google_service_account.gcf]
 }
 
 resource "google_service_account" "gcf" {
-  account_id   = "function-service-account"
+  account_id = "function-service-account-${local.unique_str}"
 }
