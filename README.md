@@ -42,6 +42,12 @@ To run a sample:
       terraform apply
       ```
 
+> [!NOTE]
+> While every effort is taken to ensure the Terraform deploys first time,
+> some resources may take time to become ready for additional configuration.
+> If the first `terraform apply` fails due to resources not existing, wait a
+> few minutes and try again.
+
 Learn more about [Terraform
 commands](https://cloud.google.com/docs/terraform/basic-commands).
 
