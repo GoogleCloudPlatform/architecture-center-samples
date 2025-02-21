@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import functions_framework
-import base64
+
 
 @functions_framework.cloud_event
 def process_data(cloud_event):
     data = cloud_event.data
-    print(data)
+    print(f"CloudEvent data: \n {data}")
