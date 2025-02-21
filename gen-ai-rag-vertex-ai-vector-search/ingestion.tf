@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-### Ingest bucket
-
+### Bucket for ingested data
 resource "google_storage_bucket" "ingest" {
   name = "ingest-${local.unique_str}"
 
@@ -22,28 +21,29 @@ resource "google_storage_bucket" "ingest" {
 }
 
 ### Pub/Sub to trigger ingestion job
+
+# Pub/Sub Topic
+resource "google_pubsub_topic" "ingest" {
+  name = "ingest-${local.unique_str}"
+}
+
+# Link events on the Cloud Storage bucket to the Pub/Sub Topic
 resource "google_storage_notification" "default" {
   bucket         = google_storage_bucket.ingest.name
   topic          = google_pubsub_topic.ingest.id
   event_types    = ["OBJECT_FINALIZE"]
   payload_format = "JSON_API_V1"
 
-  #depends_on = [google_storage_bucket_iam_member.pubsub]
+  depends_on = [google_pubsub_topic_iam_member.pubsub]
 }
 
-# Allow the Pub/Sub service account the ability to publish messages
+# Allow the Cloud Storage service account the ability to publish messages
 resource "google_pubsub_topic_iam_member" "gcs" {
   topic  = google_pubsub_topic.ingest.id
   role   = "roles/pubsub.publisher"
   member = "serviceAccount:${local.gcs_service_account}"
 
   depends_on = [module.project_services]
-}
-
-resource "google_pubsub_topic" "ingest" {
-  name = "ingest-${local.unique_str}"
-
-  #depends_on = [ google_storage_bucket_iam_member.pubsub ]
 }
 
 # Allow the Pub/Sub service account the ability to publish messages
@@ -53,36 +53,30 @@ resource "google_pubsub_topic_iam_member" "pubsub" {
   member = "serviceAccount:${local.pubsub_service_account}"
 }
 
-# Allow the Pub/Sub service account permissions to access the bucket
-# TODO(glasnt): confirm if required
-#resource "google_storage_bucket_iam_member" "pubsub" {
-#  bucket = google_storage_bucket.ingest.name
-#  role   = "roles/storage.admin"
-#  member = "serviceAccount:${local.pubsub_service_account}"
-#  depends_on = [module.project_services]
-#}
+### Cloud Run Function code
 
-# Function source, taken from function-source
-
-resource "google_storage_bucket" "default" {
-  name                        = "gcf-source-${local.unique_str}-${var.project_id}"
-  location                    = "US"
-  uniform_bucket_level_access = true
-}
-
+# Take the Cloud Run Function code from the local function-source folder
 data "archive_file" "default" {
   type        = "zip"
   output_path = "/tmp/function-source.zip"
   source_dir  = "function-source/"
 }
 
+# Create a bucket to store the Cloud Run Function code
+resource "google_storage_bucket" "default" {
+  name                        = "gcf-source-${local.unique_str}-${var.project_id}"
+  location                    = "US"
+  uniform_bucket_level_access = true
+}
+
+# Upload the function code
 resource "google_storage_bucket_object" "default" {
   name   = "function-source.zip"
   bucket = google_storage_bucket.default.name
   source = data.archive_file.default.output_path
 }
 
-# Ingestion function
+### Ingestion function
 
 resource "google_cloudfunctions2_function" "default" {
   name        = "ingestion-${local.unique_str}"
@@ -94,6 +88,7 @@ resource "google_cloudfunctions2_function" "default" {
     entry_point = "process_data"
 
     source {
+      # From uploaded archive of local code folder
       storage_source {
         bucket = google_storage_bucket.default.name
         object = google_storage_bucket_object.default.name
@@ -101,6 +96,7 @@ resource "google_cloudfunctions2_function" "default" {
     }
   }
 
+  # Note: Configure based on performance requirements for ingest function.
   service_config {
     max_instance_count = 3
     min_instance_count = 1
@@ -114,6 +110,7 @@ resource "google_cloudfunctions2_function" "default" {
     service_account_email          = google_service_account.gcf.email
   }
 
+  # Creates a Pub/Sub Subscription based on the topic
   event_trigger {
     trigger_region = "us-central1"
     event_type     = "google.cloud.pubsub.topic.v1.messagePublished"
@@ -124,6 +121,8 @@ resource "google_cloudfunctions2_function" "default" {
   depends_on = [module.project_services, google_service_account.gcf]
 }
 
+# Dedicated service account for function.
+# Note: grant any additional permissions to the function as required.
 resource "google_service_account" "gcf" {
   account_id = "function-service-account-${local.unique_str}"
 }
