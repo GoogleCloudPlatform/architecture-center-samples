@@ -12,8 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Ignore local Terraform state files.
-.terraform/
-.terraform.lock.hcl
-terraform.tfstate*
-.terraform.tfstate.lock.info
+output "result" {
+  value = <<-EOT
+
+  ### Deployment complete.
+
+  Next steps:
+
+    * Add data to the ingest bucket: gs://${google_storage_bucket.ingest.name}
+    * Launch the front end application: ${google_cloud_run_v2_service.serving.uri}
+
+  EOT
+}

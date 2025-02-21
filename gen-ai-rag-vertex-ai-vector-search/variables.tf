@@ -12,8 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Ignore local Terraform state files.
-.terraform/
-.terraform.lock.hcl
-terraform.tfstate*
-.terraform.tfstate.lock.info
+
+variable "project_id" {
+  type        = string
+  description = "Google Cloud Project ID"
+}
+
+variable "region" {
+  type        = string
+  description = "Google Cloud Region"
+  default     = "us-central1"
+}
+
+resource "random_id" "default" {
+  byte_length = 2
+}
+
+locals {
+  unique_str = random_id.default.hex
+}
