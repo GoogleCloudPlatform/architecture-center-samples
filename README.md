@@ -29,6 +29,8 @@ To run a sample:
       cd architecture-center-samples/[SAMPLE]/
       ```
 
+ 1. [Enable the required APIs](https://console.cloud.google.com/flows/enableapi?apiid=run.googleapis.com,pubsub.googleapis.com,aiplatform.googleapis.com,iam.googleapis.com,storage.googleapis.com,cloudfunctions.googleapis.com,eventarc.googleapis.com,cloudbuild.googleapis.com).
+
  1. Initialize and view the planned deployed resources:
 
       ```bash
