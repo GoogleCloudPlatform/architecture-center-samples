@@ -12,8 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Ignore local Terraform state files.
-.terraform/
-.terraform.lock.hcl
-terraform.tfstate*
-.terraform.tfstate.lock.info
+
+provider "google" {
+  project = var.project_id
+  region  = var.region
+}
+
+terraform {
+  required_version = ">= 1.5"
+
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = ">= 6, < 7"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3, < 4"
+    }
+  }
+}
