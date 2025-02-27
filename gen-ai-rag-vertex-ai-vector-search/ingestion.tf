@@ -80,7 +80,7 @@ resource "google_storage_bucket_object" "default" {
 
 resource "google_cloudfunctions2_function" "default" {
   name        = "ingestion-${local.unique_str}"
-  location    = "us-central1"
+  location    = var.region
   description = "Function to process Cloud Storage events"
 
   build_config {
@@ -112,7 +112,7 @@ resource "google_cloudfunctions2_function" "default" {
 
   # Creates a Pub/Sub Subscription based on the topic
   event_trigger {
-    trigger_region = "us-central1"
+    trigger_region = var.region
     event_type     = "google.cloud.pubsub.topic.v1.messagePublished"
     pubsub_topic   = google_pubsub_topic.ingest.id
     retry_policy   = "RETRY_POLICY_RETRY"
