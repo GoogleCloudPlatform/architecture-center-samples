@@ -10,6 +10,7 @@ To try this sample:
 
   1. [Enable the required APIs](https://console.cloud.google.com/flows/enableapi?apiid=run.googleapis.com,pubsub.googleapis.com,aiplatform.googleapis.com,iam.googleapis.com,storage.googleapis.com,cloudfunctions.googleapis.com,eventarc.googleapis.com,cloudbuild.googleapis.com).
   1. Follow the [setup instructions](/README.md#setup).
+  1. Make changes to the sample, as indicated by `Note: ` comments.
 
 
 ## Comments within sample
@@ -23,7 +24,6 @@ diagram](https://cloud.google.com/architecture/gen-ai-rag-vertex-ai-vector-searc
 `Design Considerations:`
 : configurations mapping to recommendations in the [design
 considerations](https://cloud.google.com/architecture/gen-ai-rag-vertex-ai-vector-search#design_considerations).
-
 
 `Note:`
 : Changes or modifications that should be considered when adjusting the sample
