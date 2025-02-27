@@ -21,7 +21,9 @@ variable "project_id" {
 variable "region" {
   type        = string
   description = "Google Cloud Region"
-  default     = "us-central1"
+
+  # Note: This can be changed to any region that supports Vertex AI and Cloud Run
+  default = "us-central1"
 }
 
 resource "random_id" "default" {
