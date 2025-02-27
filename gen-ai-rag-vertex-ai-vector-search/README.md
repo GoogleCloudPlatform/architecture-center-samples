@@ -6,7 +6,11 @@ Search](https://cloud.google.com/architecture/gen-ai-rag-vertex-ai-vector-search
 reference architecture from the [Cloud Architecture
 Center](https://cloud.google.com/architecture/).
 
-To try this sample, follow the [setup instructions](/README.md#setup).
+To try this sample:
+
+  1. [Enable the required APIs](https://console.cloud.google.com/flows/enableapi?apiid=run.googleapis.com,pubsub.googleapis.com,aiplatform.googleapis.com,iam.googleapis.com,storage.googleapis.com,cloudfunctions.googleapis.com,eventarc.googleapis.com,cloudbuild.googleapis.com).
+  1. Follow the [setup instructions](/README.md#setup).
+
 
 ## Comments within sample
 
