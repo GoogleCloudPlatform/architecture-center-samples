@@ -11,7 +11,7 @@ To try this sample:
   1. [Enable the required APIs](https://console.cloud.google.com/flows/enableapi?apiid=run.googleapis.com,pubsub.googleapis.com,aiplatform.googleapis.com,iam.googleapis.com,storage.googleapis.com,cloudfunctions.googleapis.com,eventarc.googleapis.com,cloudbuild.googleapis.com).
   1. Follow the [setup instructions](/README.md#setup) to deploy the sample.
 
-This will deploy the base architecture, but the applications will not be functional.
+This will deploy the supporting infrastructure for the pattern.
 
 As an example application, follow the instructions in the [RAG Architectures - App Source Code](https://github.com/GoogleCloudPlatform/devrel-demos/tree/main/ai-ml/rag-architectures).
 
