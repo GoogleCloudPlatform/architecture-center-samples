@@ -86,6 +86,7 @@ resource "google_cloudfunctions2_function" "default" {
   description = "Function to process Cloud Storage events"
 
   build_config {
+    # Note: Adjust based on the language/version of the ingestion app.
     runtime     = "python312"
     entry_point = "process_data"
 
