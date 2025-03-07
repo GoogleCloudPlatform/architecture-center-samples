@@ -19,7 +19,6 @@ As an example application, follow the instructions in the [RAG Architectures - A
 > The App Source Code was produced for a Google Cloud Next demo and is unmaintained.
 > We suggest manually changing the deployed infrastructure to try this example application.
 
-
 ## Comments within sample
 
 This sample uses the following comment scheme:
