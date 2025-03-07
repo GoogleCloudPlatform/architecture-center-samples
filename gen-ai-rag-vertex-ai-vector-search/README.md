@@ -13,11 +13,17 @@ To try this sample:
 
 This will deploy the supporting infrastructure for the pattern.
 
-As an example application, follow the instructions in the [RAG Architectures - App Source Code](https://github.com/GoogleCloudPlatform/devrel-demos/tree/main/ai-ml/rag-architectures).
+If you want to install a functional example application, follow the
+instructions in the [RAG Architectures - App Source
+Code](https://github.com/GoogleCloudPlatform/devrel-demos/tree/main/ai-ml/rag-architectures).
 
 > [!NOTE]
 > The App Source Code was produced for a Google Cloud Next demo and is unmaintained.
-> We suggest manually changing the deployed infrastructure to try this example application.
+
+We suggest manually changing the deployed infrastructure to try this example
+application (e.g. building the container images and editing the deployed
+service in the Google Cloud console to use the new container image, add
+environment variables, etc).
 
 ## Comments within sample
 
