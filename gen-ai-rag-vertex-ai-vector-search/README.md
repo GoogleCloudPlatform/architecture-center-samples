@@ -9,8 +9,14 @@ Center](https://cloud.google.com/architecture/).
 To try this sample:
 
   1. [Enable the required APIs](https://console.cloud.google.com/flows/enableapi?apiid=run.googleapis.com,pubsub.googleapis.com,aiplatform.googleapis.com,iam.googleapis.com,storage.googleapis.com,cloudfunctions.googleapis.com,eventarc.googleapis.com,cloudbuild.googleapis.com).
-  1. Follow the [setup instructions](/README.md#setup).
-  1. Make changes to the sample, as indicated by `Note: ` comments.
+  1. Follow the [setup instructions](/README.md#setup) to deploy the sample.
+
+This will deploy the base architecture, but the applications will not be functional.
+
+As an example application, follow the instructions in the [RAG Architectures - App Source Code](https://github.com/GoogleCloudPlatform/devrel-demos/tree/main/ai-ml/rag-architectures).
+
+> [!NOTE]
+> The App Source Code was produced for a Google Cloud Next demo and is unmaintained.
 
 
 ## Comments within sample
@@ -20,6 +26,11 @@ This sample uses the following comment scheme:
 `###`
 : Major functional sections, mapping to the [architecture
 diagram](https://cloud.google.com/architecture/gen-ai-rag-vertex-ai-vector-search#architecture).
+
+`Edit Me:`
+: Places to make changes to adapt the sample Terraform to support the sample
+application.
+
 
 `Design Considerations:`
 : configurations mapping to recommendations in the [design

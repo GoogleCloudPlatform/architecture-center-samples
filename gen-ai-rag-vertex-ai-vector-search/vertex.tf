@@ -20,7 +20,7 @@ resource "google_vertex_ai_index" "default" {
 
     # Note: The index config should be customized based on your model.
     config {
-      dimensions                  = 1536
+      dimensions                  = 768
       approximate_neighbors_count = 0
       distance_measure_type       = "DOT_PRODUCT_DISTANCE"
       algorithm_config {

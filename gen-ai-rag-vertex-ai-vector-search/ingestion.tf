@@ -59,6 +59,8 @@ resource "google_pubsub_topic_iam_member" "pubsub" {
 data "archive_file" "default" {
   type        = "zip"
   output_path = "/tmp/function-source.zip"
+
+  # Edit Me: Replace with a path to the customized "ingestion" function code
   source_dir  = "function-source/"
 }
 
@@ -88,7 +90,7 @@ resource "google_cloudfunctions2_function" "default" {
     entry_point = "process_data"
 
     source {
-      # From uploaded archive of local code folder
+      # Sample function from uploaded archive of local code folder
       storage_source {
         bucket = google_storage_bucket.default.name
         object = google_storage_bucket_object.default.name
