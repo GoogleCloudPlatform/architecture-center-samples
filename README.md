@@ -1,8 +1,10 @@
 # Architecture Center Samples
 
-Terraform samples for [Cloud Architecture
-Center](https://cloud.google.com/architecture/)
+This repo contains supporting code artifacts for [Cloud Architecture
+Center](https://cloud.google.com/architecture/) references.
 
+> [!NOTE]
+> The code in this repo is not intended for production use.
 
 # Running samples
 

@@ -21,7 +21,7 @@ resource "google_cloud_run_v2_service" "serving" {
 
   template {
     containers {
-      # Note: Replace with the customized container image.
+      # Edit Me: Replace with the customized "frontend" container image.
       image = "us-docker.pkg.dev/cloudrun/container/hello"
     }
   }
@@ -50,7 +50,7 @@ resource "google_cloud_run_v2_service" "backend" {
 
   template {
     containers {
-      # Note: Replace with the customized container image.
+      # Edit Me: Replace with the customized "backend" container image.
       image = "us-docker.pkg.dev/cloudrun/container/hello"
     }
   }
