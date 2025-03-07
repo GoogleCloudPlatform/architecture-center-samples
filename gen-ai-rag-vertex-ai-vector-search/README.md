@@ -17,6 +17,7 @@ As an example application, follow the instructions in the [RAG Architectures - A
 
 > [!NOTE]
 > The App Source Code was produced for a Google Cloud Next demo and is unmaintained.
+> We suggest manually changing the deployed infrastructure to try this example application.
 
 
 ## Comments within sample
@@ -28,9 +29,7 @@ This sample uses the following comment scheme:
 diagram](https://cloud.google.com/architecture/gen-ai-rag-vertex-ai-vector-search#architecture).
 
 `Edit Me:`
-: Places to make changes to adapt the sample Terraform to support the sample
-application.
-
+: Places to make changes to adapt the sample Terraform to customize the deployment.
 
 `Design Considerations:`
 : configurations mapping to recommendations in the [design
@@ -39,4 +38,3 @@ considerations](https://cloud.google.com/architecture/gen-ai-rag-vertex-ai-vecto
 `Note:`
 : Changes or modifications that should be considered when adjusting the sample
 to deploy in production.
-
