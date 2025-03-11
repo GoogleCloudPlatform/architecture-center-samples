@@ -20,6 +20,9 @@ resource "google_vertex_ai_index" "default" {
 
     # Note: The index config should be customized based on your model.
     config {
+      # Note: Ensure this matches the dimensionality of your model.
+      # For example, text-embedding-005 uses 768-dimensional vectors
+      # https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
       dimensions                  = 768
       approximate_neighbors_count = 0
       distance_measure_type       = "DOT_PRODUCT_DISTANCE"
