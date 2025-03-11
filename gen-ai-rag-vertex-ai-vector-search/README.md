@@ -20,10 +20,7 @@ Code](https://github.com/GoogleCloudPlatform/devrel-demos/tree/main/ai-ml/rag-ar
 > [!NOTE]
 > The App Source Code was produced for a Google Cloud Next demo and is unmaintained.
 
-We suggest manually changing the deployed infrastructure to try this example
-application (e.g. building the container images and editing the deployed
-service in the Google Cloud console to use the new container image, add
-environment variables, etc).
+We suggest deploying the terraform in this folder, then manually updating the deployment as described in the [sample application README](https://github.com/GoogleCloudPlatform/devrel-demos/tree/main/ai-ml/rag-architectures#steps) (i.e. building the container images and editing the deployed service in the Google Cloud console to use the new container image, add environment variables, etc).
 
 ## Comments within sample
 
