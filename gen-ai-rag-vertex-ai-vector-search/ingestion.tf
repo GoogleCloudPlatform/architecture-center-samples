@@ -61,7 +61,7 @@ data "archive_file" "default" {
   output_path = "/tmp/function-source.zip"
 
   # Edit Me: Replace with a path to the customized "ingestion" function code
-  source_dir  = "function-source/"
+  source_dir = "function-source/"
 }
 
 # Create a bucket to store the Cloud Run Function code
