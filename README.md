@@ -59,7 +59,7 @@ commands](https://cloud.google.com/docs/terraform/basic-commands).
  * Remove the resources that were created, entering `yes` at the prompt:
 
       ```bash
-      terraform destory
+      terraform destroy
       ```
 
 # Contributing
