@@ -4,3 +4,6 @@
 # https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners#codeowners-syntax
 
 *   @GoogleCloudPlatform/cloud-samples-infra @GoogleCloudPlatform/cloud-architecture-center-samples-team
+
+# Pythian code owners for the oracle-ebs-framework
+oracle-ebs-framework/   @agnnn @raivissaldabols @gmarcospythian

@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Oracle EBS environent File
+
+### update those parameters as per your Source environment
+APPS_USER=apps
+APPS_PASSWORD=apps
+
+WLS_USER=weblogic
+WLS_PASSWORD=welcome1
+
+SYSTEM_USER=system
+SYSTEM_PASS=system
+
+SYSADMIN_PASSWORD="SYSADMIN#!1234"
+
+### DO NOT MODIFY below parameters - for the automation
+# Application 
+# Database
+ORACLE_HOSTNAME=oracle-ebs-db
+ORACLE_HOME=/u01/app/oracle/product/dbhome_1
+ORACLE_SID=EBSCDB
+ORACLE_PDB_SID=EBSDB
+
+ORACLE_RDBMS_ARCHIVE=RDBMS_TO_GCP.tar.gz
+ORACLE_RMAN_ARCHIVE=RMAN_TO_GCP
+ORACLE_BACKUP_LOC=/backup
+
+ORACLE_EBS_ARCHIVE=EBSFS_TO_GCP.tar.gz
