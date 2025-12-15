@@ -1,0 +1,46 @@
+run
+{
+  ALLOCATE auxiliary CHANNEL c1 DEVICE TYPE DISK;
+  ALLOCATE auxiliary CHANNEL c2 DEVICE TYPE DISK;
+  ALLOCATE auxiliary CHANNEL c3 DEVICE TYPE DISK;
+  ALLOCATE auxiliary CHANNEL c4 DEVICE TYPE DISK;
+  ALLOCATE auxiliary CHANNEL c5 DEVICE TYPE DISK;
+  ALLOCATE auxiliary CHANNEL c6 DEVICE TYPE DISK;
+  ALLOCATE auxiliary CHANNEL c7 DEVICE TYPE DISK;
+  ALLOCATE auxiliary CHANNEL c8 DEVICE TYPE DISK;
+  ALLOCATE auxiliary CHANNEL c9 DEVICE TYPE DISK;
+  ALLOCATE auxiliary CHANNEL c10 DEVICE TYPE DISK;
+  duplicate database to EBSCDB
+  spfile
+  set db_unique_name 'EBSCDB'
+  set control_files '/u01/oradata/EBSCDB/control01.ctl','/u01/oradata/EBSCDB/control02.ctl'
+  set db_create_file_dest '/u01/oradata'
+  set db_create_online_log_dest_1 '/u01/oradata/EBSCDB'
+  set db_recovery_file_dest '/u01/oradata/EBSCDB/arch'
+  set db_recovery_file_dest_size '200G'
+  set audit_file_dest '/u01/app/oracle/admin'
+  set core_dump_dest='/u01/app/oracle'
+  set diagnostic_dest '/u01/app/oracle'
+  set pga_aggregate_target '2g'
+  set sga_target '12g'
+  set sga_max_size '12g'
+  set sessions '1600'
+  set processes '800'
+  set shared_pool_reserved_size '40M'
+  set shared_pool_size '400M'
+  set result_cache_max_size '300M'
+  set local_listener 'oracle-ebs-db:1521'
+  set recyclebin 'OFF'
+  backup location '/backup/RMAN_TO_GCP/'
+  NOFILENAMECHECK;
+  RELEASE CHANNEL c1;
+  RELEASE CHANNEL c2;
+  RELEASE CHANNEL c3;
+  RELEASE CHANNEL c4;
+  RELEASE CHANNEL c5;
+  RELEASE CHANNEL c6;
+  RELEASE CHANNEL c7;
+  RELEASE CHANNEL c8;
+  RELEASE CHANNEL c9;
+  RELEASE CHANNEL c10;
+}
