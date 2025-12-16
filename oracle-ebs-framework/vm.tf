@@ -102,8 +102,6 @@ resource "google_compute_instance" "dbs" {
   }
 
   tags = [
-    "http-server",
-    "https-server",
     "lb-health-check",
     "oracle-ebs-apps",
     "iap-access",
