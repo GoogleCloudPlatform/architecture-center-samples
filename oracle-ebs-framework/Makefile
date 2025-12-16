@@ -197,4 +197,4 @@ vision_ebs_stop: ## Stop Oracle EBS Vision application
 	@echo "\033[1m>>>Oracle Vision EBS: Stop \033[0m"
 	@vision_gce_zone=$$(terraform -chdir=$(TF_DIR) output -raw vision_instance_zone); \
 	gcloud compute ssh --zone "$$vision_gce_zone" "oracle-vision" --tunnel-through-iap --project $(PROJECT_ID) \
-	  --command "sudo -u oracle bash -c 'kill -9 -1; sleep 5; ps -fea | grep oracle'"
+	  --command "sudo -u oracle bash -c 'source /u01/install/APPS/19.0.0/EBSCDB_apps.env | echo "shut abort" | sqlplus / as sysdba; sleep 5; ps -fea | grep oracle'"
