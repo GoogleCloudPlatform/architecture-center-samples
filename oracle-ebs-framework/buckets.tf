@@ -13,7 +13,7 @@ module "ebs_storage_bucket" {
   storage_class = "NEARLINE"
   versioning    = true
   labels        = var.labels
-  force_destroy = true
+  force_destroy = var.force_destroy_bucket
 }
 
 resource "google_storage_bucket_iam_member" "bucket_object_admin" {

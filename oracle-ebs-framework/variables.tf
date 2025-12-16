@@ -26,6 +26,12 @@ variable "ebs_storage_bucket_name" {
   default     = "oracle-ebs-toolkit-storage-bucket"
 }
 
+variable "force_destroy_bucket" {
+  description = "Whether to allow force deletion of the bucket even if it contains objects"
+  type        = bool
+  default     = false
+}
+
 variable "oracle_ebs_vision" {
   description = "Whether to deploy Oracle EBS Vision environment"
   type        = bool
