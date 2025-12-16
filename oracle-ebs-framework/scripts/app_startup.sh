@@ -26,7 +26,8 @@ gcloud --version
 gcloud storage ls
 
 # disable SE LINUx
-sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+# gemini-code-assist suggestion suggestion
+# sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 
 # disable IPV6
 sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
@@ -43,8 +44,9 @@ dnf install gcc gcc-c++ elfutils-libelf-devel fontconfig-devel libXrender-devel 
 dnf clean all
 
 # disable firewall
-systemctl stop firewalld
-systemctl disable firewalld
+# gemini-code-assist suggestion suggestion
+#systemctl stop firewalld
+#systemctl disable firewalld
 
 # swap | 20g
 fallocate -l 20G /swapfile
