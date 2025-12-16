@@ -13,6 +13,11 @@ output "dbs_instance_zone" {
   value = try(!var.oracle_ebs_vision ? google_compute_instance.dbs[0].zone : "", "")
 }
 
+output "ebs_storage_bucket_url" {
+  description = "The URL of the storage bucket."
+  value       = module.ebs_storage_bucket.url
+}
+
 output "deployment_summary" {
   value = var.oracle_ebs_vision ? (
     <<EOT
