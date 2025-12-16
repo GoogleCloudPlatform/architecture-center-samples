@@ -8,7 +8,7 @@ module "firewall_rules" {
     {
       name          = "allow-http-in"
       description   = "Allow HTTP traffic inbound"
-      source_ranges = ["0.0.0.0/0"]
+      source_ranges = var.trusted_ip_ranges 
       allow = [
         {
           protocol = "tcp"
@@ -23,7 +23,7 @@ module "firewall_rules" {
     {
       name          = "allow-https-in"
       description   = "Allow HTTPS traffic inbound"
-      source_ranges = ["0.0.0.0/0"]
+      source_ranges = var.trusted_ip_ranges 
       allow = [
         {
           protocol = "tcp"
