@@ -448,7 +448,7 @@ EOF
     echo "/u01/app/oracle/temp" > $ORACLE_HOME/dbs/EBSDB_utlfiledir.txt
     mkdir -p /u01/app/oracle/product/temp/EBSDB
 
-    egrep "s_db_util_filedir|s_ecx_log_dir|s_bis_debug_log_dir|s_outbound_dir" /$CONTEXT_FILE| sed -n 's/.*>\(.*\)<.*/\1/p' | sort | uniq >> $ORACLE_HOME/dbs/EBSDB_utlfiledir.txt
+    egrep "s_db_util_filedir|s_ecx_log_dir|s_bis_debug_log_dir|s_outbound_dir" $CONTEXT_FILE| sed -n 's/.*>\(.*\)<.*/\1/p' | sort | uniq >> $ORACLE_HOME/dbs/EBSDB_utlfiledir.txt
     
     echo "UTL File Dirs:"
     cat $ORACLE_HOME/dbs/EBSDB_utlfiledir.txt
