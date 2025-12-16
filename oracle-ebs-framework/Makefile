@@ -11,19 +11,19 @@ TF_DIR := .
 # Required GCP IAM roles
 REQUIRED_ROLES = roles/storage.admin roles/iam.serviceAccountUser roles/iap.tunnelResourceAccessor roles/compute.osAdminLogin  roles/compute.instanceAdmin.v1
 
-.PHONY: help setup init format lint validate plan deploy destroy docs list-projects verify-gcp-access vision_plan vision_deploy vision_destroy
+.PHONY: help setup init format lint validate plan deploy destroy docs verify-gcp-access vision_plan vision_deploy vision_destroy
 
 help:
 	@echo "Available targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?##' Makefile | awk 'BEGIN {FS = ":.*?##"}; {printf "  make %-20s %s\n", $$1, $$2}'
 
-setup:
+setup: ## Run initial setup for the project
 	@echo "Running setup..."
 	bash scripts/install.sh
 	@echo "Setup complete."
 	@echo "Make sure you are setup with gcloud init with the project that will be used for this deployment and proceed to verify-gcp-access'."
 
-init:
+init: ## Initialize Terraform configuration
 	@if [ -z "$(PROJECT_ID)" ]; then \
 		echo "PROJECT_ID not set"; exit 1; \
 	fi
@@ -43,23 +43,31 @@ init:
 		-backend-config="prefix=$(PROJECT_ID)"
 	@echo "Terraform initialized successfully."
 
-format:
+format: ## Format Terraform files
 	terraform -chdir=$(TF_DIR) fmt
 
-lint:
+lint: ## Lint Terraform files
 	pre-commit run --all-files
 
-plan:
+validate: ## Validate Terraform configuration
+    @echo "Validating Terraform configuration..."
+	terraform -chdir=$(TF_DIR) validate \
+	  -var="project_id=$(PROJECT_ID)" \
+	  -var="project_service_account_email=$(PROJECT_SA_EMAIL)"
+	@echo "Terraform configuration is valid."
+
+plan: ## Validate Terraform configuration
 	terraform -chdir=$(TF_DIR) plan \
 	  -var="project_id=$(PROJECT_ID)" \
 	  -var="project_service_account_email=$(PROJECT_SA_EMAIL)"
+	@echo "Terraform plan generated."
 
-deploy:
+deploy: ## Apply Terraform configuration
 	terraform -chdir=$(TF_DIR) apply -auto-approve \
 	  -var="project_id=$(PROJECT_ID)" \
 	  -var="project_service_account_email=$(PROJECT_SA_EMAIL)"
 
-deploy_oracle_ebs_scripts:
+deploy_oracle_ebs_scripts: ## Deploy Oracle EBS scripts to instances
 	@echo ""
 	@echo "\033[1m>>> Getting EBS instance zone from Terraform output \033[0m"
 	@ebs_gce_zone=$$(terraform -chdir=$(TF_DIR) output -raw apps_instance_zone); \
@@ -83,34 +91,30 @@ deploy_oracle_ebs_scripts:
 
 VISION ?= false
 
-vision_plan:
+vision_plan: ## Plan Terraform configuration with Oracle EBS Vision
 	terraform -chdir=$(TF_DIR) plan \
 	  -var="project_id=$(PROJECT_ID)" \
 	  -var="project_service_account_email=$(PROJECT_SA_EMAIL)" \
 	  -var="oracle_ebs_vision=true"
 
-vision_deploy:
+vision_deploy: ## Apply Terraform configuration with Oracle EBS Vision
 	terraform -chdir=$(TF_DIR) apply -auto-approve \
 	  -var="project_id=$(PROJECT_ID)" \
 	  -var="project_service_account_email=$(PROJECT_SA_EMAIL)" \
 	  -var="oracle_ebs_vision=true"
 
-vision_destroy:
+vision_destroy: ## Destroy Terraform configuration with Oracle EBS Vision
 	terraform -chdir=$(TF_DIR) destroy -auto-approve \
 	  -var="project_id=$(PROJECT_ID)" \
 	  -var="project_service_account_email=$(PROJECT_SA_EMAIL)" \
 	  -var="oracle_ebs_vision=true"
 
-destroy:
+destroy: ## Destroy Terraform-managed infrastructure
 	terraform -chdir=$(TF_DIR) destroy -auto-approve \
 	  -var="project_id=$(PROJECT_ID)" \
 	  -var="project_service_account_email=$(PROJECT_SA_EMAIL)"
 
-list-projects:
-	@echo "Available projects:"
-	@ls -1 projects
-
-verify-gcp-access:
+verify-gcp-access: ## Verify GCP access and required IAM roles
 	@if [ -z "$(PROJECT_ID)" ]; then \
 		echo " PROJECT_ID is not set and could not be auto-detected from gcloud config."; \
 		echo "Please run: gcloud init OR pass PROJECT_ID=<id> to make."; \
@@ -152,7 +156,7 @@ verify-gcp-access:
 	echo ""; \
 	echo " GCP access check passed for project: $(PROJECT_ID)"
 
-vision_deploy_oracle_ebs:
+vision_deploy_oracle_ebs: ## Deploy Oracle EBS Vision application
 	@echo ""
 	@echo "\033[1m>>> Getting Vision instance zone from Terraform output \033[0m"
 	@vision_gce_zone=$$(terraform -chdir=$(TF_DIR) output -raw vision_instance_zone); \
@@ -174,21 +178,21 @@ vision_deploy_oracle_ebs:
 	gcloud compute ssh --zone "$$vision_gce_zone" "oracle-vision" --tunnel-through-iap --project $(PROJECT_ID) \
 	  --command "sudo /scripts/vision_apps_fs_prepare.sh | tee -a /scripts/vision_apps_fs_prepare.sh.\$$(date +%Y%m%d_%H%M%S).log"
 
-vision_ebs_troubleshoot:
+vision_ebs_troubleshoot: ## Troubleshoot Oracle EBS Vision deployment
 	@echo ""
 	@echo "\033[1m>>>Troubleshooting - printing deployment Oracle EBS details \033[0m"
 	@vision_gce_zone=$$(terraform -chdir=$(TF_DIR) output -raw vision_instance_zone); \
 	gcloud compute ssh --zone "$$vision_gce_zone" "oracle-vision" --tunnel-through-iap --project $(PROJECT_ID) \
 	  --command "sudo bash -c '/scripts/vision_apps_troubleshoot.sh | tee -a /scripts/vision_apps_troubleshoot.sh.\$$(date +%Y%m%d_%H%M%S).log'"
 
-vision_ebs_start:
+vision_ebs_start: ## Start Oracle EBS Vision application
 	@echo ""
 	@echo "\033[1m>>>Oracle Vision EBS: Startup \033[0m"
 	@vision_gce_zone=$$(terraform -chdir=$(TF_DIR) output -raw vision_instance_zone); \
 	gcloud compute ssh --zone "$$vision_gce_zone" "oracle-vision" --tunnel-through-iap --project $(PROJECT_ID) \
 	  --command "sudo -u oracle bash -c '/scripts/vision_apps_startup.sh | tee -a /scripts/vision_apps_startup.sh.log'"
 
-vision_ebs_stop:
+vision_ebs_stop: ## Stop Oracle EBS Vision application
 	@echo ""
 	@echo "\033[1m>>>Oracle Vision EBS: Stop \033[0m"
 	@vision_gce_zone=$$(terraform -chdir=$(TF_DIR) output -raw vision_instance_zone); \
