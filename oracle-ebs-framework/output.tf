@@ -1,22 +1,16 @@
 output "vision_instance_zone" {
   description = "The zone of the Oracle Vision instance."
-  value       = try(regex("zones/([^/]+)/", google_compute_instance.vision[0].self_link)[0], "")
+  value       = try(var.oracle_ebs_vision ? google_compute_instance.vision[0].zone : "", "")
 }
 
 output "apps_instance_zone" {
   description = "The zone where the EBS apps instance is deployed"
-  value = try(
-    !var.oracle_ebs_vision ? regex("zones/([^/]+)/", google_compute_instance.apps[0].self_link)[0] : "",
-    ""
-  )
+  value = try(!var.oracle_ebs_vision ? google_compute_instance.apps[0].zone : "", "")
 }
 
 output "dbs_instance_zone" {
   description = "The zone where the EBS database instance is deployed"
-  value = try(
-    !var.oracle_ebs_vision ? regex("zones/([^/]+)/", google_compute_instance.dbs[0].self_link)[0] : "",
-    ""
-  )
+  value = try(!var.oracle_ebs_vision ? google_compute_instance.dbs[0].zone : "", "")
 }
 
 output "deployment_summary" {
