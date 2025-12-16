@@ -51,7 +51,6 @@ lint: ## Lint Terraform files
 	pre-commit run --all-files
 
 validate: ## Validate Terraform configuration
-    @echo "Validating Terraform configuration..."
 	terraform -chdir=$(TF_DIR) validate \
 	  -var="project_id=$(PROJECT_ID_CLEAN)" \
 	  -var="project_service_account_email=$(PROJECT_SA_EMAIL)"
