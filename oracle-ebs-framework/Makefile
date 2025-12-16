@@ -172,7 +172,7 @@ vision_deploy_oracle_ebs: ## Deploy Oracle EBS Vision application
 	echo ""; \
 	echo "\033[1m>>> Ownership updates /scripts/ on oracle-vision \033[0m"; \
 	gcloud compute ssh --zone "$$vision_gce_zone" "oracle-vision" --tunnel-through-iap --project $(PROJECT_ID_CLEAN) \
-	  --command "sudo chown -Rfv root:root /scripts && sudo chmod -Rfv 777 /scripts/*"; \
+	  --command "sudo chown -Rfv root:root /scripts && sudo chmod -Rfv 755 /scripts/*"; \
 	echo ""; \
 	echo "\033[1m>>> Deploying Oracle EBS vision: Runtime ~ 50-60 minutes \033[0m"; \
 	gcloud compute ssh --zone "$$vision_gce_zone" "oracle-vision" --tunnel-through-iap --project $(PROJECT_ID_CLEAN) \
