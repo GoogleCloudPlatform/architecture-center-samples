@@ -65,7 +65,7 @@ EOT
    • Name           : ${google_compute_instance.apps[0].name}
    • Internal IP    : ${google_compute_instance.apps[0].network_interface[0].network_ip}
    • SSH Command    :
-       gcloud compute ssh --zone "${var.zone}" "${google_compute_instance.apps[0].name}" --tunnel-through-iap --project "${var.project_id} -- -L 8000:localhost:8000"
+       gcloud compute ssh --zone "${var.zone}" "${google_compute_instance.apps[0].name}" --tunnel-through-iap --project "${var.project_id}" -- -L 8000:localhost:8000"
 
 -----------------------------------------
  DB Instance
