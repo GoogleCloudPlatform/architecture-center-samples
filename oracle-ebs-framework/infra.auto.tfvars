@@ -12,7 +12,6 @@ subnets = [{
   subnet_flow_logs      = true
 }]
 
-
 # EBS Apps VM Configuration
 ebs_apps_server_internal_ip = "10.115.0.20"
 apps_machine_type           = "e2-standard-4"
@@ -33,3 +32,6 @@ vision_machine_type          = "e2-standard-8"
 vision_boot_disk_size        = 1024
 vision_boot_disk_type        = "pd-balanced"
 vision_boot_disk_auto_delete = true
+
+# Trusted IP Ranges for External access | Replace with actual trusted IP ranges
+trusted_ip_ranges = ["203.0.113.0/24", "198.51.100.0/24"]

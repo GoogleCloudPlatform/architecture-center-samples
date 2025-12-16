@@ -82,7 +82,7 @@ module "firewall_rules" {
     {
       name          = "allow-external-app-access"
       description   = "Allow external access to Oracle EBS Apps"
-      source_ranges = ["0.0.0.0/0"]
+      source_ranges = var.trusted_ip_ranges
       allow = [
         {
           protocol = "tcp"
@@ -97,7 +97,7 @@ module "firewall_rules" {
     {
       name          = "allow-external-db-access"
       description   = "Allow external access to Oracle EBS DB"
-      source_ranges = ["0.0.0.0/0"]
+      source_ranges = var.trusted_ip_ranges
       allow = [
         {
           protocol = "tcp"
