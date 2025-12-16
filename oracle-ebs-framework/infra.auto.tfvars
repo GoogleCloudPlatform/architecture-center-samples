@@ -1,7 +1,8 @@
 # Set Region and Zone
-terraform_version = "1.6.6"
-region            = "us-central1"
-zone              = "us-central1-a"
+terraform_version    = "1.6.6"
+region               = "us-central1"
+zone                 = "us-central1-a"
+force_destroy_bucket = true
 
 # Adjust subnet region and IP CIDR range
 subnets = [{
@@ -34,4 +35,4 @@ vision_boot_disk_type        = "pd-balanced"
 vision_boot_disk_auto_delete = true
 
 # Trusted IP Ranges for External access
-trusted_ip_ranges = []  # Please provide your own trusted IP ranges. Example -   trusted_ip_ranges = ["203.0.113.0/24", "198.51.100.0/24"]
+trusted_ip_ranges = [] # Please provide your own trusted IP ranges. Example -   trusted_ip_ranges = ["203.0.113.0/24", "198.51.100.0/24"]
