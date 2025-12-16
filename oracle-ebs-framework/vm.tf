@@ -38,17 +38,7 @@ resource "google_compute_instance" "apps" {
     startup-script = file("${path.module}/scripts/app_startup.sh")
   }
 
-  tags = [
-    "http-server",
-    "https-server",
-    "lb-health-check",
-    "oracle-ebs-apps",
-    "iap-access",
-    "icmp-access",
-    "egress-nat",
-    "internal-access",
-    "external-app-access"
-  ]
+  tags = local.vm_network_tags.app
 
   service_account {
     email  = google_service_account.project_sa.email
@@ -101,15 +91,7 @@ resource "google_compute_instance" "dbs" {
     startup-script = file("${path.module}/scripts/app_startup.sh")
   }
 
-  tags = [
-    "lb-health-check",
-    "oracle-ebs-apps",
-    "iap-access",
-    "icmp-access",
-    "egress-nat",
-    "internal-access",
-    "external-db-access"
-  ]
+  tags = local.vm_network_tags.db
 
   service_account {
     email  = google_service_account.project_sa.email
