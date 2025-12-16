@@ -60,7 +60,8 @@ variable "project_service_account_roles" {
     "roles/compute.instanceAdmin.v1",
     "roles/logging.logWriter",
     "roles/monitoring.metricWriter",
-    "roles/storage.admin",
+    "roles/storage.objectViewer",
+    "roles/storage.legacyBucketReader",
     "roles/secretmanager.secretAccessor",
     "roles/iam.serviceAccountUser",
     "roles/iap.tunnelResourceAccessor"
