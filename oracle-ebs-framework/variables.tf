@@ -61,7 +61,7 @@ variable "project_service_account_roles" {
     "roles/logging.logWriter",
     "roles/monitoring.metricWriter",
     "roles/storage.objectViewer",
-    "roles/storage.legacyBucketReader",
+    "roles/viewer",
     "roles/secretmanager.secretAccessor",
     "roles/iam.serviceAccountUser",
     "roles/iap.tunnelResourceAccessor"
