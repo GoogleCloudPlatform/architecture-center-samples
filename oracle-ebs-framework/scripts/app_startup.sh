@@ -69,7 +69,7 @@ fi
 
 # remove profiles
 mv /etc/profile.d/modules.sh /etc/profile.d/modules.sh.back
-mv /etc/profile.d/scl-init.sh /etc/profile.d/scl-init.sh.mack
+mv /etc/profile.d/scl-init.sh /etc/profile.d/scl-init.sh.back
 mv /etc/profile.d/which2.sh /etc/profile.d/which2.sh.back
 
 # link libs
