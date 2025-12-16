@@ -153,7 +153,7 @@ hostnamectl set-hostname apps
 hostname
 
 # add reboot script to cron
- if [ $(crontab  -l | grep vision_apps_fs_mount | wc -l) -eq 0 ]; then
+ if [ $(crontab  -l | grep "hostnamectl set-hostname apps" | wc -l) -eq 0 ]; then
     echo "Add crontab: set hostname on startup";
     job="@reboot hostnamectl set-hostname apps"
     ( crontab -l 2>/dev/null; echo "$job" ) | crontab -
