@@ -8,6 +8,6 @@ resource "google_project_iam_member" "project_sa_roles" {
   for_each = toset(var.project_service_account_roles)
 
   project = var.project_id
-  role    = "roles/storage.objectAdmin"
+  role    = each.value
   member  = "serviceAccount:${google_service_account.project_sa.email}"
 }
