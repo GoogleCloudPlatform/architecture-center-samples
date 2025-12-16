@@ -253,7 +253,7 @@ Oracle EBS application part setup
 
 ```bash
 # Connect to the server and switch to root
-gcloud compute ssh oracle-ebs-apps --tunnel-through-iap --project ${PROCJECT}
+gcloud compute ssh oracle-ebs-apps --tunnel-through-iap --project ${PROJECT}
 sudo su -
 
 # Execute root activities as functions
