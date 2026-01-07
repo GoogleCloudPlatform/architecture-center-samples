@@ -1,0 +1,43 @@
+[general]
+s_hostname = oracle-ebs-apps
+s_domainname = us-west2-a.c.oracle-ebs-toolkit.internal
+s_file_edition_name = fs1
+s_display = oracle-ebs-apps:0.0
+s_file_edition_type = run
+s_dbSid = EBSDB
+s_dbhost = oracle-ebs-db
+s_dbdomain = us-west2-a.c.oracle-ebs-toolkit.internal
+s_db_service_name = ebs_EBSDB
+s_patch_service_name = EBSDB_ebs_patch
+
+[webentry]
+s_webentryurlprotocol = http
+s_webentryhost = oracle-ebs-apps
+s_webentrydomain = us-west2-a.c.oracle-ebs-toolkit.internal
+s_active_webport = 8000
+
+[services]
+s_root_status = enabled
+s_web_entry_status = enabled
+s_web_applications_status = enabled
+s_batch_status = enabled
+s_other_service_group_status = disabled
+
+[pools]
+s_port_pool = 0
+s_proxyhost =
+s_proxyport = 80
+s_update_wls_server_ssl_port = false
+s_appsuser = applmgr
+s_appsgroup = dba
+
+[paths]
+s_appltmp = /u01/app/oracle/temp
+s_applptmp = /u01/app/oracle/temp
+s_fmw_home = /u01/ebs122/fs1/FMW_Home
+s_current_base = /u01/ebs122/fs1
+s_ne_base = /u01/ebs122/fs_ne
+s_other_base = /u01/ebs122/fs2
+s_config_home = /u01/ebs122/fs1/inst/apps/EBSDB_oracle-ebs-apps
+s_base = /u01/ebs122
+s_inst_base = /u01/ebs122

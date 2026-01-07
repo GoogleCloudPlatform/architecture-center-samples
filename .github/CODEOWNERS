@@ -4,3 +4,5 @@
 # https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners#codeowners-syntax
 
 *   @GoogleCloudPlatform/cloud-samples-infra @GoogleCloudPlatform/cloud-architecture-center-samples-team
+
+oracle-ebs-framework/   @nelsong356

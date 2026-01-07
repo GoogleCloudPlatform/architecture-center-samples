@@ -1,0 +1,25 @@
+####################################
+# Definition for database listener
+####################################
+
+EBSCDB =
+  (DESCRIPTION_LIST =
+    (DESCRIPTION =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = oracle-ebs-db)(PORT = 1521))
+    )
+  )
+
+USE_SID_AS_SERVICE_EBSCDB            = ON
+STARTUP_WAIT_TIME_EBSCDB             = 0
+CONNECT_TIMEOUT_EBSCDB               = 10
+TRACE_LEVEL_EBSCDB                   = OFF
+LOG_DIRECTORY_EBSCDB                 = /u01/app/oracle/product/dbhome_1/network/admin
+LOG_FILE_EBSCDB                      = EBSCDB
+TRACE_DIRECTORY_EBSCDB               = /u01/app/oracle/product/dbhome_1/network/admin
+TRACE_FILE_EBSCDB                    = EBSCDB
+ADMIN_RESTRICTIONS_EBSCDB            = ON
+SUBSCRIBE_FOR_NODE_DOWN_EVENT_EBSCDB = OFF
+LOG_STATUS_EBSCDB                    = ON
+INBOUND_CONNECT_TIMEOUT_EBSCDB       = 60
+DIAG_ADR_ENABLED_EBSCDB              = ON
+ADR_BASE_EBSCDB                      = /u01/app/oracle
