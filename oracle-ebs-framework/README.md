@@ -9,7 +9,7 @@ This folder provides Terraform configurations and Makefile automation to deploy 
 ![Oracle Vision on Google Cloud Technical Architecture Diagram](images/Oracle%20Vision%20on%20GCP_%20Technical%20Architecture%20diagram.png "Oracle Vision on Google Cloud Technical Architecture Diagram")
 
 ### Oracle Customer EBS on Google Cloud
-![Oracle Customer EBS on Google Cloud Technical Architecture Diagram](images/Oracle%20Customer%20EBS%20on%20GCP_%20Technical%20Architecture%20diagram.png "Oracle Customer EBS on GCP Technical Architecture Diagram")
+![Oracle Customer EBS on Google Cloud Technical Architecture Diagram](images/Oracle%20Customer%20EBS%20on%20GCP_%20Technical%20Architecture%20diagram.png "Oracle Customer EBS on Google Cloud Technical Architecture Diagram")
 
 ## Prerequisites
 
