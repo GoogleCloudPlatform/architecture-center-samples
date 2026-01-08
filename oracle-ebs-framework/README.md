@@ -1,26 +1,26 @@
-# Oracle EBS Toolkit on GCP | Oracle EBS Vision
+# Oracle EBS Toolkit on Google Cloud | Oracle EBS Vision
 
-This folder provides Terraform configurations and Makefile automation to deploy Oracle EBS infrastructure on Google Cloud Platform.
+This folder provides Terraform configurations and Makefile automation to deploy Oracle EBS infrastructure on Google Cloud.
 
 
-## Architectural Diagram
+## Architecture Diagram
 
-### Oracle Vision on GCP
-![Oracle Vision on GCP Technical Architecture Diagram](images/Oracle%20Vision%20on%20GCP_%20Technical%20Architecture%20diagram.png "Oracle Vision on GCP Technical Architecture Diagram")
+### Oracle Vision on Google Cloud
+![Oracle Vision on Google Cloud Technical Architecture Diagram](images/Oracle%20Vision%20on%20GCP_%20Technical%20Architecture%20diagram.png "Oracle Vision on Google Cloud Technical Architecture Diagram")
 
-### Oracle Customer EBS on GCP
-![Oracle Customer EBS on GCP Technical Architecture Diagram](images/Oracle%20Customer%20EBS%20on%20GCP_%20Technical%20Architecture%20diagram.png "Oracle Customer EBS on GCP Technical Architecture Diagram")
+### Oracle Customer EBS on Google Cloud
+![Oracle Customer EBS on Google Cloud Technical Architecture Diagram](images/Oracle%20Customer%20EBS%20on%20GCP_%20Technical%20Architecture%20diagram.png "Oracle Customer EBS on Google Cloud Technical Architecture Diagram")
 
 ## Prerequisites
 
 Before starting, ensure the following requirements are met:
 
 ### Environment
-- GCP Project: A Google Cloud project must already exist for this deployment. Note the `PROJECT_ID`.
+- Google Cloud project: A Google Cloud project must already exist for this deployment. Note the `PROJECT_ID`.
 - Make: Install the `make` tool (version >= 4.3 recommended).
 
 ### Quota Requirements
-Before deploying Toolkit, verify that your GCP project has sufficient resource quotas in the target region.
+Before deploying Toolkit, verify that your Google Cloud project has sufficient resource quotas in the target region.
 
 Minimum recommended quotas:
 - Persistent Disk SSD (GB): ≥ 1TB
@@ -46,7 +46,7 @@ Action if insufficient:
 
 ### IAM
 
-Ensure your GCP account has the following IAM roles:
+Ensure your Google Cloud account has the following IAM roles:
 
 - `roles/iam.serviceAccountUser` – Use service accounts for VM access  
 - `roles/iap.tunnelResourceAccessor` – Connect to VMs using IAP tunneling  
@@ -56,7 +56,7 @@ Ensure your GCP account has the following IAM roles:
   - `roles/storage.admin` – Full control of Cloud Storage (buckets and objects), **or**  
   - `roles/storage.objectAdmin` – Object-level control only (least privilege option) 
 
-#### Alternatively, the GCP account can have broad roles like:
+#### Alternatively, the Google Cloud account can have broad roles like:
 - `roles/owner`
 
 - `roles/editor`
@@ -71,18 +71,18 @@ All Makefile commands should be run from the project root for all the deployment
 # Install required tools
 make setup
 
-# Verify GCP account and project
+# Verify Google Cloud account and project
 gcloud config list
 
-# Verify GCP access and IAM roles
+# Verify Google Cloud access and IAM roles
 make verify-gcp-access
 ```
 
 ---
 
-### 2. Authenticate with GCP and configure Application Default Credentials:
+### 2. Authenticate with Google Cloud and configure Application Default Credentials:
 
-Terraform uses Application Default Credentials (ADC) to interact with GCP. Run the following command before initializing Terraform:
+Terraform uses Application Default Credentials (ADC) to interact with Google Cloud. Run the following command before initializing Terraform:
 
 ```bash
 gcloud auth application-default login
@@ -113,7 +113,7 @@ make vision_deploy
 
 1) Login to https://edelivery.oracle.com using your Oracle account
 2) Search for "Oracle VM Virtual Appliance for Oracle E-Business Suite" and download the media (~ 19 V*.zip files)
-3) Copy those Oracle EBS vision media to the GCP bucket created by the steps above 
+3) Copy those Oracle EBS vision media to the Google Cloud Storage bucket created by the steps above 
 
 * NOTE: deploy process will do md5sum, in case of data issues compare README_DISK -> assemble_12212.zip -> md5sumwhenshipped.txt"
 
