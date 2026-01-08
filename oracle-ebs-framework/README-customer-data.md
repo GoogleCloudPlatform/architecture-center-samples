@@ -1,4 +1,4 @@
-# Oracle EBS Toolkit on GCP | Customer Oracle EBS environment
+# Oracle EBS Toolkit on Google Cloud | Customer Oracle EBS environment
 
 This repository provides Terraform configurations and Makefile automation to deploy Oracle EBS infrastructure on Google Cloud Platform.
 
@@ -22,11 +22,11 @@ This repository provides Terraform configurations and Makefile automation to dep
 Before starting, ensure the following requirements are met:
 
 ### Environment
-- GCP Project: A Google Cloud project must already exist for this deployment. Note the `PROJECT_ID`.
+- Google Cloud Project: A Google Cloud project must already exist for this deployment. Note the `PROJECT_ID`.
 - Make: Install the `make` tool (version >= 4.3 recommended).
 
 ### Quota Requirements
-Before deploying Toolkit, verify that your GCP project has sufficient resource quotas in the target region.
+Before deploying Toolkit, verify that your Google Cloud project has sufficient resource quotas in the target region.
 
 Minimum recommended quotas:
 - Persistent Disk SSD (GB): ≥ 1TB
@@ -52,7 +52,7 @@ Action if insufficient:
 
 ### IAM
 
-Ensure your GCP account has the following IAM roles:
+Ensure your Google Cloud account has the following IAM roles:
 
 - `roles/iam.serviceAccountUser` – Use service accounts for VM access  
 - `roles/iap.tunnelResourceAccessor` – Connect to VMs using IAP tunneling  
@@ -62,7 +62,7 @@ Ensure your GCP account has the following IAM roles:
   - `roles/storage.admin` – Full control of Cloud Storage (buckets and objects), **or**  
   - `roles/storage.objectAdmin` – Object-level control only (least privilege option) 
 
-#### Alternatively, the GCP account can have broad roles like:
+#### Alternatively, the Google Cloud account can have broad roles like:
 - `roles/owner`
 
 - `roles/editor`
@@ -78,15 +78,15 @@ All Makefile commands should be run from the project root for all the deployment
 # Install required tools
 make setup
 
-# Verify GCP access and IAM roles
+# Verify Google Cloud access and IAM roles
 make verify-gcp-access
 ```
 
 ---
 
-### 2. Authenticate with GCP and configure Application Default Credentials:
+### 2. Authenticate with Google Cloud and configure Application Default Credentials:
 
-Terraform uses Application Default Credentials (ADC) to interact with GCP. Run the following command before initializing Terraform:
+Terraform uses Application Default Credentials (ADC) to interact with Google Cloud. Run the following command before initializing Terraform:
 
 ```bash
 $ gcloud auth application-default login
@@ -118,7 +118,7 @@ make deploy
 ```
 
 ---
-#### 3.1 Prepare Oracle EBS database to be packed for GCP
+#### 3.1 Prepare Oracle EBS database to be packed for Google Cloud
 
 Run adpreclone and pack the RDBMS Oracle home and Oracle RMAN cold (startup mount) backup
 
@@ -171,7 +171,7 @@ echo "shutdown immediate;" | sqlplus -s / as sysdba
 ```
 
 ---
-#### 3.2 Prepare Oracle EBS Application FS to be packed for GCP
+#### 3.2 Prepare Oracle EBS Application FS to be packed for Google Cloud
 
 Run adpreclone and pack Oracle EBS RunFS and FS_NE
 
@@ -188,9 +188,9 @@ time tar -czf EBSFS_TO_GCP.tar.gz -C $(dirname $RUN_BASE) $(basename ${RUN_BASE}
 
 ```
 ---
-#### 3.3 Copy media to the GCP bucket
+#### 3.3 Copy media to the Google Cloud Storage bucket
 
-Copy packed media to the GCP bucket
+Copy packed media to the Google Cloud Storage bucket
 
 ```bash
 # Copy 
@@ -217,7 +217,7 @@ make deploy_oracle_ebs_scripts
 
 Oracle EBS is a complicated setup with a lot of moving parts, so follow the action plan below: 
 
-*Note: Update scripts/ebs/environment file with current passwords for cloning on GCP. Later passwords can be changed using seeded procedures and the file can be removed from the server*
+*Note: Update scripts/ebs/environment file with current passwords for cloning on Google Cloud. Later passwords can be changed using seeded procedures and the file can be removed from the server*
 
 ```bash
 # Connect the server and switch to root
