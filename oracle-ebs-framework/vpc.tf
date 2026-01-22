@@ -53,7 +53,7 @@ locals {
 
 module "cloud_router" {
   source  = "terraform-google-modules/cloud-router/google"
-  version = "6.1.0"
+  version = "8.3.0"
   project = var.project_id
 
   name    = "${var.network_name}-cloud-router"
