@@ -406,7 +406,7 @@ else
 
 	if [ "$GATEWAY_TYPE" == "diy" ]; then
 		log "Applying artifact registry module..."
-		terraform apply -var-file="$TFVARS_FILE" -auto-approve -lock=false -target=module.artifact_registry
+		terraform apply -var-file="$TFVARS_FILE" -auto-approve -target=module.artifact_registry
 
 		log "Building and pushing BBR ext_proc image..."
 		BBR_IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/images/bbr-ext-proc:latest"
@@ -417,7 +417,7 @@ else
 	fi
 
 	log "Applying complete Terraform configuration..."
-	terraform apply -var-file="$TFVARS_FILE" -auto-approve -lock=false
+	terraform apply -var-file="$TFVARS_FILE" -auto-approve
 
 	# Capture outputs for Phase C
 	log "Capturing Terraform outputs..."
