@@ -1,6 +1,6 @@
 module "firewall_rules" {
   source       = "terraform-google-modules/network/google//modules/firewall-rules"
-  version      = "9.2.0"
+  version      = "16.0.1"
   project_id   = var.project_id
   network_name = module.network.network_name
 
