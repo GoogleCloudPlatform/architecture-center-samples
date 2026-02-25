@@ -7,8 +7,8 @@ models behind a regional internal Application Load Balancer with
 OpenAI-compatible routing.
 
 ## Reference Architectures
-- [Architecture 1: GKE Inference Gateway]()
-- [Architecture 2: Self-Managed Gateway]()
+- [Architecture 1: GKE Inference Gateway](https://docs.cloud.google.com/architecture/networking-for-ai-inference-gke-ra)
+- [Architecture 2: Self-Managed Gateway](https://docs.cloud.google.com/architecture/networking-for-ai-inference-ra)
 
 ## Documentation
 
