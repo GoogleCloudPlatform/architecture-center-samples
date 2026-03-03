@@ -4,7 +4,7 @@ resource "random_id" "bucket_suffix" {
 
 module "ebs_storage_bucket" {
   source  = "terraform-google-modules/cloud-storage/google//modules/simple_bucket"
-  version = "~> 8.0.1"
+  version = "~> 12.3.0"
 
   name       = "${var.ebs_storage_bucket_name}-${random_id.bucket_suffix.hex}"
   project_id = var.project_id
