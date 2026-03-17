@@ -667,7 +667,7 @@ routing = {
       backend     = "gke-pool"
       header_name = "X-Gateway-Model-Name"
       match_type  = "exact"
-      match_value = "gemma-2-9b-it"
+      match_value = "gemma-3-27b-it"
     }
   ]
 }
