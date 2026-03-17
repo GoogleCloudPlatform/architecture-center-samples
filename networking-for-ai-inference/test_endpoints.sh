@@ -153,8 +153,8 @@ elif [ "$MODE" = "diy" ]; then
 
 	echo "================================================================"
 	echo "2. Testing Gemini -> Vertex AI (Body-Based Routing)"
-	echo "   BBR extracts model='gemini-2.5-flash' from request body"
-	echo "   Sets header X-Gateway-Model-Name: gemini-2.5-flash"
+	echo "   BBR extracts model='gemini-3-flash-preview' from request body"
+	echo "   Sets header X-Gateway-Model-Name: gemini-3-flash-preview"
 	echo "   URL map prefix match 'gemini' -> Vertex AI backend"
 	echo "   Backend: us-east4-aiplatform.googleapis.com (Internet NEG)"
 	echo "================================================================"
@@ -165,7 +165,7 @@ elif [ "$MODE" = "diy" ]; then
 		echo "Run 'gcloud auth login' or ensure application default credentials."
 	else
 		PAYLOAD='{
-		  "model": "google/gemini-2.5-flash",
+		  "model": "google/gemini-3-flash-preview",
 		  "messages": [{"role": "user", "content": "What is 2+2? Reply with just the number."}]
 		}'
 		send_request "/v1/chat/completions" "$PAYLOAD" -H "Authorization: Bearer $TOKEN" -i

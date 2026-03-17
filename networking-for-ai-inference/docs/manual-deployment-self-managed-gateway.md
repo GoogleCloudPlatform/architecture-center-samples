@@ -660,7 +660,7 @@ routing = {
       backend     = "vertex-ai"
       header_name = "X-Gateway-Model-Name"
       match_type  = "exact"
-      match_value = "gemini-1.5-pro"
+      match_value = "gemini-3.1-pro-preview"
     },
     {
       priority    = 20

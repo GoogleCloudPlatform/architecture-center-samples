@@ -34,7 +34,7 @@ routing = {
       backend     = "vertex-ai"
       header_name = "X-Gateway-Model-Name"
       match_type  = "exact"
-      match_value = "gemini-1.5-pro"
+      match_value = "gemini-3.1-pro-preview"
     },
     {
       priority    = 20
@@ -50,11 +50,11 @@ routing = {
 **Test this configuration:**
 
 ```bash
-# Route to Vertex AI (gemini-1.5-pro)
+# Route to Vertex AI (gemini-3.1-pro-preview)
 kubectl exec curl-test -- curl -k -s -X POST \
   https://YOUR_GATEWAY_HOSTNAME/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -d '{"model": "gemini-1.5-pro", "messages": [{"role": "user", "content": "Hello"}]}'
+  -d '{"model": "gemini-3.1-pro-preview", "messages": [{"role": "user", "content": "Hello"}]}'
 
 # Route to GKE (gemma-2-9b-it)
 kubectl exec curl-test -- curl -k -s -X POST \
@@ -108,7 +108,7 @@ kubectl exec curl-test -- curl -k -s -X POST \
 kubectl exec curl-test -- curl -k -s -X POST \
   https://YOUR_GATEWAY_HOSTNAME/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -d '{"model": "gemini-1.5-flash", "messages": [{"role": "user", "content": "Hello"}]}'
+  -d '{"model": "gemini-3-flash-preview", "messages": [{"role": "user", "content": "Hello"}]}'
 ```
 
 ---
