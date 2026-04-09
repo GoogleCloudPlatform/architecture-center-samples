@@ -1,6 +1,6 @@
 module "network" {
   source                                 = "terraform-google-modules/network/google"
-  version                                = "~> 16.0"
+  version                                = "~> 17.0"
   project_id                             = var.project_id
   network_name                           = var.network_name
   delete_default_internet_gateway_routes = var.delete_default_internet_gateway_routes
@@ -12,7 +12,7 @@ module "network" {
 
 module "nat_gateway_route" {
   source  = "terraform-google-modules/network/google//modules/routes"
-  version = "16.0.1"
+  version = "17.1.0"
 
   project_id   = var.project_id
   network_name = module.network.network_name
