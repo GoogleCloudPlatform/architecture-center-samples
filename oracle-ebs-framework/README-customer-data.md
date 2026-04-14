@@ -221,7 +221,7 @@ Oracle EBS is a complicated setup with a lot of moving parts, so follow the acti
 
 ```bash
 # Connect the server and switch to root
-gcloud compute ssh oracle-ebs-db --tunnel-through-iap --project ${PROCJECT}
+gcloud compute ssh oracle-ebs-db --tunnel-through-iap --project ${PROJECT}
 sudo su -
 
 # Execute root activities as functions
