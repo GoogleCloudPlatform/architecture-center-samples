@@ -16,7 +16,7 @@ s_webentryhost = oracle-ebs-apps
 s_webentrydomain = us-west2-a.c.oracle-ebs-toolkit.internal
 s_active_webport = 8000
 
-[serivces]
+[services]
 s_root_status = enabled
 s_web_entry_status = enabled
 s_web_applications_status = enabled
