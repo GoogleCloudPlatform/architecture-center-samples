@@ -36,7 +36,7 @@ sysctl -p
 dnf config-manager --set-enabled ol8_addons
 dnf install oracle-ebs-server-R12-preinstall -y
 dnf install oracle-database-preinstall-19c -y
-dnf install tmux gcc gcc-c++ elfutils-libelf-devel fontconfig-devel libXrender-devel librdmacm-devel unixODBC libnsl.i686 libnsl2.i686 policycoreutils-python-utils -y
+dnf install jq tmux gcc gcc-c++ elfutils-libelf-devel fontconfig-devel libXrender-devel librdmacm-devel unixODBC libnsl.i686 libnsl2.i686 policycoreutils-python-utils -y
 
 # dnf cleanup
 dnf clean all
