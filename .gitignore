@@ -17,3 +17,11 @@
 .terraform.lock.hcl
 terraform.tfstate*
 .terraform.tfstate.lock.info
+
+# Ignore generated grid and exascale files
+.grid_image_id
+exascale_outputs.*
+
+# Ignore key files
+*.pem
+*.pub
