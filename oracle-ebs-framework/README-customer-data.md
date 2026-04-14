@@ -16,6 +16,10 @@ This repository provides Terraform configurations and Makefile automation to dep
 
 ```
 
+## Architectural Diagram
+
+### Oracle Customer EBS on GCP
+![Oracle Customer EBS on GCP Technical Architecture Diagram](images/Oracle%20Customer%20EBS%20on%20GCP_%20Technical%20Architecture%20diagram.png "Oracle Customer EBS on GCP Technical Architecture Diagram")
 
 ## Prerequisites
 

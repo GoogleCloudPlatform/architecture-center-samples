@@ -7289,3 +7289,1480 @@ Mon Apr 13 11:40:12 UTC 2026
 [oracle@apps scripts]$
 
 ```
+### ### 6. Destroy Exascale infrastructure
+
+Note: this process will ask confirm destory process
+
+```bash
+ 
+[user@desktop] make exascale_destroy
+terraform -chdir=. destroy \
+		-var="project_id=oracle-ebs-toolkit-demo" \
+		-var="project_service_account_email=project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" \
+		-var="oracle_ebs_exascale=true" \
+		-var="oracle_ebs_vision=false" \
+		-var="exascale_grid_image_id=$(cat .grid_image_id)" \
+		-var="exascale_deletion_protection=false"
+random_id.secret_suffix[0]: Refreshing state... [id=27_LvA]
+random_id.bucket_suffix: Refreshing state... [id=CGAk2w]
+random_password.admin_password[0]: Refreshing state... [id=none]
+tls_private_key.exadb_ssh_key[0]: Refreshing state... [id=011e78a02a77b2f1b2abcdfb0e749551d788643c]
+local_file.exadb_public_key[0]: Refreshing state... [id=68b5445e4399079402ed4a9470154e7493600eea]
+local_file.exadb_private_key[0]: Refreshing state... [id=22c4bd9970490ba9b182c2616f323137cecba340]
+data.google_compute_image.vision_image: Reading...
+data.google_compute_image.apps_image: Reading...
+module.ebs_storage_bucket.data.google_storage_project_service_account.gcs_account: Reading...
+google_service_account.project_sa: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/serviceAccounts/project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+data.google_compute_image.dbs_image: Reading...
+module.project_services.google_project_service.project_services["iam.googleapis.com"]: Refreshing state... [id=oracle-ebs-toolkit-demo/iam.googleapis.com]
+google_compute_address.nat_ip["oracle-ebs-toolkit-nat-01"]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/addresses/oracle-ebs-toolkit-nat-01]
+google_secret_manager_secret.exadb_private_key_secret[0]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/secrets/exadb-ssh-private-key-dbbfcbbc]
+module.network.module.vpc.google_compute_network.network: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/global/networks/oracle-ebs-toolkit-network]
+google_oracle_database_exascale_db_storage_vault.exascale_vault[0]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/exascaleDbStorageVaults/exascale-db-storage-vault]
+data.google_compute_image.apps_image: Read complete after 1s [id=projects/oracle-linux-cloud/global/images/oracle-linux-8-v20260126]
+module.project_services.google_project_service.project_services["secretmanager.googleapis.com"]: Refreshing state... [id=oracle-ebs-toolkit-demo/secretmanager.googleapis.com]
+data.google_compute_image.dbs_image: Read complete after 1s [id=projects/oracle-linux-cloud/global/images/oracle-linux-8-v20260126]
+module.project_services.google_project_service.project_services["storage.googleapis.com"]: Refreshing state... [id=oracle-ebs-toolkit-demo/storage.googleapis.com]
+module.project_services.google_project_service.project_services["cloudresourcemanager.googleapis.com"]: Refreshing state... [id=oracle-ebs-toolkit-demo/cloudresourcemanager.googleapis.com]
+module.project_services.google_project_service.project_services["compute.googleapis.com"]: Refreshing state... [id=oracle-ebs-toolkit-demo/compute.googleapis.com]
+module.ebs_storage_bucket.data.google_storage_project_service_account.gcs_account: Read complete after 1s [id=service-119724395047@gs-project-accounts.iam.gserviceaccount.com]
+google_secret_manager_secret_version.exadb_private_key_secret_version[0]: Refreshing state... [id=projects/119724395047/secrets/exadb-ssh-private-key-dbbfcbbc/versions/1]
+google_project_iam_member.project_sa_roles["roles/secretmanager.secretAccessor"]: Refreshing state... [id=oracle-ebs-toolkit-demo/roles/secretmanager.secretAccessor/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+google_project_iam_member.project_sa_roles["roles/logging.logWriter"]: Refreshing state... [id=oracle-ebs-toolkit-demo/roles/logging.logWriter/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+google_project_iam_member.project_sa_roles["roles/iap.tunnelResourceAccessor"]: Refreshing state... [id=oracle-ebs-toolkit-demo/roles/iap.tunnelResourceAccessor/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+data.google_compute_image.vision_image: Read complete after 2s [id=projects/oracle-linux-cloud/global/images/oracle-linux-8-v20260126]
+google_project_iam_member.project_sa_roles["roles/monitoring.metricWriter"]: Refreshing state... [id=oracle-ebs-toolkit-demo/roles/monitoring.metricWriter/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+google_project_iam_member.project_sa_roles["roles/storage.admin"]: Refreshing state... [id=oracle-ebs-toolkit-demo/roles/storage.admin/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+google_project_iam_member.project_sa_roles["roles/compute.instanceAdmin.v1"]: Refreshing state... [id=oracle-ebs-toolkit-demo/roles/compute.instanceAdmin.v1/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+google_project_iam_member.project_sa_roles["roles/iam.serviceAccountUser"]: Refreshing state... [id=oracle-ebs-toolkit-demo/roles/iam.serviceAccountUser/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+module.network.module.subnets.google_compute_subnetwork.subnetwork["northamerica-northeast2/oracle-ebs-toolkit-subnet-01"]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/subnetworks/oracle-ebs-toolkit-subnet-01]
+google_oracle_database_odb_network.odb_network[0]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/odbNetworks/oracle-ebs-toolkit-network-odb-network]
+module.ebs_storage_bucket.google_storage_bucket.bucket: Refreshing state... [id=oracle-ebs-toolkit-storage-bucket-086024db]
+google_compute_address.exascale_vision_server_internal_ip[0]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/addresses/exascale-vision-server-internal-ip]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-internal-access"]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-internal-access]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-http-in"]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-http-in]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-iap-in"]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-iap-in]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-https-in"]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-https-in]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-icmp-in"]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-icmp-in]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-external-db-access"]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-external-db-access]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-external-app-access"]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-external-app-access]
+module.cloud_router.google_compute_router.router: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/routers/oracle-ebs-toolkit-network-cloud-router]
+module.nat_gateway_route.google_compute_route.route["nat-egress-internet"]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/global/routes/nat-egress-internet]
+google_oracle_database_odb_subnet.client_subnet[0]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/odbNetworks/oracle-ebs-toolkit-network-odb-network/odbSubnets/oracle-ebs-toolkit-network-client-subnet]
+google_oracle_database_odb_subnet.backup_subnet[0]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/odbNetworks/oracle-ebs-toolkit-network-odb-network/odbSubnets/oracle-ebs-toolkit-network-backup-subnet]
+google_storage_bucket_iam_member.bucket_object_admin: Refreshing state... [id=b/oracle-ebs-toolkit-storage-bucket-086024db/roles/storage.objectAdmin/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+google_compute_instance.exascale_vision[0]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/zones/northamerica-northeast2-a/instances/oracle-exascale-vision-app]
+module.cloud_router.google_compute_router_nat.nats["oracle-ebs-toolkit-nat-01"]: Refreshing state... [id=oracle-ebs-toolkit-demo/northamerica-northeast2/oracle-ebs-toolkit-network-cloud-router/oracle-ebs-toolkit-nat-01]
+google_oracle_database_exadb_vm_cluster.exadb_vm_cluster[0]: Refreshing state... [id=projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/exadbVmClusters/exadb-vm-cluster-01]
+null_resource.exascale_db_provisioning[0]: Refreshing state... [id=9184041753248778086]
+null_resource.exascale_ingress_rules[0]: Refreshing state... [id=176744551146596870]
+null_resource.exascale_configure_and_upload[0]: Refreshing state... [id=797419597963081016]
+
+Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
+  - destroy
+
+Terraform will perform the following actions:
+
+  # google_compute_address.exascale_vision_server_internal_ip[0] will be destroyed
+  - resource "google_compute_address" "exascale_vision_server_internal_ip" {
+      - address            = "10.115.0.40" -> null
+      - address_type       = "INTERNAL" -> null
+      - creation_timestamp = "2026-04-13T00:58:37.615-07:00" -> null
+      - effective_labels   = {
+          - "goog-terraform-provisioned" = "true"
+        } -> null
+      - id                 = "projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/addresses/exascale-vision-server-internal-ip" -> null
+      - label_fingerprint  = "vezUS-42LLM=" -> null
+      - labels             = {} -> null
+      - name               = "exascale-vision-server-internal-ip" -> null
+      - network_tier       = "PREMIUM" -> null
+      - prefix_length      = 0 -> null
+      - project            = "oracle-ebs-toolkit-demo" -> null
+      - purpose            = "GCE_ENDPOINT" -> null
+      - region             = "northamerica-northeast2" -> null
+      - self_link          = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/addresses/exascale-vision-server-internal-ip" -> null
+      - subnetwork         = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/subnetworks/oracle-ebs-toolkit-subnet-01" -> null
+      - terraform_labels   = {
+          - "goog-terraform-provisioned" = "true"
+        } -> null
+      - users              = [
+          - "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/zones/northamerica-northeast2-a/instances/oracle-exascale-vision-app",
+        ] -> null
+        # (4 unchanged attributes hidden)
+    }
+
+  # google_compute_address.nat_ip["oracle-ebs-toolkit-nat-01"] will be destroyed
+  - resource "google_compute_address" "nat_ip" {
+      - address            = "34.130.41.239" -> null
+      - address_type       = "EXTERNAL" -> null
+      - creation_timestamp = "2026-04-13T00:57:56.480-07:00" -> null
+      - effective_labels   = {
+          - "goog-terraform-provisioned" = "true"
+        } -> null
+      - id                 = "projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/addresses/oracle-ebs-toolkit-nat-01" -> null
+      - label_fingerprint  = "vezUS-42LLM=" -> null
+      - labels             = {} -> null
+      - name               = "oracle-ebs-toolkit-nat-01" -> null
+      - network_tier       = "PREMIUM" -> null
+      - prefix_length      = 0 -> null
+      - project            = "oracle-ebs-toolkit-demo" -> null
+      - region             = "northamerica-northeast2" -> null
+      - self_link          = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/addresses/oracle-ebs-toolkit-nat-01" -> null
+      - terraform_labels   = {
+          - "goog-terraform-provisioned" = "true"
+        } -> null
+      - users              = [
+          - "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/routers/oracle-ebs-toolkit-network-cloud-router",
+        ] -> null
+        # (6 unchanged attributes hidden)
+    }
+
+  # google_compute_instance.exascale_vision[0] will be destroyed
+  - resource "google_compute_instance" "exascale_vision" {
+      - can_ip_forward             = false -> null
+      - cpu_platform               = "AMD Rome" -> null
+      - creation_timestamp         = "2026-04-13T00:58:54.681-07:00" -> null
+      - current_status             = "RUNNING" -> null
+      - deletion_protection        = false -> null
+      - effective_labels           = {
+          - "application"                = "oracle-exascale-vision"
+          - "goog-terraform-provisioned" = "true"
+          - "managed-by"                 = "terraform"
+        } -> null
+      - enable_display             = false -> null
+      - id                         = "projects/oracle-ebs-toolkit-demo/zones/northamerica-northeast2-a/instances/oracle-exascale-vision-app" -> null
+      - instance_id                = "4890289151153347794" -> null
+      - label_fingerprint          = "nWjutqQmnxg=" -> null
+      - labels                     = {
+          - "application" = "oracle-exascale-vision"
+          - "managed-by"  = "terraform"
+        } -> null
+      - machine_type               = "e2-standard-8" -> null
+      - metadata                   = {
+          - "enable-oslogin"              = "TRUE"
+          - "exadb_private_key_secret_id" = "projects/oracle-ebs-toolkit-demo/secrets/exadb-ssh-private-key-dbbfcbbc"
+          - "exadb_public_key"            = <<-EOT
+                ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDYFE8md/TXQlR6D1J92CLsi92Das5k0vyG4CDi6f5fdnK5kisi+bde8r/MRyqiQSXh2pIV2rKkVgv5Lgf/V67US2o1B5Nwth+RUYOEeCutebahvL922wual9iGAnfQzjse/FkimBEePVOQLoZyUgfF0ljIP/XXhgl6moGeySgpe6JVea5vMcpjT3T1Vqb6D2G4dJotTpa2JUix9WuGHrtRk0jRxus9EDVLnP/IdkVomO6p/kzrRqCgq+klw1yugL6nUX//+lPGDXU7OTuJglT9wQmrGIFiuTFHUBbWrViP6QzsEewEmgkZeijT3+O3g3P6D+cKXihHe/1nn+UpqHmpuUSYYagdNkis7HaYD2RJi0HBVyhpzJsFEy7pj2K4VWr1xY1LHq0B4ChljqaRMlm9Q4oDW2/lbVUSOQ09mH7MvKmWSQmJ8BPAaTdYCqLJPy5yWNsr1v/WLhqs5YgnqxHlU5yIbO2wYcOFE2mbUIrJal32j5lZv46ObaTNlkqGxBnTeWDoUCfen670ifXJXz6TLPWJgM7lu83Gsf2p5tj1M7cF7UVp1YTOEdgLCVeRtyV8JCf2lOfwYvPdmdZwUaATNc4FzUeetBzEQ8ugJaZlhy5CC+YFIfNjGe22eML39IQ5RKsOf9zAjXSzD8V9oDJHsKvS6JlIrIREovOSTOZ/yQ==
+            EOT
+          - "startup-script"              = <<-EOT
+                #!/bin/bash
+                set -e
+
+                # NOTE: This is EBS server boot script - all the updates add here
+
+                # Update packages - skipping due to this is time consuming
+                # dnf update -y
+
+                # Enable Google Cloud repo
+                tee /etc/yum.repos.d/google-cloud-sdk.repo << 'EOF'
+                [google-cloud-cli]
+                name=Google Cloud CLI
+                baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el8-x86_64
+                enabled=1
+                gpgcheck=1
+                repo_gpgcheck=0
+                gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+                EOF
+
+                # Install Cloud SDK
+                dnf install -y google-cloud-cli
+
+                # Verify installation
+                gcloud --version
+                gcloud storage ls
+
+                # disable SE LINUx
+                sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+
+                # disable IPV6
+                sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+                sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+                sysctl -p
+
+                # dnf oracle packages
+                dnf config-manager --set-enabled ol8_addons
+                dnf install oracle-ebs-server-R12-preinstall -y
+                dnf install oracle-database-preinstall-19c -y
+                dnf install tmux gcc gcc-c++ elfutils-libelf-devel fontconfig-devel libXrender-devel librdmacm-devel unixODBC libnsl.i686 libnsl2.i686 policycoreutils-python-utils -y
+
+                # dnf cleanup
+                dnf clean all
+
+                # disable firewall
+                systemctl stop firewalld
+                systemctl disable firewalld
+
+                if [ ! -f /swapfile ]; then
+                    fallocate -l 20G /swapfile
+                    chmod 600 /swapfile
+                    mkswap /swapfile
+                    swapon /swapfile
+                    echo '/swapfile none swap sw 0 0' >> /etc/fstab
+                fi
+
+                # dir precreate and ownerships
+                mkdir -v -p /u01 /u02
+                chown oracle:oinstall /u01
+                chown applmgr:oinstall /u02
+
+                # OEL8 FIX
+                # separate tasks for vision vs non-vision
+                # vision requires hostname change
+                # customer env requires tmux install to have long runnings sessions to attach
+                if [ "$(hostname)" != "apps" ]; then
+                    hostnamectl set-hostname apps
+                fi
+
+                [ -f /etc/profile.d/modules.sh ] && mv /etc/profile.d/modules.sh /etc/profile.d/modules.sh.back
+                [ -f /etc/profile.d/scl-init.sh ] && mv /etc/profile.d/scl-init.sh /etc/profile.d/scl-init.sh.mack
+                [ -f /etc/profile.d/which2.sh ] && mv /etc/profile.d/which2.sh /etc/profile.d/which2.sh.back
+
+                [ ! -L /usr/lib/libXm.so.2 ] && ln -s /usr/lib/libXm.so.4.0.4 /usr/lib/libXm.so.2
+
+                # unset which for oracle (Preinstall RPM install oracle)
+                if [[ $(grep which /home/oracle/.bash_profile | wc -l) -eq 0 ]]; then echo "unset which" >> /home/oracle/.bash_profile ; fi
+
+                echo "Configuring Exascale Cluster Access for Oracle user..."
+
+                mkdir -p /home/oracle/.ssh
+                chown oracle:oinstall /home/oracle/.ssh
+                chmod 700 /home/oracle/.ssh
+
+                SECRET_ID=$(curl -s -f -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/attributes/exadb_private_key_secret_id" || true)
+
+                SECRET_NAME=$(basename "$SECRET_ID")
+
+                EXA_KEY=""
+                if [ -n "$SECRET_NAME" ]; then
+                    for i in {1..6}; do
+                        EXA_KEY=$(gcloud secrets versions access latest --secret="$SECRET_NAME" 2>/dev/null || true)
+                        if [ -n "$EXA_KEY" ]; then
+                            break
+                        fi
+                        sleep 10
+                    done
+                fi
+
+                if [ -n "$EXA_KEY" ]; then
+                    SKEL_SSH="/etc/skel/.ssh"
+                    mkdir -p "$SKEL_SSH"
+                    echo "$EXA_KEY" > "$SKEL_SSH/exadb_private_key.pem"
+                    chmod 700 "$SKEL_SSH"
+                    chmod 400 "$SKEL_SSH/exadb_private_key.pem"
+
+                    USER_LIST=$(awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd)
+                    USER_LIST="$USER_LIST oracle"
+
+                    for USERNAME in $USER_LIST; do
+                        USER_HOME=$(getent passwd "$USERNAME" | cut -d: -f6)
+                        if [ -d "$USER_HOME" ]; then
+                            USER_SSH="$USER_HOME/.ssh"
+                            mkdir -p "$USER_SSH"
+                            printf "%s" "$EXA_KEY" > "$USER_SSH/exadb_private_key.pem"
+                            chown -R "$USERNAME" "$USER_SSH"
+                            chmod 700 "$USER_SSH"
+                            chmod 400 "$USER_SSH/exadb_private_key.pem"
+                        fi
+                    done
+                fi
+
+                echo "EBS Startup Script Complete!"
+            EOT
+        } -> null
+      - metadata_fingerprint       = "w15NpQylq_s=" -> null
+      - name                       = "oracle-exascale-vision-app" -> null
+      - project                    = "oracle-ebs-toolkit-demo" -> null
+      - resource_policies          = [] -> null
+      - self_link                  = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/zones/northamerica-northeast2-a/instances/oracle-exascale-vision-app" -> null
+      - tags                       = [
+          - "egress-nat",
+          - "external-db-access",
+          - "http-server",
+          - "https-server",
+          - "iap-access",
+          - "icmp-access",
+          - "internal-access",
+          - "lb-health-check",
+          - "oracle-ebs-apps",
+        ] -> null
+      - tags_fingerprint           = "Z67z3FXcE1U=" -> null
+      - terraform_labels           = {
+          - "application"                = "oracle-exascale-vision"
+          - "goog-terraform-provisioned" = "true"
+          - "managed-by"                 = "terraform"
+        } -> null
+      - zone                       = "northamerica-northeast2-a" -> null
+        # (4 unchanged attributes hidden)
+
+      - boot_disk {
+          - auto_delete                     = true -> null
+          - device_name                     = "persistent-disk-0" -> null
+          - force_attach                    = false -> null
+          - guest_os_features               = [
+              - "UEFI_COMPATIBLE",
+              - "VIRTIO_SCSI_MULTIQUEUE",
+              - "SEV_CAPABLE",
+              - "SECURE_BOOT",
+              - "GVNIC",
+            ] -> null
+          - mode                            = "READ_WRITE" -> null
+          - source                          = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/zones/northamerica-northeast2-a/disks/oracle-exascale-vision-app" -> null
+            # (6 unchanged attributes hidden)
+
+          - initialize_params {
+              - architecture                = "X86_64" -> null
+              - enable_confidential_compute = false -> null
+              - image                       = "https://www.googleapis.com/compute/v1/projects/oracle-linux-cloud/global/images/oracle-linux-8-v20260126" -> null
+              - labels                      = {} -> null
+              - provisioned_iops            = 0 -> null
+              - provisioned_throughput      = 0 -> null
+              - resource_manager_tags       = {} -> null
+              - resource_policies           = [] -> null
+              - size                        = 1024 -> null
+              - type                        = "pd-balanced" -> null
+                # (2 unchanged attributes hidden)
+            }
+        }
+
+      - network_interface {
+          - internal_ipv6_prefix_length = 0 -> null
+          - name                        = "nic0" -> null
+          - network                     = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/networks/oracle-ebs-toolkit-network" -> null
+          - network_ip                  = "10.115.0.40" -> null
+          - queue_count                 = 0 -> null
+          - stack_type                  = "IPV4_ONLY" -> null
+          - subnetwork                  = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/subnetworks/oracle-ebs-toolkit-subnet-01" -> null
+          - subnetwork_project          = "oracle-ebs-toolkit-demo" -> null
+            # (4 unchanged attributes hidden)
+        }
+
+      - reservation_affinity {
+          - type = "ANY_RESERVATION" -> null
+        }
+
+      - scheduling {
+          - automatic_restart           = true -> null
+          - availability_domain         = 0 -> null
+          - min_node_cpus               = 0 -> null
+          - on_host_maintenance         = "MIGRATE" -> null
+          - preemptible                 = false -> null
+          - provisioning_model          = "STANDARD" -> null
+            # (2 unchanged attributes hidden)
+        }
+
+      - service_account {
+          - email  = "project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+          - scopes = [
+              - "https://www.googleapis.com/auth/cloud-platform",
+            ] -> null
+        }
+
+      - shielded_instance_config {
+          - enable_integrity_monitoring = true -> null
+          - enable_secure_boot          = true -> null
+          - enable_vtpm                 = true -> null
+        }
+    }
+
+  # google_oracle_database_exadb_vm_cluster.exadb_vm_cluster[0] will be destroyed
+  - resource "google_oracle_database_exadb_vm_cluster" "exadb_vm_cluster" {
+      - backup_odb_subnet   = "projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/odbNetworks/oracle-ebs-toolkit-network-odb-network/odbSubnets/oracle-ebs-toolkit-network-backup-subnet" -> null
+      - create_time         = "2026-04-13T08:03:38.556622280Z" -> null
+      - deletion_protection = false -> null
+      - display_name        = "Exadata VM Cluster" -> null
+      - effective_labels    = {
+          - "deployment"                 = "demo"
+          - "goog-terraform-provisioned" = "true"
+        } -> null
+      - entitlement_id      = "e9ba70fb-1d6d-4539-8f05-e4a61819531e" -> null
+      - exadb_vm_cluster_id = "exadb-vm-cluster-01" -> null
+      - gcp_oracle_zone     = "northamerica-northeast2-a-r2" -> null
+      - id                  = "projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/exadbVmClusters/exadb-vm-cluster-01" -> null
+      - labels              = {
+          - "deployment" = "demo"
+        } -> null
+      - location            = "northamerica-northeast2" -> null
+      - name                = "projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/exadbVmClusters/exadb-vm-cluster-01" -> null
+      - odb_network         = "projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/odbNetworks/oracle-ebs-toolkit-network-odb-network" -> null
+      - odb_subnet          = "projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/odbNetworks/oracle-ebs-toolkit-network-odb-network/odbSubnets/oracle-ebs-toolkit-network-client-subnet" -> null
+      - project             = "oracle-ebs-toolkit-demo" -> null
+      - terraform_labels    = {
+          - "deployment"                 = "demo"
+          - "goog-terraform-provisioned" = "true"
+        } -> null
+
+      - properties {
+          - additional_ecpu_count_per_node = 0 -> null
+          - cluster_name                   = "exadb-cl1" -> null
+          - enabled_ecpu_count_per_node    = 8 -> null
+          - exascale_db_storage_vault      = "projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/exascaleDbStorageVaults/exascale-db-storage-vault" -> null
+          - gi_version                     = "19.30.0.0.0" -> null
+          - grid_image_id                  = "ocid1.dbpatch.oc1.ca-toronto-1.an2g6ljrt5t4sqqagp4ifksgm2fm5i6zmp66syuyubmygc7umcaf3chmxvsq" -> null
+          - hostname                       = "exadb-node" -> null
+          - hostname_prefix                = "exadb-node" -> null
+          - license_model                  = "BRING_YOUR_OWN_LICENSE" -> null
+          - lifecycle_state                = "AVAILABLE" -> null
+          - memory_size_gb                 = 22 -> null
+          - node_count                     = 1 -> null
+          - oci_uri                        = "https://cloud.oracle.com/dbaas/exadb-xs/exadbVmClusters/ocid1.exadbvmcluster.oc1.ca-toronto-1.an2g6ljr33xv2ayaxhv3jjhifyweolg6rr7fddebmgcydg4qbbh342ndjqpq?region=ca-toronto-1&tenant=pytsjosegcp&compartmentId=ocid1.compartment.oc1..aaaaaaaaaexfjapm4xs74xjvtqevggl6gg4hxfauafnblcjk5i3nsrav5rja" -> null
+          - scan_listener_port_tcp         = 1521 -> null
+          - shape_attribute                = "BLOCK_STORAGE" -> null
+          - ssh_public_keys                = [
+              - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDYFE8md/TXQlR6D1J92CLsi92Das5k0vyG4CDi6f5fdnK5kisi+bde8r/MRyqiQSXh2pIV2rKkVgv5Lgf/V67US2o1B5Nwth+RUYOEeCutebahvL922wual9iGAnfQzjse/FkimBEePVOQLoZyUgfF0ljIP/XXhgl6moGeySgpe6JVea5vMcpjT3T1Vqb6D2G4dJotTpa2JUix9WuGHrtRk0jRxus9EDVLnP/IdkVomO6p/kzrRqCgq+klw1yugL6nUX//+lPGDXU7OTuJglT9wQmrGIFiuTFHUBbWrViP6QzsEewEmgkZeijT3+O3g3P6D+cKXihHe/1nn+UpqHmpuUSYYagdNkis7HaYD2RJi0HBVyhpzJsFEy7pj2K4VWr1xY1LHq0B4ChljqaRMlm9Q4oDW2/lbVUSOQ09mH7MvKmWSQmJ8BPAaTdYCqLJPy5yWNsr1v/WLhqs5YgnqxHlU5yIbO2wYcOFE2mbUIrJal32j5lZv46ObaTNlkqGxBnTeWDoUCfen670ifXJXz6TLPWJgM7lu83Gsf2p5tj1M7cF7UVp1YTOEdgLCVeRtyV8JCf2lOfwYvPdmdZwUaATNc4FzUeetBzEQ8ugJaZlhy5CC+YFIfNjGe22eML39IQ5RKsOf9zAjXSzD8V9oDJHsKvS6JlIrIREovOSTOZ/yQ==",
+            ] -> null
+
+          - data_collection_options {
+              - is_diagnostics_events_enabled = true -> null
+              - is_health_monitoring_enabled  = true -> null
+              - is_incident_logs_enabled      = true -> null
+            }
+
+          - time_zone {
+              - id      = "UTC" -> null
+                # (1 unchanged attribute hidden)
+            }
+
+          - vm_file_system_storage {
+              - size_in_gbs_per_node = 260 -> null
+            }
+        }
+
+      - timeouts {
+          - create = "180m" -> null
+          - delete = "180m" -> null
+          - update = "180m" -> null
+        }
+    }
+
+  # google_oracle_database_exascale_db_storage_vault.exascale_vault[0] will be destroyed
+  - resource "google_oracle_database_exascale_db_storage_vault" "exascale_vault" {
+      - create_time                  = "2026-04-13T07:57:57.451338664Z" -> null
+      - deletion_protection          = false -> null
+      - display_name                 = "Exascale DB Storage Vault" -> null
+      - effective_labels             = {
+          - "goog-terraform-provisioned" = "true"
+        } -> null
+      - entitlement_id               = "e9ba70fb-1d6d-4539-8f05-e4a61819531e" -> null
+      - exascale_db_storage_vault_id = "exascale-db-storage-vault" -> null
+      - gcp_oracle_zone              = "northamerica-northeast2-a-r2" -> null
+      - id                           = "projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/exascaleDbStorageVaults/exascale-db-storage-vault" -> null
+      - labels                       = {} -> null
+      - location                     = "northamerica-northeast2" -> null
+      - name                         = "projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/exascaleDbStorageVaults/exascale-db-storage-vault" -> null
+      - project                      = "oracle-ebs-toolkit-demo" -> null
+      - terraform_labels             = {
+          - "goog-terraform-provisioned" = "true"
+        } -> null
+
+      - properties {
+          - additional_flash_cache_percent = 0 -> null
+          - attached_shape_attributes      = [
+              - "BLOCK_STORAGE",
+            ] -> null
+          - available_shape_attributes     = [
+              - "BLOCK_STORAGE",
+            ] -> null
+          - oci_uri                        = "https://cloud.oracle.com/dbaas/exadb-xs/exascaleStorageVaults/ocid1.exascaledbstoragevault.oc1.ca-toronto-1.an2g6ljr33xv2ayahtbvcg4erwvtuqsg6llbczwxtxdzx4q3weaqxqfwqdka?region=ca-toronto-1&tenant=pytsjosegcp&compartmentId=ocid1.compartment.oc1..aaaaaaaaaexfjapm4xs74xjvtqevggl6gg4hxfauafnblcjk5i3nsrav5rja" -> null
+          - ocid                           = "ocid1.exascaledbstoragevault.oc1.ca-toronto-1.an2g6ljr33xv2ayahtbvcg4erwvtuqsg6llbczwxtxdzx4q3weaqxqfwqdka" -> null
+          - state                          = "AVAILABLE" -> null
+          - vm_cluster_count               = 1 -> null
+          - vm_cluster_ids                 = [
+              - "ocid1.exadbvmcluster.oc1.ca-toronto-1.an2g6ljr33xv2ayaxhv3jjhifyweolg6rr7fddebmgcydg4qbbh342ndjqpq",
+            ] -> null
+
+          - exascale_db_storage_details {
+              - available_size_gbs = 129 -> null
+              - total_size_gbs     = 1000 -> null
+            }
+
+          - time_zone {
+              - id      = "UTC" -> null
+                # (1 unchanged attribute hidden)
+            }
+        }
+    }
+
+  # google_oracle_database_odb_network.odb_network[0] will be destroyed
+  - resource "google_oracle_database_odb_network" "odb_network" {
+      - create_time         = "2026-04-13T07:58:25.742454118Z" -> null
+      - deletion_protection = false -> null
+      - effective_labels    = {
+          - "goog-terraform-provisioned" = "true"
+          - "terraform_created"          = "true"
+        } -> null
+      - entitlement_id      = "e9ba70fb-1d6d-4539-8f05-e4a61819531e" -> null
+      - id                  = "projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/odbNetworks/oracle-ebs-toolkit-network-odb-network" -> null
+      - labels              = {
+          - "terraform_created" = "true"
+        } -> null
+      - location            = "northamerica-northeast2" -> null
+      - name                = "projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/odbNetworks/oracle-ebs-toolkit-network-odb-network" -> null
+      - network             = "projects/oracle-ebs-toolkit-demo/global/networks/oracle-ebs-toolkit-network" -> null
+      - odb_network_id      = "oracle-ebs-toolkit-network-odb-network" -> null
+      - project             = "oracle-ebs-toolkit-demo" -> null
+      - state               = "AVAILABLE" -> null
+      - terraform_labels    = {
+          - "goog-terraform-provisioned" = "true"
+          - "terraform_created"          = "true"
+        } -> null
+    }
+
+  # google_oracle_database_odb_subnet.backup_subnet[0] will be destroyed
+  - resource "google_oracle_database_odb_subnet" "backup_subnet" {
+      - cidr_range          = "10.116.128.0/20" -> null
+      - create_time         = "2026-04-13T07:58:27.607793069Z" -> null
+      - deletion_protection = false -> null
+      - effective_labels    = {
+          - "goog-terraform-provisioned" = "true"
+          - "terraform_created"          = "true"
+        } -> null
+      - id                  = "projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/odbNetworks/oracle-ebs-toolkit-network-odb-network/odbSubnets/oracle-ebs-toolkit-network-backup-subnet" -> null
+      - labels              = {
+          - "terraform_created" = "true"
+        } -> null
+      - location            = "northamerica-northeast2" -> null
+      - name                = "projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/odbNetworks/oracle-ebs-toolkit-network-odb-network/odbSubnets/oracle-ebs-toolkit-network-backup-subnet" -> null
+      - odb_subnet_id       = "oracle-ebs-toolkit-network-backup-subnet" -> null
+      - odbnetwork          = "oracle-ebs-toolkit-network-odb-network" -> null
+      - project             = "oracle-ebs-toolkit-demo" -> null
+      - purpose             = "BACKUP_SUBNET" -> null
+      - state               = "AVAILABLE" -> null
+      - terraform_labels    = {
+          - "goog-terraform-provisioned" = "true"
+          - "terraform_created"          = "true"
+        } -> null
+    }
+
+  # google_oracle_database_odb_subnet.client_subnet[0] will be destroyed
+  - resource "google_oracle_database_odb_subnet" "client_subnet" {
+      - cidr_range          = "10.116.0.0/20" -> null
+      - create_time         = "2026-04-13T07:58:27.570096381Z" -> null
+      - deletion_protection = false -> null
+      - effective_labels    = {
+          - "goog-terraform-provisioned" = "true"
+          - "terraform_created"          = "true"
+        } -> null
+      - id                  = "projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/odbNetworks/oracle-ebs-toolkit-network-odb-network/odbSubnets/oracle-ebs-toolkit-network-client-subnet" -> null
+      - labels              = {
+          - "terraform_created" = "true"
+        } -> null
+      - location            = "northamerica-northeast2" -> null
+      - name                = "projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/odbNetworks/oracle-ebs-toolkit-network-odb-network/odbSubnets/oracle-ebs-toolkit-network-client-subnet" -> null
+      - odb_subnet_id       = "oracle-ebs-toolkit-network-client-subnet" -> null
+      - odbnetwork          = "oracle-ebs-toolkit-network-odb-network" -> null
+      - project             = "oracle-ebs-toolkit-demo" -> null
+      - purpose             = "CLIENT_SUBNET" -> null
+      - state               = "AVAILABLE" -> null
+      - terraform_labels    = {
+          - "goog-terraform-provisioned" = "true"
+          - "terraform_created"          = "true"
+        } -> null
+    }
+
+  # google_project_iam_member.project_sa_roles["roles/compute.instanceAdmin.v1"] will be destroyed
+  - resource "google_project_iam_member" "project_sa_roles" {
+      - etag    = "BwZPUthrXZ0=" -> null
+      - id      = "oracle-ebs-toolkit-demo/roles/compute.instanceAdmin.v1/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - member  = "serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - project = "oracle-ebs-toolkit-demo" -> null
+      - role    = "roles/compute.instanceAdmin.v1" -> null
+    }
+
+  # google_project_iam_member.project_sa_roles["roles/iam.serviceAccountUser"] will be destroyed
+  - resource "google_project_iam_member" "project_sa_roles" {
+      - etag    = "BwZPUthrXZ0=" -> null
+      - id      = "oracle-ebs-toolkit-demo/roles/iam.serviceAccountUser/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - member  = "serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - project = "oracle-ebs-toolkit-demo" -> null
+      - role    = "roles/iam.serviceAccountUser" -> null
+    }
+
+  # google_project_iam_member.project_sa_roles["roles/iap.tunnelResourceAccessor"] will be destroyed
+  - resource "google_project_iam_member" "project_sa_roles" {
+      - etag    = "BwZPUthrXZ0=" -> null
+      - id      = "oracle-ebs-toolkit-demo/roles/iap.tunnelResourceAccessor/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - member  = "serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - project = "oracle-ebs-toolkit-demo" -> null
+      - role    = "roles/iap.tunnelResourceAccessor" -> null
+    }
+
+  # google_project_iam_member.project_sa_roles["roles/logging.logWriter"] will be destroyed
+  - resource "google_project_iam_member" "project_sa_roles" {
+      - etag    = "BwZPUthrXZ0=" -> null
+      - id      = "oracle-ebs-toolkit-demo/roles/logging.logWriter/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - member  = "serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - project = "oracle-ebs-toolkit-demo" -> null
+      - role    = "roles/logging.logWriter" -> null
+    }
+
+  # google_project_iam_member.project_sa_roles["roles/monitoring.metricWriter"] will be destroyed
+  - resource "google_project_iam_member" "project_sa_roles" {
+      - etag    = "BwZPUthrXZ0=" -> null
+      - id      = "oracle-ebs-toolkit-demo/roles/monitoring.metricWriter/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - member  = "serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - project = "oracle-ebs-toolkit-demo" -> null
+      - role    = "roles/monitoring.metricWriter" -> null
+    }
+
+  # google_project_iam_member.project_sa_roles["roles/secretmanager.secretAccessor"] will be destroyed
+  - resource "google_project_iam_member" "project_sa_roles" {
+      - etag    = "BwZPUthrXZ0=" -> null
+      - id      = "oracle-ebs-toolkit-demo/roles/secretmanager.secretAccessor/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - member  = "serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - project = "oracle-ebs-toolkit-demo" -> null
+      - role    = "roles/secretmanager.secretAccessor" -> null
+    }
+
+  # google_project_iam_member.project_sa_roles["roles/storage.admin"] will be destroyed
+  - resource "google_project_iam_member" "project_sa_roles" {
+      - etag    = "BwZPUthrXZ0=" -> null
+      - id      = "oracle-ebs-toolkit-demo/roles/storage.admin/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - member  = "serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - project = "oracle-ebs-toolkit-demo" -> null
+      - role    = "roles/storage.admin" -> null
+    }
+
+  # google_secret_manager_secret.exadb_private_key_secret[0] will be destroyed
+  - resource "google_secret_manager_secret" "exadb_private_key_secret" {
+      - annotations           = {} -> null
+      - create_time           = "2026-04-13T07:57:55.853015Z" -> null
+      - deletion_protection   = false -> null
+      - effective_annotations = {} -> null
+      - effective_labels      = {
+          - "goog-terraform-provisioned" = "true"
+        } -> null
+      - id                    = "projects/oracle-ebs-toolkit-demo/secrets/exadb-ssh-private-key-dbbfcbbc" -> null
+      - labels                = {} -> null
+      - name                  = "projects/119724395047/secrets/exadb-ssh-private-key-dbbfcbbc" -> null
+      - project               = "oracle-ebs-toolkit-demo" -> null
+      - secret_id             = "exadb-ssh-private-key-dbbfcbbc" -> null
+      - terraform_labels      = {
+          - "goog-terraform-provisioned" = "true"
+        } -> null
+      - version_aliases       = {} -> null
+        # (2 unchanged attributes hidden)
+
+      - replication {
+          - auto {
+            }
+        }
+    }
+
+  # google_secret_manager_secret_version.exadb_private_key_secret_version[0] will be destroyed
+  - resource "google_secret_manager_secret_version" "exadb_private_key_secret_version" {
+      - create_time            = "2026-04-13T07:58:01.504860Z" -> null
+      - deletion_policy        = "DELETE" -> null
+      - enabled                = true -> null
+      - id                     = "projects/119724395047/secrets/exadb-ssh-private-key-dbbfcbbc/versions/1" -> null
+      - is_secret_data_base64  = false -> null
+      - name                   = "projects/119724395047/secrets/exadb-ssh-private-key-dbbfcbbc/versions/1" -> null
+      - secret                 = "projects/oracle-ebs-toolkit-demo/secrets/exadb-ssh-private-key-dbbfcbbc" -> null
+      - secret_data            = (sensitive value) -> null
+      - secret_data_wo         = (write-only attribute) -> null
+      - secret_data_wo_version = 0 -> null
+      - version                = "1" -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # google_service_account.project_sa will be destroyed
+  - resource "google_service_account" "project_sa" {
+      - account_id   = "project-service-account" -> null
+      - disabled     = false -> null
+      - display_name = "Project Service Account" -> null
+      - email        = "project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - id           = "projects/oracle-ebs-toolkit-demo/serviceAccounts/project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - member       = "serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - name         = "projects/oracle-ebs-toolkit-demo/serviceAccounts/project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - project      = "oracle-ebs-toolkit-demo" -> null
+      - unique_id    = "118124765175151734087" -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # google_storage_bucket_iam_member.bucket_object_admin will be destroyed
+  - resource "google_storage_bucket_iam_member" "bucket_object_admin" {
+      - bucket = "b/oracle-ebs-toolkit-storage-bucket-086024db" -> null
+      - etag   = "CAI=" -> null
+      - id     = "b/oracle-ebs-toolkit-storage-bucket-086024db/roles/storage.objectAdmin/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - member = "serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com" -> null
+      - role   = "roles/storage.objectAdmin" -> null
+    }
+
+  # local_file.exadb_private_key[0] will be destroyed
+  - resource "local_file" "exadb_private_key" {
+      - content              = (sensitive value) -> null
+      - content_base64sha256 = "1tY5ahVR+p/+8hWhFlhRWRDMw6w/vbLXmnbZr73ItmE=" -> null
+      - content_base64sha512 = "aFioD5DWc+R7ZIrusmN7UCZcMfW9+Hgb1oEgGv9m2d/uSuubMc4ztOTiwL+RG2Zl+TOM4/xV1OU6x+oMrM3owQ==" -> null
+      - content_md5          = "58bded8588e782e9bd930d6719d79e1c" -> null
+      - content_sha1         = "22c4bd9970490ba9b182c2616f323137cecba340" -> null
+      - content_sha256       = "d6d6396a1551fa9ffef215a11658515910ccc3ac3fbdb2d79a76d9afbdc8b661" -> null
+      - content_sha512       = "6858a80f90d673e47b648aeeb2637b50265c31f5bdf8781bd681201aff66d9dfee4aeb9b31ce33b4e4e2c0bf911b6665f9338ce3fc55d4e53ac7ea0caccde8c1" -> null
+      - directory_permission = "0777" -> null
+      - file_permission      = "0600" -> null
+      - filename             = "./exadb_private_key.pem" -> null
+      - id                   = "22c4bd9970490ba9b182c2616f323137cecba340" -> null
+    }
+
+  # local_file.exadb_public_key[0] will be destroyed
+  - resource "local_file" "exadb_public_key" {
+      - content              = <<-EOT
+            ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDYFE8md/TXQlR6D1J92CLsi92Das5k0vyG4CDi6f5fdnK5kisi+bde8r/MRyqiQSXh2pIV2rKkVgv5Lgf/V67US2o1B5Nwth+RUYOEeCutebahvL922wual9iGAnfQzjse/FkimBEePVOQLoZyUgfF0ljIP/XXhgl6moGeySgpe6JVea5vMcpjT3T1Vqb6D2G4dJotTpa2JUix9WuGHrtRk0jRxus9EDVLnP/IdkVomO6p/kzrRqCgq+klw1yugL6nUX//+lPGDXU7OTuJglT9wQmrGIFiuTFHUBbWrViP6QzsEewEmgkZeijT3+O3g3P6D+cKXihHe/1nn+UpqHmpuUSYYagdNkis7HaYD2RJi0HBVyhpzJsFEy7pj2K4VWr1xY1LHq0B4ChljqaRMlm9Q4oDW2/lbVUSOQ09mH7MvKmWSQmJ8BPAaTdYCqLJPy5yWNsr1v/WLhqs5YgnqxHlU5yIbO2wYcOFE2mbUIrJal32j5lZv46ObaTNlkqGxBnTeWDoUCfen670ifXJXz6TLPWJgM7lu83Gsf2p5tj1M7cF7UVp1YTOEdgLCVeRtyV8JCf2lOfwYvPdmdZwUaATNc4FzUeetBzEQ8ugJaZlhy5CC+YFIfNjGe22eML39IQ5RKsOf9zAjXSzD8V9oDJHsKvS6JlIrIREovOSTOZ/yQ==
+        EOT -> null
+      - content_base64sha256 = "osGhD90bUXO6XDNkGhGcVfBB8vujudfLvfCmDcxS5Do=" -> null
+      - content_base64sha512 = "s2okHUNkeizDaVhd7Dj3dFtOiTzVp+2CXtWEoGxFJmHuoqnVGvNnCXquuV4yTNyC1iyBh1oDXE9S1gCXNgJbZA==" -> null
+      - content_md5          = "08a7967111da97818b0898f382bc7f01" -> null
+      - content_sha1         = "68b5445e4399079402ed4a9470154e7493600eea" -> null
+      - content_sha256       = "a2c1a10fdd1b5173ba5c33641a119c55f041f2fba3b9d7cbbdf0a60dcc52e43a" -> null
+      - content_sha512       = "b36a241d43647a2cc369585dec38f7745b4e893cd5a7ed825ed584a06c452661eea2a9d51af367097aaeb95e324cdc82d62c81875a035c4f52d6009736025b64" -> null
+      - directory_permission = "0777" -> null
+      - file_permission      = "0644" -> null
+      - filename             = "./exadb_public_key.pub" -> null
+      - id                   = "68b5445e4399079402ed4a9470154e7493600eea" -> null
+    }
+
+  # null_resource.exascale_configure_and_upload[0] will be destroyed
+  - resource "null_resource" "exascale_configure_and_upload" {
+      - id       = "797419597963081016" -> null
+      - triggers = {
+          - "cdb_name"        = "EBSCDB"
+          - "oci_api_version" = "20160918"
+          - "password"        = (sensitive value)
+          - "vm_id"           = "projects/oracle-ebs-toolkit-demo/zones/northamerica-northeast2-a/instances/oracle-exascale-vision-app"
+        } -> null
+    }
+
+  # null_resource.exascale_db_provisioning[0] will be destroyed
+  - resource "null_resource" "exascale_db_provisioning" {
+      - id       = "9184041753248778086" -> null
+      - triggers = {
+          - "cdb_name"        = "EBSCDB"
+          - "cluster_uri"     = "https://cloud.oracle.com/dbaas/exadb-xs/exadbVmClusters/ocid1.exadbvmcluster.oc1.ca-toronto-1.an2g6ljr33xv2ayaxhv3jjhifyweolg6rr7fddebmgcydg4qbbh342ndjqpq?region=ca-toronto-1&tenant=pytsjosegcp&compartmentId=ocid1.compartment.oc1..aaaaaaaaaexfjapm4xs74xjvtqevggl6gg4hxfauafnblcjk5i3nsrav5rja"
+          - "oci_api_version" = "20160918"
+        } -> null
+    }
+
+  # null_resource.exascale_ingress_rules[0] will be destroyed
+  - resource "null_resource" "exascale_ingress_rules" {
+      - id       = "176744551146596870" -> null
+      - triggers = {
+          - "cluster_uri"     = "https://cloud.oracle.com/dbaas/exadb-xs/exadbVmClusters/ocid1.exadbvmcluster.oc1.ca-toronto-1.an2g6ljr33xv2ayaxhv3jjhifyweolg6rr7fddebmgcydg4qbbh342ndjqpq?region=ca-toronto-1&tenant=pytsjosegcp&compartmentId=ocid1.compartment.oc1..aaaaaaaaaexfjapm4xs74xjvtqevggl6gg4hxfauafnblcjk5i3nsrav5rja"
+          - "oci_api_version" = "20160918"
+          - "vpc_cidr"        = "10.115.0.0/20"
+        } -> null
+    }
+
+  # random_id.bucket_suffix will be destroyed
+  - resource "random_id" "bucket_suffix" {
+      - b64_std     = "CGAk2w==" -> null
+      - b64_url     = "CGAk2w" -> null
+      - byte_length = 4 -> null
+      - dec         = "140518619" -> null
+      - hex         = "086024db" -> null
+      - id          = "CGAk2w" -> null
+    }
+
+  # random_id.secret_suffix[0] will be destroyed
+  - resource "random_id" "secret_suffix" {
+      - b64_std     = "27/LvA==" -> null
+      - b64_url     = "27_LvA" -> null
+      - byte_length = 4 -> null
+      - dec         = "3686779836" -> null
+      - hex         = "dbbfcbbc" -> null
+      - id          = "27_LvA" -> null
+    }
+
+  # random_password.admin_password[0] will be destroyed
+  - resource "random_password" "admin_password" {
+      - bcrypt_hash      = (sensitive value) -> null
+      - id               = "none" -> null
+      - length           = 16 -> null
+      - lower            = true -> null
+      - min_lower        = 2 -> null
+      - min_numeric      = 2 -> null
+      - min_special      = 2 -> null
+      - min_upper        = 2 -> null
+      - number           = true -> null
+      - numeric          = true -> null
+      - override_special = "_-" -> null
+      - result           = (sensitive value) -> null
+      - special          = true -> null
+      - upper            = true -> null
+    }
+
+  # tls_private_key.exadb_ssh_key[0] will be destroyed
+  - resource "tls_private_key" "exadb_ssh_key" {
+      - algorithm                     = "RSA" -> null
+      - ecdsa_curve                   = "P224" -> null
+      - id                            = "011e78a02a77b2f1b2abcdfb0e749551d788643c" -> null
+      - private_key_openssh           = (sensitive value) -> null
+      - private_key_pem               = (sensitive value) -> null
+      - private_key_pem_pkcs8         = (sensitive value) -> null
+      - public_key_fingerprint_md5    = "5a:8b:be:06:ee:8e:39:4c:5d:7f:86:9b:f1:49:e1:7d" -> null
+      - public_key_fingerprint_sha256 = "SHA256:IHwp0h+6ReB+1vSgc0X08F1KI6bAPJ3AT89WKBOXPZg" -> null
+      - public_key_openssh            = <<-EOT
+            ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDYFE8md/TXQlR6D1J92CLsi92Das5k0vyG4CDi6f5fdnK5kisi+bde8r/MRyqiQSXh2pIV2rKkVgv5Lgf/V67US2o1B5Nwth+RUYOEeCutebahvL922wual9iGAnfQzjse/FkimBEePVOQLoZyUgfF0ljIP/XXhgl6moGeySgpe6JVea5vMcpjT3T1Vqb6D2G4dJotTpa2JUix9WuGHrtRk0jRxus9EDVLnP/IdkVomO6p/kzrRqCgq+klw1yugL6nUX//+lPGDXU7OTuJglT9wQmrGIFiuTFHUBbWrViP6QzsEewEmgkZeijT3+O3g3P6D+cKXihHe/1nn+UpqHmpuUSYYagdNkis7HaYD2RJi0HBVyhpzJsFEy7pj2K4VWr1xY1LHq0B4ChljqaRMlm9Q4oDW2/lbVUSOQ09mH7MvKmWSQmJ8BPAaTdYCqLJPy5yWNsr1v/WLhqs5YgnqxHlU5yIbO2wYcOFE2mbUIrJal32j5lZv46ObaTNlkqGxBnTeWDoUCfen670ifXJXz6TLPWJgM7lu83Gsf2p5tj1M7cF7UVp1YTOEdgLCVeRtyV8JCf2lOfwYvPdmdZwUaATNc4FzUeetBzEQ8ugJaZlhy5CC+YFIfNjGe22eML39IQ5RKsOf9zAjXSzD8V9oDJHsKvS6JlIrIREovOSTOZ/yQ==
+        EOT -> null
+      - public_key_pem                = <<-EOT
+            -----BEGIN PUBLIC KEY-----
+            MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA2BRPJnf010JUeg9Sfdgi
+            7Ivdg2rOZNL8huAg4un+X3ZyuZIrIvm3XvK/zEcqokEl4dqSFdqypFYL+S4H/1eu
+            1EtqNQeTcLYfkVGDhHgrrXm2oby/dtsLmpfYhgJ30M47HvxZIpgRHj1TkC6GclIH
+            xdJYyD/114YJepqBnskoKXuiVXmubzHKY0909Vam+g9huHSaLU6WtiVIsfVrhh67
+            UZNI0cbrPRA1S5z/yHZFaJjuqf5M60agoKvpJcNcroC+p1F///pTxg11Ozk7iYJU
+            /cEJqxiBYrkxR1AW1q1Yj+kM7BHsBJoJGXoo09/jt4Nz+g/nCl4oR3v9Z5/lKah5
+            qblEmGGoHTZIrOx2mA9kSYtBwVcoacybBRMu6Y9iuFVq9cWNSx6tAeAoZY6mkTJZ
+            vUOKA1tv5W1VEjkNPZh+zLyplkkJifATwGk3WAqiyT8ucljbK9b/1i4arOWIJ6sR
+            5VOciGztsGHDhRNpm1CKyWpd9o+ZWb+Ojm2kzZZKhsQZ03lg6FAn3p+u9In1yV8+
+            kyz1iYDO5bvNxrH9qebY9TO3Be1FadWEzhHYCwlXkbclfCQn9pTn8GLz3ZnWcFGg
+            EzXOBc1HnrQcxEPLoCWmZYcuQgvmBSHzYxnttnjC9/SEOUSrDn/cwI10sw/FfaAy
+            R7Cr0uiZSKyERKLzkkzmf8kCAwEAAQ==
+            -----END PUBLIC KEY-----
+        EOT -> null
+      - rsa_bits                      = 4096 -> null
+    }
+
+  # module.cloud_router.google_compute_router.router will be destroyed
+  - resource "google_compute_router" "router" {
+      - creation_timestamp            = "2026-04-13T00:58:37.711-07:00" -> null
+      - encrypted_interconnect_router = false -> null
+      - id                            = "projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/routers/oracle-ebs-toolkit-network-cloud-router" -> null
+      - name                          = "oracle-ebs-toolkit-network-cloud-router" -> null
+      - network                       = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/networks/oracle-ebs-toolkit-network" -> null
+      - project                       = "oracle-ebs-toolkit-demo" -> null
+      - region                        = "northamerica-northeast2" -> null
+      - self_link                     = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/routers/oracle-ebs-toolkit-network-cloud-router" -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # module.cloud_router.google_compute_router_nat.nats["oracle-ebs-toolkit-nat-01"] will be destroyed
+  - resource "google_compute_router_nat" "nats" {
+      - drain_nat_ips                        = [] -> null
+      - enable_dynamic_port_allocation       = false -> null
+      - enable_endpoint_independent_mapping  = false -> null
+      - endpoint_types                       = [
+          - "ENDPOINT_TYPE_VM",
+        ] -> null
+      - icmp_idle_timeout_sec                = 30 -> null
+      - id                                   = "oracle-ebs-toolkit-demo/northamerica-northeast2/oracle-ebs-toolkit-network-cloud-router/oracle-ebs-toolkit-nat-01" -> null
+      - max_ports_per_vm                     = 0 -> null
+      - min_ports_per_vm                     = 0 -> null
+      - name                                 = "oracle-ebs-toolkit-nat-01" -> null
+      - nat_ip_allocate_option               = "MANUAL_ONLY" -> null
+      - nat_ips                              = [
+          - "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/addresses/oracle-ebs-toolkit-nat-01",
+        ] -> null
+      - project                              = "oracle-ebs-toolkit-demo" -> null
+      - region                               = "northamerica-northeast2" -> null
+      - router                               = "oracle-ebs-toolkit-network-cloud-router" -> null
+      - source_subnetwork_ip_ranges_to_nat   = "LIST_OF_SUBNETWORKS" -> null
+      - tcp_established_idle_timeout_sec     = 1200 -> null
+      - tcp_time_wait_timeout_sec            = 120 -> null
+      - tcp_transitory_idle_timeout_sec      = 30 -> null
+      - type                                 = "PUBLIC" -> null
+      - udp_idle_timeout_sec                 = 30 -> null
+        # (1 unchanged attribute hidden)
+
+      - log_config {
+          - enable = true -> null
+          - filter = "ALL" -> null
+        }
+
+      - subnetwork {
+          - name                     = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/subnetworks/oracle-ebs-toolkit-subnet-01" -> null
+          - secondary_ip_range_names = [] -> null
+          - source_ip_ranges_to_nat  = [
+              - "ALL_IP_RANGES",
+            ] -> null
+        }
+    }
+
+  # module.ebs_storage_bucket.google_storage_bucket.bucket will be destroyed
+  - resource "google_storage_bucket" "bucket" {
+      - default_event_based_hold    = false -> null
+      - effective_labels            = {
+          - "goog-terraform-provisioned" = "true"
+          - "managed-by"                 = "terraform"
+          - "service"                    = "oracle-ebs-toolkit"
+        } -> null
+      - enable_object_retention     = false -> null
+      - force_destroy               = true -> null
+      - id                          = "oracle-ebs-toolkit-storage-bucket-086024db" -> null
+      - labels                      = {
+          - "managed-by" = "terraform"
+          - "service"    = "oracle-ebs-toolkit"
+        } -> null
+      - location                    = "NORTHAMERICA-NORTHEAST2" -> null
+      - name                        = "oracle-ebs-toolkit-storage-bucket-086024db" -> null
+      - project                     = "oracle-ebs-toolkit-demo" -> null
+      - project_number              = 119724395047 -> null
+      - public_access_prevention    = "inherited" -> null
+      - requester_pays              = false -> null
+      - self_link                   = "https://www.googleapis.com/storage/v1/b/oracle-ebs-toolkit-storage-bucket-086024db" -> null
+      - storage_class               = "NEARLINE" -> null
+      - terraform_labels            = {
+          - "goog-terraform-provisioned" = "true"
+          - "managed-by"                 = "terraform"
+          - "service"                    = "oracle-ebs-toolkit"
+        } -> null
+      - time_created                = "2026-04-13T07:57:58.916Z" -> null
+      - uniform_bucket_level_access = true -> null
+      - updated                     = "2026-04-13T07:58:13.428Z" -> null
+      - url                         = "gs://oracle-ebs-toolkit-storage-bucket-086024db" -> null
+
+      - hierarchical_namespace {
+          - enabled = false -> null
+        }
+
+      - soft_delete_policy {
+          - effective_time             = "2026-04-13T07:57:58.916Z" -> null
+          - retention_duration_seconds = 604800 -> null
+        }
+
+      - versioning {
+          - enabled = true -> null
+        }
+    }
+
+  # module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-external-app-access"] will be destroyed
+  - resource "google_compute_firewall" "rules_ingress_egress" {
+      - creation_timestamp      = "2026-04-13T00:58:50.524-07:00" -> null
+      - description             = "Allow external access to Oracle EBS Apps" -> null
+      - destination_ranges      = [] -> null
+      - direction               = "INGRESS" -> null
+      - disabled                = false -> null
+      - id                      = "projects/oracle-ebs-toolkit-demo/global/firewalls/allow-external-app-access" -> null
+      - name                    = "allow-external-app-access" -> null
+      - network                 = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/networks/oracle-ebs-toolkit-network" -> null
+      - priority                = 1000 -> null
+      - project                 = "oracle-ebs-toolkit-demo" -> null
+      - self_link               = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/firewalls/allow-external-app-access" -> null
+      - source_ranges           = [
+          - "0.0.0.0/0",
+        ] -> null
+      - source_service_accounts = [] -> null
+      - source_tags             = [] -> null
+      - target_service_accounts = [] -> null
+      - target_tags             = [
+          - "external-app-access",
+        ] -> null
+
+      - allow {
+          - ports    = [
+              - "8000",
+              - "4443",
+            ] -> null
+          - protocol = "tcp" -> null
+        }
+
+      - log_config {
+          - metadata = "INCLUDE_ALL_METADATA" -> null
+        }
+    }
+
+  # module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-external-db-access"] will be destroyed
+  - resource "google_compute_firewall" "rules_ingress_egress" {
+      - creation_timestamp      = "2026-04-13T00:58:38.486-07:00" -> null
+      - description             = "Allow external access to Oracle EBS DB" -> null
+      - destination_ranges      = [] -> null
+      - direction               = "INGRESS" -> null
+      - disabled                = false -> null
+      - id                      = "projects/oracle-ebs-toolkit-demo/global/firewalls/allow-external-db-access" -> null
+      - name                    = "allow-external-db-access" -> null
+      - network                 = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/networks/oracle-ebs-toolkit-network" -> null
+      - priority                = 1000 -> null
+      - project                 = "oracle-ebs-toolkit-demo" -> null
+      - self_link               = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/firewalls/allow-external-db-access" -> null
+      - source_ranges           = [
+          - "0.0.0.0/0",
+        ] -> null
+      - source_service_accounts = [] -> null
+      - source_tags             = [] -> null
+      - target_service_accounts = [] -> null
+      - target_tags             = [
+          - "external-db-access",
+        ] -> null
+
+      - allow {
+          - ports    = [
+              - "1521",
+            ] -> null
+          - protocol = "tcp" -> null
+        }
+
+      - log_config {
+          - metadata = "INCLUDE_ALL_METADATA" -> null
+        }
+    }
+
+  # module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-http-in"] will be destroyed
+  - resource "google_compute_firewall" "rules_ingress_egress" {
+      - creation_timestamp      = "2026-04-13T00:58:37.066-07:00" -> null
+      - description             = "Allow HTTP traffic inbound" -> null
+      - destination_ranges      = [] -> null
+      - direction               = "INGRESS" -> null
+      - disabled                = false -> null
+      - id                      = "projects/oracle-ebs-toolkit-demo/global/firewalls/allow-http-in" -> null
+      - name                    = "allow-http-in" -> null
+      - network                 = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/networks/oracle-ebs-toolkit-network" -> null
+      - priority                = 1000 -> null
+      - project                 = "oracle-ebs-toolkit-demo" -> null
+      - self_link               = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/firewalls/allow-http-in" -> null
+      - source_ranges           = [
+          - "0.0.0.0/0",
+        ] -> null
+      - source_service_accounts = [] -> null
+      - source_tags             = [] -> null
+      - target_service_accounts = [] -> null
+      - target_tags             = [
+          - "http-server",
+        ] -> null
+
+      - allow {
+          - ports    = [
+              - "80",
+            ] -> null
+          - protocol = "tcp" -> null
+        }
+
+      - log_config {
+          - metadata = "INCLUDE_ALL_METADATA" -> null
+        }
+    }
+
+  # module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-https-in"] will be destroyed
+  - resource "google_compute_firewall" "rules_ingress_egress" {
+      - creation_timestamp      = "2026-04-13T00:58:50.581-07:00" -> null
+      - description             = "Allow HTTPS traffic inbound" -> null
+      - destination_ranges      = [] -> null
+      - direction               = "INGRESS" -> null
+      - disabled                = false -> null
+      - id                      = "projects/oracle-ebs-toolkit-demo/global/firewalls/allow-https-in" -> null
+      - name                    = "allow-https-in" -> null
+      - network                 = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/networks/oracle-ebs-toolkit-network" -> null
+      - priority                = 1000 -> null
+      - project                 = "oracle-ebs-toolkit-demo" -> null
+      - self_link               = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/firewalls/allow-https-in" -> null
+      - source_ranges           = [
+          - "0.0.0.0/0",
+        ] -> null
+      - source_service_accounts = [] -> null
+      - source_tags             = [] -> null
+      - target_service_accounts = [] -> null
+      - target_tags             = [
+          - "https-server",
+        ] -> null
+
+      - allow {
+          - ports    = [
+              - "443",
+            ] -> null
+          - protocol = "tcp" -> null
+        }
+
+      - log_config {
+          - metadata = "INCLUDE_ALL_METADATA" -> null
+        }
+    }
+
+  # module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-iap-in"] will be destroyed
+  - resource "google_compute_firewall" "rules_ingress_egress" {
+      - creation_timestamp      = "2026-04-13T00:58:38.381-07:00" -> null
+      - description             = "Allow IAP traffic inbound" -> null
+      - destination_ranges      = [] -> null
+      - direction               = "INGRESS" -> null
+      - disabled                = false -> null
+      - id                      = "projects/oracle-ebs-toolkit-demo/global/firewalls/allow-iap-in" -> null
+      - name                    = "allow-iap-in" -> null
+      - network                 = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/networks/oracle-ebs-toolkit-network" -> null
+      - priority                = 1000 -> null
+      - project                 = "oracle-ebs-toolkit-demo" -> null
+      - self_link               = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/firewalls/allow-iap-in" -> null
+      - source_ranges           = [
+          - "35.235.240.0/20",
+        ] -> null
+      - source_service_accounts = [] -> null
+      - source_tags             = [] -> null
+      - target_service_accounts = [] -> null
+      - target_tags             = [
+          - "iap-access",
+        ] -> null
+
+      - allow {
+          - ports    = [] -> null
+          - protocol = "tcp" -> null
+        }
+
+      - log_config {
+          - metadata = "INCLUDE_ALL_METADATA" -> null
+        }
+    }
+
+  # module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-icmp-in"] will be destroyed
+  - resource "google_compute_firewall" "rules_ingress_egress" {
+      - creation_timestamp      = "2026-04-13T00:58:38.278-07:00" -> null
+      - description             = "Allow ICMP traffic inbound" -> null
+      - destination_ranges      = [] -> null
+      - direction               = "INGRESS" -> null
+      - disabled                = false -> null
+      - id                      = "projects/oracle-ebs-toolkit-demo/global/firewalls/allow-icmp-in" -> null
+      - name                    = "allow-icmp-in" -> null
+      - network                 = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/networks/oracle-ebs-toolkit-network" -> null
+      - priority                = 1000 -> null
+      - project                 = "oracle-ebs-toolkit-demo" -> null
+      - self_link               = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/firewalls/allow-icmp-in" -> null
+      - source_ranges           = [
+          - "35.235.240.0/20",
+        ] -> null
+      - source_service_accounts = [] -> null
+      - source_tags             = [] -> null
+      - target_service_accounts = [] -> null
+      - target_tags             = [
+          - "icmp-access",
+        ] -> null
+
+      - allow {
+          - ports    = [] -> null
+          - protocol = "icmp" -> null
+        }
+
+      - log_config {
+          - metadata = "INCLUDE_ALL_METADATA" -> null
+        }
+    }
+
+  # module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-internal-access"] will be destroyed
+  - resource "google_compute_firewall" "rules_ingress_egress" {
+      - creation_timestamp      = "2026-04-13T00:58:38.398-07:00" -> null
+      - description             = "Allow internal HTTP traffic within the VPC" -> null
+      - destination_ranges      = [] -> null
+      - direction               = "INGRESS" -> null
+      - disabled                = false -> null
+      - id                      = "projects/oracle-ebs-toolkit-demo/global/firewalls/allow-internal-access" -> null
+      - name                    = "allow-internal-access" -> null
+      - network                 = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/networks/oracle-ebs-toolkit-network" -> null
+      - priority                = 1000 -> null
+      - project                 = "oracle-ebs-toolkit-demo" -> null
+      - self_link               = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/firewalls/allow-internal-access" -> null
+      - source_ranges           = [
+          - "10.115.0.0/20",
+        ] -> null
+      - source_service_accounts = [] -> null
+      - source_tags             = [] -> null
+      - target_service_accounts = [] -> null
+      - target_tags             = [
+          - "internal-access",
+        ] -> null
+
+      - allow {
+          - ports    = [] -> null
+          - protocol = "tcp" -> null
+        }
+
+      - log_config {
+          - metadata = "INCLUDE_ALL_METADATA" -> null
+        }
+    }
+
+  # module.nat_gateway_route.google_compute_route.route["nat-egress-internet"] will be destroyed
+  - resource "google_compute_route" "route" {
+      - as_paths                   = [] -> null
+      - creation_timestamp         = "2026-04-13T00:58:50.552-07:00" -> null
+      - description                = "Public NAT GW - route through IGW to access internet" -> null
+      - dest_range                 = "0.0.0.0/0" -> null
+      - id                         = "projects/oracle-ebs-toolkit-demo/global/routes/nat-egress-internet" -> null
+      - name                       = "nat-egress-internet" -> null
+      - network                    = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/networks/oracle-ebs-toolkit-network" -> null
+      - next_hop_gateway           = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/gateways/default-internet-gateway" -> null
+      - priority                   = 1000 -> null
+      - project                    = "oracle-ebs-toolkit-demo" -> null
+      - self_link                  = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/routes/nat-egress-internet" -> null
+      - tags                       = [
+          - "egress-nat",
+        ] -> null
+      - warnings                   = [] -> null
+        # (12 unchanged attributes hidden)
+    }
+
+  # module.project_services.google_project_service.project_services["cloudresourcemanager.googleapis.com"] will be destroyed
+  - resource "google_project_service" "project_services" {
+      - disable_dependent_services = true -> null
+      - disable_on_destroy         = false -> null
+      - id                         = "oracle-ebs-toolkit-demo/cloudresourcemanager.googleapis.com" -> null
+      - project                    = "oracle-ebs-toolkit-demo" -> null
+      - service                    = "cloudresourcemanager.googleapis.com" -> null
+    }
+
+  # module.project_services.google_project_service.project_services["compute.googleapis.com"] will be destroyed
+  - resource "google_project_service" "project_services" {
+      - disable_dependent_services = true -> null
+      - disable_on_destroy         = false -> null
+      - id                         = "oracle-ebs-toolkit-demo/compute.googleapis.com" -> null
+      - project                    = "oracle-ebs-toolkit-demo" -> null
+      - service                    = "compute.googleapis.com" -> null
+    }
+
+  # module.project_services.google_project_service.project_services["iam.googleapis.com"] will be destroyed
+  - resource "google_project_service" "project_services" {
+      - disable_dependent_services = true -> null
+      - disable_on_destroy         = false -> null
+      - id                         = "oracle-ebs-toolkit-demo/iam.googleapis.com" -> null
+      - project                    = "oracle-ebs-toolkit-demo" -> null
+      - service                    = "iam.googleapis.com" -> null
+    }
+
+  # module.project_services.google_project_service.project_services["secretmanager.googleapis.com"] will be destroyed
+  - resource "google_project_service" "project_services" {
+      - disable_dependent_services = true -> null
+      - disable_on_destroy         = false -> null
+      - id                         = "oracle-ebs-toolkit-demo/secretmanager.googleapis.com" -> null
+      - project                    = "oracle-ebs-toolkit-demo" -> null
+      - service                    = "secretmanager.googleapis.com" -> null
+    }
+
+  # module.project_services.google_project_service.project_services["storage.googleapis.com"] will be destroyed
+  - resource "google_project_service" "project_services" {
+      - disable_dependent_services = true -> null
+      - disable_on_destroy         = false -> null
+      - id                         = "oracle-ebs-toolkit-demo/storage.googleapis.com" -> null
+      - project                    = "oracle-ebs-toolkit-demo" -> null
+      - service                    = "storage.googleapis.com" -> null
+    }
+
+  # module.network.module.subnets.google_compute_subnetwork.subnetwork["northamerica-northeast2/oracle-ebs-toolkit-subnet-01"] will be destroyed
+  - resource "google_compute_subnetwork" "subnetwork" {
+      - creation_timestamp         = "2026-04-13T00:58:24.042-07:00" -> null
+      - enable_flow_logs           = true -> null
+      - gateway_address            = "10.115.0.1" -> null
+      - id                         = "projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/subnetworks/oracle-ebs-toolkit-subnet-01" -> null
+      - ip_cidr_range              = "10.115.0.0/20" -> null
+      - name                       = "oracle-ebs-toolkit-subnet-01" -> null
+      - network                    = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/networks/oracle-ebs-toolkit-network" -> null
+      - private_ip_google_access   = true -> null
+      - private_ipv6_google_access = "DISABLE_GOOGLE_ACCESS" -> null
+      - project                    = "oracle-ebs-toolkit-demo" -> null
+      - purpose                    = "PRIVATE" -> null
+      - region                     = "northamerica-northeast2" -> null
+      - self_link                  = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/subnetworks/oracle-ebs-toolkit-subnet-01" -> null
+      - stack_type                 = "IPV4_ONLY" -> null
+      - subnetwork_id              = 6521975200025746639 -> null
+        # (9 unchanged attributes hidden)
+
+      - log_config {
+          - aggregation_interval = "INTERVAL_5_SEC" -> null
+          - filter_expr          = "true" -> null
+          - flow_sampling        = 0.5 -> null
+          - metadata             = "INCLUDE_ALL_METADATA" -> null
+          - metadata_fields      = [] -> null
+        }
+    }
+
+  # module.network.module.vpc.google_compute_network.network will be destroyed
+  - resource "google_compute_network" "network" {
+      - auto_create_subnetworks                   = false -> null
+      - bgp_always_compare_med                    = false -> null
+      - bgp_best_path_selection_mode              = "LEGACY" -> null
+      - delete_bgp_always_compare_med             = false -> null
+      - delete_default_routes_on_create           = true -> null
+      - enable_ula_internal_ipv6                  = false -> null
+      - id                                        = "projects/oracle-ebs-toolkit-demo/global/networks/oracle-ebs-toolkit-network" -> null
+      - mtu                                       = 0 -> null
+      - name                                      = "oracle-ebs-toolkit-network" -> null
+      - network_firewall_policy_enforcement_order = "AFTER_CLASSIC_FIREWALL" -> null
+      - network_id                                = "4731128679754702058" -> null
+      - numeric_id                                = "4731128679754702058" -> null
+      - project                                   = "oracle-ebs-toolkit-demo" -> null
+      - routing_mode                              = "REGIONAL" -> null
+      - self_link                                 = "https://www.googleapis.com/compute/v1/projects/oracle-ebs-toolkit-demo/global/networks/oracle-ebs-toolkit-network" -> null
+        # (5 unchanged attributes hidden)
+    }
+
+Plan: 0 to add, 0 to change, 46 to destroy.
+
+Changes to Outputs:
+  - admin_password                = (sensitive value) -> null
+  - apps_instance_zone            = "" -> null
+  - dbs_instance_zone             = "" -> null
+  - deployment_summary            = <<-EOT
+        =========================================
+                Oracle Vision VM Deployment
+        =========================================
+         Project ID         : oracle-ebs-toolkit-demo
+         Region             : northamerica-northeast2
+         Zone               : northamerica-northeast2-a
+         VPC Network        : oracle-ebs-toolkit-network
+
+        -----------------------------------------
+         Vision Instance
+        -----------------------------------------
+           • Name           : oracle-exascale-vision-app
+           • Internal IP    : 10.115.0.40
+           • SSH Command    :
+               gcloud compute ssh --zone "northamerica-northeast2-a" "oracle-exascale-vision-app" --tunnel-through-iap --project "oracle-ebs-toolkit-demo"
+
+        -----------------------------------------
+         Database Tier
+        -----------------------------------------
+           • Type           : Oracle Database@Google Cloud (Exascale)
+           • Cluster Name   : Exadata VM Cluster
+           • SSH Key        : ./exadb_private_key.pem
+           • Connection Info: Saved securely to ./exascale_outputs.yaml (TNS, SCAN DNS)
+           • Connection String: Pending generation (Available after apply)
+
+        -----------------------------------------
+         Storage
+        -----------------------------------------
+           • Bucket Name    : oracle-ebs-toolkit-storage-bucket-086024db
+           • Bucket URL     : gs://oracle-ebs-toolkit-storage-bucket-086024db
+
+        -----------------------------------------
+         User Credentials
+        -----------------------------------------
+           • Username       : admin
+           • Admin Password : Run this command to retrieve the admin password securely:
+
+               terraform output admin_password
+
+        =========================================
+         Summary
+        -----------------------------------------
+           • Total Instances: 1 Exascale Vision VM + 1 Exascale Cluster
+           • Storage Bucket : oracle-ebs-toolkit-storage-bucket-086024db
+           • Admin Password : Run "terraform output admin_password" to retrieve securely
+           • Generated At   : 2026-04-13T09:03:44Z
+        =========================================
+    EOT -> null
+  - exascale_vision_instance_zone = "northamerica-northeast2-a" -> null
+  - vision_instance_zone          = "" -> null
+
+Do you really want to destroy all resources?
+  Terraform will destroy all your managed infrastructure, as shown above.
+  There is no undo. Only 'yes' will be accepted to confirm.
+
+  Enter a value: yes
+
+null_resource.exascale_configure_and_upload[0]: Destroying... [id=797419597963081016]
+null_resource.exascale_ingress_rules[0]: Destroying... [id=176744551146596870]
+null_resource.exascale_configure_and_upload[0]: Provisioning with 'local-exec'...
+null_resource.exascale_configure_and_upload[0] (local-exec): Executing: ["/bin/sh" "-c" "rm -f ./exascale_outputs.yaml"]
+null_resource.exascale_ingress_rules[0]: Provisioning with 'local-exec'...
+null_resource.exascale_ingress_rules[0] (local-exec): Executing: ["/bin/bash" "-c" "      set -e\n\n      if ! command -v jq &> /dev/null; then\n        exit 0\n      fi\n\n      CLUSTER_URI=\"https://cloud.oracle.com/dbaas/exadb-xs/exadbVmClusters/ocid1.exadbvmcluster.oc1.ca-toronto-1.an2g6ljr33xv2ayaxhv3jjhifyweolg6rr7fddebmgcydg4qbbh342ndjqpq?region=ca-toronto-1&tenant=pytsjosegcp&compartmentId=ocid1.compartment.oc1..aaaaaaaaaexfjapm4xs74xjvtqevggl6gg4hxfauafnblcjk5i3nsrav5rja\"\n      if [ -z \"$CLUSTER_URI\" ]; then\n        exit 0\n      fi\n\n      CLUSTER_OCID=$(echo \"$CLUSTER_URI\" | grep -oE 'ocid1\\.[^/?&]+' | head -1)\n      OCI_REGION=$(echo \"$CLUSTER_OCID\" | cut -d'.' -f4)\n\n      CLUSTER_JSON=$(oci raw-request --http-method GET --target-uri \"https://database.${OCI_REGION}.oraclecloud.com/20160918/exadbVmClusters/$CLUSTER_OCID\" 2>/dev/null || true)\n      SUBNET_OCID=$(echo \"$CLUSTER_JSON\" | jq -r '.data.subnetId // empty')\n\n      if [ -z \"$SUBNET_OCID\" ]; then\n        exit 0\n      fi\n\n      SUBNET_JSON=$(oci raw-request --http-method GET --target-uri \"https://iaas.${OCI_REGION}.oraclecloud.com/20160918/subnets/$SUBNET_OCID\" 2>/dev/null || true)\n      VCN_OCID=$(echo \"$SUBNET_JSON\" | jq -r '.data.vcnId // empty')\n      COMPARTMENT_OCID=$(echo \"$SUBNET_JSON\" | jq -r '.data.compartmentId // empty')\n\n      if [ -z \"$VCN_OCID\" ] || [ -z \"$COMPARTMENT_OCID\" ]; then\n        exit 0\n      fi\n\n      TARGET_NSG_OCID=$(oci network nsg list \\\n        --compartment-id \"$COMPARTMENT_OCID\" \\\n        --vcn-id \"$VCN_OCID\" \\\n        --all 2>/dev/null | jq -r '\n          .data[] \n          | select(.[\"display-name\"] | endswith(\"_NSG\")) \n          | select(.[\"display-name\"] | contains(\"BCKP\") | not) \n          | .id\n        ' | head -n 1)\n\n      if [ -z \"$TARGET_NSG_OCID\" ]; then\n        exit 0\n      fi\n\n      RULE_IDS=$(oci network nsg rules list --nsg-id \"$TARGET_NSG_OCID\" --all 2>/dev/null | jq -r --arg cidr \"10.115.0.0/20\" '.data[] | select(.source == $cidr) | .id')\n\n      if [ -n \"$RULE_IDS\" ]; then\n        for id in $RULE_IDS; do\n          oci network nsg rules remove --nsg-id \"$TARGET_NSG_OCID\" --security-rule-ids \"[\\\"$id\\\"]\" --force || true\n        done\n      fi\n"]
+null_resource.exascale_configure_and_upload[0]: Destruction complete after 0s
+google_project_iam_member.project_sa_roles["roles/secretmanager.secretAccessor"]: Destroying... [id=oracle-ebs-toolkit-demo/roles/secretmanager.secretAccessor/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+module.project_services.google_project_service.project_services["iam.googleapis.com"]: Destroying... [id=oracle-ebs-toolkit-demo/iam.googleapis.com]
+module.project_services.google_project_service.project_services["cloudresourcemanager.googleapis.com"]: Destroying... [id=oracle-ebs-toolkit-demo/cloudresourcemanager.googleapis.com]
+module.project_services.google_project_service.project_services["compute.googleapis.com"]: Destroying... [id=oracle-ebs-toolkit-demo/compute.googleapis.com]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-icmp-in"]: Destroying... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-icmp-in]
+module.project_services.google_project_service.project_services["secretmanager.googleapis.com"]: Destroying... [id=oracle-ebs-toolkit-demo/secretmanager.googleapis.com]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-http-in"]: Destroying... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-http-in]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-external-app-access"]: Destroying... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-external-app-access]
+module.project_services.google_project_service.project_services["compute.googleapis.com"]: Destruction complete after 0s
+module.project_services.google_project_service.project_services["secretmanager.googleapis.com"]: Destruction complete after 0s
+module.project_services.google_project_service.project_services["cloudresourcemanager.googleapis.com"]: Destruction complete after 0s
+module.project_services.google_project_service.project_services["iam.googleapis.com"]: Destruction complete after 0s
+google_project_iam_member.project_sa_roles["roles/compute.instanceAdmin.v1"]: Destroying... [id=oracle-ebs-toolkit-demo/roles/compute.instanceAdmin.v1/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+google_project_iam_member.project_sa_roles["roles/monitoring.metricWriter"]: Destroying... [id=oracle-ebs-toolkit-demo/roles/monitoring.metricWriter/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+module.project_services.google_project_service.project_services["storage.googleapis.com"]: Destroying... [id=oracle-ebs-toolkit-demo/storage.googleapis.com]
+google_compute_instance.exascale_vision[0]: Destroying... [id=projects/oracle-ebs-toolkit-demo/zones/northamerica-northeast2-a/instances/oracle-exascale-vision-app]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-iap-in"]: Destroying... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-iap-in]
+module.project_services.google_project_service.project_services["storage.googleapis.com"]: Destruction complete after 0s
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-external-db-access"]: Destroying... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-external-db-access]
+google_project_iam_member.project_sa_roles["roles/monitoring.metricWriter"]: Destruction complete after 9s
+module.cloud_router.google_compute_router_nat.nats["oracle-ebs-toolkit-nat-01"]: Destroying... [id=oracle-ebs-toolkit-demo/northamerica-northeast2/oracle-ebs-toolkit-network-cloud-router/oracle-ebs-toolkit-nat-01]
+google_project_iam_member.project_sa_roles["roles/secretmanager.secretAccessor"]: Destruction complete after 9s
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-https-in"]: Destroying... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-https-in]
+null_resource.exascale_ingress_rules[0]: Still destroying... [id=176744551146596870, 00m10s elapsed]
+google_project_iam_member.project_sa_roles["roles/compute.instanceAdmin.v1"]: Destruction complete after 10s
+google_project_iam_member.project_sa_roles["roles/storage.admin"]: Destroying... [id=oracle-ebs-toolkit-demo/roles/storage.admin/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-icmp-in"]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-icmp-in, 00m10s elapsed]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-http-in"]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-http-in, 00m10s elapsed]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-external-app-access"]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-external-app-access, 00m10s elapsed]
+google_compute_instance.exascale_vision[0]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/zones/...a/instances/oracle-exascale-vision-app, 00m10s elapsed]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-iap-in"]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-iap-in, 00m10s elapsed]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-external-db-access"]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-external-db-access, 00m10s elapsed]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-icmp-in"]: Destruction complete after 13s
+google_secret_manager_secret_version.exadb_private_key_secret_version[0]: Destroying... [id=projects/119724395047/secrets/exadb-ssh-private-key-dbbfcbbc/versions/1]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-iap-in"]: Destruction complete after 13s
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-internal-access"]: Destroying... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-internal-access]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-external-app-access"]: Destruction complete after 13s
+google_project_iam_member.project_sa_roles["roles/iam.serviceAccountUser"]: Destroying... [id=oracle-ebs-toolkit-demo/roles/iam.serviceAccountUser/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+google_secret_manager_secret_version.exadb_private_key_secret_version[0]: Destruction complete after 0s
+google_storage_bucket_iam_member.bucket_object_admin: Destroying... [id=b/oracle-ebs-toolkit-storage-bucket-086024db/roles/storage.objectAdmin/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-http-in"]: Destruction complete after 13s
+google_project_iam_member.project_sa_roles["roles/iap.tunnelResourceAccessor"]: Destroying... [id=oracle-ebs-toolkit-demo/roles/iap.tunnelResourceAccessor/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+null_resource.exascale_ingress_rules[0] (local-exec): Usage: oci network nsg rules remove [OPTIONS]
+
+null_resource.exascale_ingress_rules[0] (local-exec): Error: No such option: --force
+
+null_resource.exascale_ingress_rules[0] (local-exec): For OCI CLI commands and parameters suggestion, auto completion and other useful features, try the Interactive mode by typing `oci -i`.
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-external-db-access"]: Destruction complete after 14s
+google_project_iam_member.project_sa_roles["roles/logging.logWriter"]: Destroying... [id=oracle-ebs-toolkit-demo/roles/logging.logWriter/serviceAccount:project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+null_resource.exascale_ingress_rules[0] (local-exec): Usage: oci network nsg rules remove [OPTIONS]
+
+null_resource.exascale_ingress_rules[0] (local-exec): Error: No such option: --force
+
+null_resource.exascale_ingress_rules[0] (local-exec): For OCI CLI commands and parameters suggestion, auto completion and other useful features, try the Interactive mode by typing `oci -i`.
+null_resource.exascale_ingress_rules[0]: Destruction complete after 15s
+module.nat_gateway_route.google_compute_route.route["nat-egress-internet"]: Destroying... [id=projects/oracle-ebs-toolkit-demo/global/routes/nat-egress-internet]
+google_storage_bucket_iam_member.bucket_object_admin: Destruction complete after 6s
+module.cloud_router.google_compute_router_nat.nats["oracle-ebs-toolkit-nat-01"]: Still destroying... [id=oracle-ebs-toolkit-demo/northamerica-no...cloud-router/oracle-ebs-toolkit-nat-01, 00m10s elapsed]
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-https-in"]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-https-in, 00m10s elapsed]
+null_resource.exascale_db_provisioning[0]: Destroying... [id=9184041753248778086]
+null_resource.exascale_db_provisioning[0]: Provisioning with 'local-exec'...
+null_resource.exascale_db_provisioning[0] (local-exec): Executing: ["/bin/bash" "-c" "      set -e\n\n      if ! command -v jq &> /dev/null; then\n        exit 0\n      fi\n\n      CLUSTER_URI=\"https://cloud.oracle.com/dbaas/exadb-xs/exadbVmClusters/ocid1.exadbvmcluster.oc1.ca-toronto-1.an2g6ljr33xv2ayaxhv3jjhifyweolg6rr7fddebmgcydg4qbbh342ndjqpq?region=ca-toronto-1&tenant=pytsjosegcp&compartmentId=ocid1.compartment.oc1..aaaaaaaaaexfjapm4xs74xjvtqevggl6gg4hxfauafnblcjk5i3nsrav5rja\"\n      if [ -z \"$CLUSTER_URI\" ]; then\n        exit 0\n      fi\n\n      CLUSTER_OCID=$(echo \"$CLUSTER_URI\" | grep -oE 'ocid1\\.[^/?&]+' | head -1)\n      OCI_REGION=$(echo \"$CLUSTER_OCID\" | cut -d'.' -f4)\n\n      if [ -z \"$CLUSTER_OCID\" ] || [ -z \"$OCI_REGION\" ]; then\n        exit 0\n      fi\n\n      CDB_NAME_RAW=\"EBSCDB\"\n      DB_NAME_CLEAN=$(echo \"$CDB_NAME_RAW\" | sed 's/[-_]//g')\n\n      DB_LIST=$(oci raw-request --http-method GET --target-uri \"https://database.${OCI_REGION}.oraclecloud.com/20160918/databases?systemId=$CLUSTER_OCID\" 2>/dev/null || true)\n      DB_OCID=$(echo \"$DB_LIST\" | jq -r --arg dbname \"$DB_NAME_CLEAN\" '.data[] | select((.dbName | ascii_downcase) == ($dbname | ascii_downcase)) | .id' | head -1)\n\n      if [ -n \"$DB_OCID\" ] && [ \"$DB_OCID\" != \"null\" ]; then\n        oci raw-request --http-method DELETE --target-uri \"https://database.${OCI_REGION}.oraclecloud.com/20160918/databases/$DB_OCID\" 2>/dev/null || true\n        sleep 60\n      fi\n\n      DISPLAY_NAME=\"Home_19c_$CDB_NAME_RAW\"\n      API_URL=\"https://database.${OCI_REGION}.oraclecloud.com/20160918/dbHomes\"\n      LIST_URL=\"$API_URL?vmClusterId=$CLUSTER_OCID&displayName=$DISPLAY_NAME\"\n      LIST_RESULT=$(oci raw-request --http-method GET --target-uri \"$LIST_URL\" 2>/dev/null || true)\n      DB_HOME_OCID=$(echo \"$LIST_RESULT\" | jq -r --arg dname \"$DISPLAY_NAME\" '.data[] | select(.displayName == $dname) | .id' | head -1)\n\n      if [ -n \"$DB_HOME_OCID\" ] && [ \"$DB_HOME_OCID\" != \"null\" ]; then\n        oci raw-request --http-method DELETE --target-uri \"https://database.${OCI_REGION}.oraclecloud.com/20160918/dbHomes/$DB_HOME_OCID\" 2>/dev/null || true\n      fi\n"]
+google_project_iam_member.project_sa_roles["roles/storage.admin"]: Still destroying... [id=oracle-ebs-toolkit-demo/roles/storage.a...s-toolkit-demo.iam.gserviceaccount.com, 00m10s elapsed]
+google_compute_instance.exascale_vision[0]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/zones/...a/instances/oracle-exascale-vision-app, 00m20s elapsed]
+null_resource.exascale_db_provisioning[0] (local-exec): jq: error (at <stdin>:16): Cannot index string with string "dbName"
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-https-in"]: Destruction complete after 14s
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-internal-access"]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/global/firewalls/allow-internal-access, 00m10s elapsed]
+module.ebs_storage_bucket.google_storage_bucket.bucket: Destroying... [id=oracle-ebs-toolkit-storage-bucket-086024db]
+google_project_iam_member.project_sa_roles["roles/iam.serviceAccountUser"]: Still destroying... [id=oracle-ebs-toolkit-demo/roles/iam.servi...s-toolkit-demo.iam.gserviceaccount.com, 00m10s elapsed]
+module.cloud_router.google_compute_router_nat.nats["oracle-ebs-toolkit-nat-01"]: Destruction complete after 14s
+module.cloud_router.google_compute_router.router: Destroying... [id=projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/routers/oracle-ebs-toolkit-network-cloud-router]
+null_resource.exascale_db_provisioning[0] (local-exec): jq: error (at <stdin>:16): Cannot index string with string "displayName"
+null_resource.exascale_db_provisioning[0]: Destruction complete after 3s
+google_oracle_database_exadb_vm_cluster.exadb_vm_cluster[0]: Destroying... [id=projects/oracle-ebs-toolkit-demo/locations/northamerica-northeast2/exadbVmClusters/exadb-vm-cluster-01]
+google_project_iam_member.project_sa_roles["roles/iap.tunnelResourceAccessor"]: Still destroying... [id=oracle-ebs-toolkit-demo/roles/iap.tunne...s-toolkit-demo.iam.gserviceaccount.com, 00m10s elapsed]
+google_project_iam_member.project_sa_roles["roles/logging.logWriter"]: Still destroying... [id=oracle-ebs-toolkit-demo/roles/logging.l...s-toolkit-demo.iam.gserviceaccount.com, 00m10s elapsed]
+google_project_iam_member.project_sa_roles["roles/iam.serviceAccountUser"]: Destruction complete after 11s
+random_password.admin_password[0]: Destroying... [id=none]
+random_password.admin_password[0]: Destruction complete after 0s
+google_project_iam_member.project_sa_roles["roles/storage.admin"]: Destruction complete after 14s
+module.nat_gateway_route.google_compute_route.route["nat-egress-internet"]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/global/routes/nat-egress-internet, 00m10s elapsed]
+google_project_iam_member.project_sa_roles["roles/logging.logWriter"]: Destruction complete after 11s
+google_project_iam_member.project_sa_roles["roles/iap.tunnelResourceAccessor"]: Destruction complete after 12s
+module.firewall_rules.google_compute_firewall.rules_ingress_egress["allow-internal-access"]: Destruction complete after 13s
+module.ebs_storage_bucket.google_storage_bucket.bucket: Destruction complete after 4s
+random_id.bucket_suffix: Destroying... [id=CGAk2w]
+random_id.bucket_suffix: Destruction complete after 0s
+module.nat_gateway_route.google_compute_route.route["nat-egress-internet"]: Destruction complete after 13s
+google_compute_instance.exascale_vision[0]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/zones/...a/instances/oracle-exascale-vision-app, 00m30s elapsed]
+module.cloud_router.google_compute_router.router: Still destroying... [id=projects/oracle-ebs-toolkit-demo/region...racle-ebs-toolkit-network-cloud-router, 00m10s elapsed]
+google_oracle_database_exadb_vm_cluster.exadb_vm_cluster[0]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/locati...t2/exadbVmClusters/exadb-vm-cluster-01, 00m10s elapsed]
+google_compute_instance.exascale_vision[0]: Destruction complete after 35s
+google_service_account.project_sa: Destroying... [id=projects/oracle-ebs-toolkit-demo/serviceAccounts/project-service-account@oracle-ebs-toolkit-demo.iam.gserviceaccount.com]
+google_secret_manager_secret.exadb_private_key_secret[0]: Destroying... [id=projects/oracle-ebs-toolkit-demo/secrets/exadb-ssh-private-key-dbbfcbbc]
+google_compute_address.exascale_vision_server_internal_ip[0]: Destroying... [id=projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/addresses/exascale-vision-server-internal-ip]
+local_file.exadb_private_key[0]: Destroying... [id=22c4bd9970490ba9b182c2616f323137cecba340]
+local_file.exadb_public_key[0]: Destroying... [id=68b5445e4399079402ed4a9470154e7493600eea]
+local_file.exadb_public_key[0]: Destruction complete after 0s
+local_file.exadb_private_key[0]: Destruction complete after 0s
+module.cloud_router.google_compute_router.router: Destruction complete after 13s
+google_compute_address.nat_ip["oracle-ebs-toolkit-nat-01"]: Destroying... [id=projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/addresses/oracle-ebs-toolkit-nat-01]
+google_service_account.project_sa: Destruction complete after 1s
+google_compute_address.exascale_vision_server_internal_ip[0]: Destruction complete after 2s
+module.network.module.subnets.google_compute_subnetwork.subnetwork["northamerica-northeast2/oracle-ebs-toolkit-subnet-01"]: Destroying... [id=projects/oracle-ebs-toolkit-demo/regions/northamerica-northeast2/subnetworks/oracle-ebs-toolkit-subnet-01]
+google_compute_address.nat_ip["oracle-ebs-toolkit-nat-01"]: Destruction complete after 1s
+google_secret_manager_secret.exadb_private_key_secret[0]: Destruction complete after 2s
+random_id.secret_suffix[0]: Destroying... [id=27_LvA]
+random_id.secret_suffix[0]: Destruction complete after 0s
+google_oracle_database_exadb_vm_cluster.exadb_vm_cluster[0]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/locati...t2/exadbVmClusters/exadb-vm-cluster-01, 00m20s elapsed]
+module.network.module.subnets.google_compute_subnetwork.subnetwork["northamerica-northeast2/oracle-ebs-toolkit-subnet-01"]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/region...bnetworks/oracle-ebs-toolkit-subnet-01, 00m10s elapsed]
+module.network.module.subnets.google_compute_subnetwork.subnetwork["northamerica-northeast2/oracle-ebs-toolkit-subnet-01"]: Destruction complete after 13s
+google_oracle_database_exadb_vm_cluster.exadb_vm_cluster[0]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/locati...t2/exadbVmClusters/exadb-vm-cluster-01, 00m30s elapsed]
+google_oracle_database_exadb_vm_cluster.exadb_vm_cluster[0]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/locati...t2/exadbVmClusters/exadb-vm-cluster-01, 00m40s elapsed]
+google_oracle_database_exadb_vm_cluster.exadb_vm_cluster[0]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/locati...t2/exadbVmClusters/exadb-vm-cluster-01, 00m50s elapsed]
+google_oracle_database_exadb_vm_cluster.exadb_vm_cluster[0]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/locati...t2/exadbVmClusters/exadb-vm-cluster-01, 01m00s elapsed]
+google_oracle_database_exadb_vm_cluster.exadb_vm_cluster[0]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/locati...t2/exadbVmClusters/exadb-vm-cluster-01, 01m10s elapsed]
+google_oracle_database_exadb_vm_cluster.exadb_vm_cluster[0]: Still destroying... [id=projects/oracle-ebs-toolkit-demo/locati...t2/exadbVmClusters/exadb-vm-cluster-01, 01m20s elapsed]
+
+
+```

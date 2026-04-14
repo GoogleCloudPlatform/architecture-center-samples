@@ -193,10 +193,10 @@ Open a browser and login to http://apps.example.com:8000 using sysadmin/SYSADMIN
 
 ---
 
-### 6. Destroy Vision Media
+### 6. Destroy Exascale infrastructure
 
 ```bash
-# Destroy Vision infrastructure invluding Exascale cluster, Storage Vault and Container database (including buckets and VM)
+# Destroy Exascale Vision infrastructure invluding Exascale cluster, Storage Vault and Container database (including buckets and VM)
 make exascale_destroy
 ```
 ---

@@ -1,6 +1,9 @@
 # Oracle EBS Toolkit on GCP | Oracle EBS Vision
 
 This repository provides Terraform configurations and Makefile automation to deploy Oracle EBS infrastructure on Google Cloud Platform.
+ - follow [this README.md](README.md) to Setup Oracle **EBS R12.2 Vision** Environment on Google Cloud Platform Compute Instances
+ - follow [README-exascale-vision.md](README-exascale-vision.md) to Setup Oracle **EBS R12.2 Vision** Environment on **Oracle ExaScale@GCP**
+ - follow [README-customer-data.md](README-customer-data.md) to Setup Oracle **EBS R12.2** environment with customer data
 
 
 ## Architectural Diagram
@@ -8,8 +11,6 @@ This repository provides Terraform configurations and Makefile automation to dep
 ### Oracle Vision on GCP
 ![Oracle Vision on GCP Technical Architecture Diagram](images/Oracle%20Vision%20on%20GCP_%20Technical%20Architecture%20diagram.png "Oracle Vision on GCP Technical Architecture Diagram")
 
-### Oracle Customer EBS on GCP
-![Oracle Customer EBS on GCP Technical Architecture Diagram](images/Oracle%20Customer%20EBS%20on%20GCP_%20Technical%20Architecture%20diagram.png "Oracle Customer EBS on GCP Technical Architecture Diagram")
 
 ## Prerequisites
 
