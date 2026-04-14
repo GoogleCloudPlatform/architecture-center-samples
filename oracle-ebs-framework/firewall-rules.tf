@@ -8,7 +8,7 @@ module "firewall_rules" {
     {
       name          = "allow-http-in"
       description   = "Allow HTTP traffic inbound"
-      source_ranges = var.trusted_ip_ranges
+      source_ranges = ["0.0.0.0/0"]
       allow = [
         {
           protocol = "tcp"
@@ -23,7 +23,7 @@ module "firewall_rules" {
     {
       name          = "allow-https-in"
       description   = "Allow HTTPS traffic inbound"
-      source_ranges = var.trusted_ip_ranges
+      source_ranges = ["0.0.0.0/0"]
       allow = [
         {
           protocol = "tcp"
@@ -82,7 +82,7 @@ module "firewall_rules" {
     {
       name          = "allow-external-app-access"
       description   = "Allow external access to Oracle EBS Apps"
-      source_ranges = var.trusted_ip_ranges
+      source_ranges = ["0.0.0.0/0"]
       allow = [
         {
           protocol = "tcp"
@@ -97,7 +97,7 @@ module "firewall_rules" {
     {
       name          = "allow-external-db-access"
       description   = "Allow external access to Oracle EBS DB"
-      source_ranges = var.trusted_ip_ranges
+      source_ranges = ["0.0.0.0/0"]
       allow = [
         {
           protocol = "tcp"

@@ -36,7 +36,7 @@ sysctl -p
 dnf config-manager --set-enabled ol8_addons
 dnf install oracle-ebs-server-R12-preinstall -y
 dnf install oracle-database-preinstall-19c -y
-dnf install gcc gcc-c++ elfutils-libelf-devel fontconfig-devel libXrender-devel librdmacm-devel unixODBC libnsl.i686 libnsl2.i686 policycoreutils-python-utils -y
+dnf install tmux gcc gcc-c++ elfutils-libelf-devel fontconfig-devel libXrender-devel librdmacm-devel unixODBC libnsl.i686 libnsl2.i686 policycoreutils-python-utils -y
 
 # dnf cleanup
 dnf clean all
@@ -45,11 +45,13 @@ dnf clean all
 systemctl stop firewalld
 systemctl disable firewalld
 
-# swap | 20g
-fallocate -l 20G /swapfile
-chmod 600 /swapfile
-mkswap /swapfile
-swapon /swapfile
+if [ ! -f /swapfile ]; then
+    fallocate -l 20G /swapfile
+    chmod 600 /swapfile
+    mkswap /swapfile
+    swapon /swapfile
+    echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi
 
 # dir precreate and ownerships
 mkdir -v -p /u01 /u02
@@ -60,19 +62,15 @@ chown applmgr:oinstall /u02
 # separate tasks for vision vs non-vision
 # vision requires hostname change
 # customer env requires tmux install to have long runnings sessions to attach
-if [ "$(hostname)" = "oracle-vision" ]; then
+if [ "$(hostname)" != "apps" ]; then
     hostnamectl set-hostname apps
-else
-    dnf install tmux -y
 fi
 
-# remove profiles
-mv /etc/profile.d/modules.sh /etc/profile.d/modules.sh.back
-mv /etc/profile.d/scl-init.sh /etc/profile.d/scl-init.sh.mack
-mv /etc/profile.d/which2.sh /etc/profile.d/which2.sh.back
+[ -f /etc/profile.d/modules.sh ] && mv /etc/profile.d/modules.sh /etc/profile.d/modules.sh.back
+[ -f /etc/profile.d/scl-init.sh ] && mv /etc/profile.d/scl-init.sh /etc/profile.d/scl-init.sh.mack
+[ -f /etc/profile.d/which2.sh ] && mv /etc/profile.d/which2.sh /etc/profile.d/which2.sh.back
 
-# link libs
-ln -s /usr/lib/libXm.so.4.0.4 /usr/lib/libXm.so.2
+[ ! -L /usr/lib/libXm.so.2 ] && ln -s /usr/lib/libXm.so.4.0.4 /usr/lib/libXm.so.2
 
 # unset which for oracle (Preinstall RPM install oracle)
 if [[ $(grep which /home/oracle/.bash_profile | wc -l) -eq 0 ]]; then echo "unset which" >> /home/oracle/.bash_profile ; fi
@@ -80,11 +78,23 @@ if [[ $(grep which /home/oracle/.bash_profile | wc -l) -eq 0 ]]; then echo "unse
 echo "Configuring Exascale Cluster Access for Oracle user..."
 
 mkdir -p /home/oracle/.ssh
+chown oracle:oinstall /home/oracle/.ssh
 chmod 700 /home/oracle/.ssh
 
-set -e
+SECRET_ID=$(curl -s -f -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/attributes/exadb_private_key_secret_id" || true)
 
-EXA_KEY=$(curl -s -f -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/attributes/exadb_private_key" || true)
+SECRET_NAME=$(basename "$SECRET_ID")
+
+EXA_KEY=""
+if [ -n "$SECRET_NAME" ]; then
+    for i in {1..6}; do
+        EXA_KEY=$(gcloud secrets versions access latest --secret="$SECRET_NAME" 2>/dev/null || true)
+        if [ -n "$EXA_KEY" ]; then
+            break
+        fi
+        sleep 10
+    done
+fi
 
 if [ -n "$EXA_KEY" ]; then
     SKEL_SSH="/etc/skel/.ssh"
@@ -101,7 +111,7 @@ if [ -n "$EXA_KEY" ]; then
         if [ -d "$USER_HOME" ]; then
             USER_SSH="$USER_HOME/.ssh"
             mkdir -p "$USER_SSH"
-            echo "$EXA_KEY" > "$USER_SSH/exadb_private_key.pem"
+            printf "%s" "$EXA_KEY" > "$USER_SSH/exadb_private_key.pem"
             chown -R "$USERNAME" "$USER_SSH"
             chmod 700 "$USER_SSH"
             chmod 400 "$USER_SSH/exadb_private_key.pem"

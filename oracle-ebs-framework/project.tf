@@ -1,6 +1,6 @@
 module "project_services" {
   source  = "terraform-google-modules/project-factory/google//modules/project_services"
-  version = "14.5.0"
+  version = "18.2.0"
 
   project_id = var.project_id
 
@@ -8,7 +8,8 @@ module "project_services" {
     "compute.googleapis.com",
     "storage.googleapis.com",
     "iam.googleapis.com",
-    "cloudresourcemanager.googleapis.com"
+    "cloudresourcemanager.googleapis.com",
+    "secretmanager.googleapis.com"
   ]
   enable_apis                 = true
   disable_services_on_destroy = false

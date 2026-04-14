@@ -11,25 +11,19 @@ variable "project_id" {
 variable "region" {
   description = "The default region for resources"
   type        = string
-  default     = "us-central1"
+  default     = "northamerica-northeast2"
 }
 
 variable "zone" {
   description = "The default zone for resources"
   type        = string
-  default     = "us-central1-a"
+  default     = "northamerica-northeast2-a"
 }
 
 variable "ebs_storage_bucket_name" {
   description = "The name of the storage bucket to be created."
   type        = string
   default     = "oracle-ebs-toolkit-storage-bucket"
-}
-
-variable "force_destroy_bucket" {
-  description = "Whether to allow force deletion of the bucket even if it contains objects"
-  type        = bool
-  default     = false
 }
 
 variable "oracle_ebs_vision" {
@@ -60,8 +54,7 @@ variable "project_service_account_roles" {
     "roles/compute.instanceAdmin.v1",
     "roles/logging.logWriter",
     "roles/monitoring.metricWriter",
-    "roles/storage.objectViewer",
-    "roles/viewer",
+    "roles/storage.admin",
     "roles/secretmanager.secretAccessor",
     "roles/iam.serviceAccountUser",
     "roles/iap.tunnelResourceAccessor"
@@ -104,7 +97,7 @@ variable "subnets" {
   default = [
     {
       subnet_name           = "oracle-ebs-toolkit-subnet-01"
-      subnet_region         = "us-central1"
+      subnet_region         = "northamerica-northeast2"
       subnet_ip             = "10.115.0.0/20"
       subnet_private_access = true
       subnet_flow_logs      = true
@@ -191,10 +184,10 @@ variable "vision_server_internal_ip" {
 
 }
 
-variable "trusted_ip_ranges" {
-  description = "List of trusted IP ranges allowed to access the firewall rules"
-  type        = list(string)
-  default     = []
+variable "exascale_vision_server_internal_ip" {
+  description = "The internal IP address for the Exascale Vision VM instance"
+  type        = string
+  default     = "10.115.0.40"
 }
 
 variable "apps_image_family" {
@@ -300,4 +293,164 @@ variable "vision_boot_disk_auto_delete" {
   description = "Whether the boot disk should be auto-deleted when the instance is deleted"
   type        = bool
   default     = false
+}
+
+# Vars for Exascale
+
+variable "oracle_ebs_exascale" {
+  description = "Whether to deploy Oracle Exascale environment"
+  type        = bool
+  default     = false
+
+}
+
+variable "odb_subnet_id" {
+  description = "The name of the subnet to be used for ODB network"
+  type        = string
+  default     = "oracle-ebs-toolkit-odb-subnet"
+}
+
+variable "odb_subnet_cidr" {
+  description = "The CIDR range for the ODB subnet"
+  type        = string
+  default     = "10.116.0.0/20"
+}
+
+variable "exascale_location" {
+  description = "The region for the Exascale environment"
+  type        = string
+  default     = "northamerica-northeast2"
+}
+
+variable "exascale_client_subnet_cidr" {
+  description = "The CIDR range for the client subnet"
+  type        = string
+  default     = "10.116.0.0/20"
+}
+
+variable "exascale_backup_subnet_cidr" {
+  description = "The CIDR range for the backup subnet"
+  type        = string
+  default     = "10.116.128.0/20"
+}
+
+variable "exadb_vm_cluster_id" {
+  description = "ID of the Exadata VM Cluster"
+  type        = string
+  default     = "exadb-vm-cluster-01"
+}
+
+variable "exadb_display_name" {
+  description = "Display name of the Exadata VM Cluster"
+  type        = string
+  default     = "Exadata VM Cluster"
+}
+
+variable "exadata_infrastructure_id" {
+  description = "ID of the Exadata infrastructure to use for the VM cluster"
+  type        = string
+  default     = "exadata-infrastructure-01"
+}
+
+variable "exascale_time_zone" {
+  description = "Time zone for the VM cluster"
+  type        = string
+  default     = "UTC"
+}
+
+variable "exascale_grid_image_id" {
+  description = "Grid image ID for the VM cluster"
+  type        = string
+  default     = ""
+}
+
+variable "exascale_node_count" {
+  description = "Number of nodes in the VM cluster"
+  type        = number
+  default     = 1
+}
+
+variable "exascale_enabled_ecpu_count_per_node" {
+  description = "Number of enabled eCPUs per node"
+  type        = number
+  default     = 8
+}
+
+variable "exascale_vm_file_system_storage_size_gb" {
+  description = "Size of the VM file system storage per node in GB"
+  type        = number
+  default     = 260
+  validation {
+    condition     = var.exascale_vm_file_system_storage_size_gb >= 260
+    error_message = "The VM file system storage size per node must be at least 260 GB."
+  }
+}
+
+variable "exascale_hostname_prefix" {
+  description = "Hostname prefix for the VM cluster"
+  type        = string
+  default     = "exadb-node"
+}
+
+variable "exascale_license_model" {
+  description = "License model for the VM cluster"
+  type        = string
+  default     = "BRING_YOUR_OWN_LICENSE"
+}
+
+variable "exascale_scan_listener_port_tcp" {
+  description = "TCP port for the scan listener"
+  type        = number
+  default     = 1521
+}
+
+variable "exascale_cluster_name" {
+  description = "Cluster name for the VM cluster"
+  type        = string
+  default     = "exadb-cl1"
+  validation {
+    condition     = length(var.exascale_cluster_name) >= 1 && length(var.exascale_cluster_name) <= 11
+    error_message = "The cluster name must be between 1 and 11 characters."
+  }
+}
+
+variable "exascale_storage_vault_id" {
+  description = "ID of the Exascale DB Storage Vault"
+  type        = string
+  default     = "exascale-db-storage-vault"
+}
+
+variable "exascale_storage_vault_display_name" {
+  description = "Display name of the Exascale DB Storage Vault"
+  type        = string
+  default     = "Exascale DB Storage Vault"
+}
+
+variable "exascale_storage_vault_size_gb" {
+  description = "Total size of the Exascale DB Storage Vault in GB"
+  type        = number
+  default     = 1000
+}
+
+variable "exascale_shape_attribute" {
+  description = "Shape attribute for the VM cluster"
+  type        = string
+  default     = "BLOCK_STORAGE"
+}
+
+variable "cdb_name" {
+  description = "Name of the Exadata database to be provisioned"
+  type        = string
+  default     = "EBSCDB"
+}
+
+variable "oci_api_version" {
+  type    = string
+  default = "20160918"
+}
+
+variable "exascale_deletion_protection" {
+  description = "Whether to enable deletion protection for the Exascale VM cluster"
+  type        = bool
+  default     = true
 }

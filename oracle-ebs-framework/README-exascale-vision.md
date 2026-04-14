@@ -1,15 +1,13 @@
-# Oracle EBS Toolkit on GCP | Oracle EBS Vision
+# Oracle EBS Toolkit on GCP | Oracle EBS Vision on Oracle Database @GCP
 
-This repository provides Terraform configurations and Makefile automation to deploy Oracle EBS infrastructure on Google Cloud Platform.
+This repository provides Terraform configurations and Makefile automation to deploy Oracle EBS Vision infrastructure on Google Cloud Platform and Oracle Database@Google Cloud .
 
 
 ## Architectural Diagram
 
 ### Oracle Vision on GCP
-![Oracle Vision on GCP Technical Architecture Diagram](images/Oracle%20Vision%20on%20GCP_%20Technical%20Architecture%20diagram.png "Oracle Vision on GCP Technical Architecture Diagram")
+![Oracle Vision on GCP Technical Architecture Diagram](images/Oracle%20Customer%20EBS%20on%20GCP%20OCI%20Technical%20Architecture%20diagram.png "Oracle Vision on GCP Technical Architecture Diagram")
 
-### Oracle Customer EBS on GCP
-![Oracle Customer EBS on GCP Technical Architecture Diagram](images/Oracle%20Customer%20EBS%20on%20GCP_%20Technical%20Architecture%20diagram.png "Oracle Customer EBS on GCP Technical Architecture Diagram")
 
 ## Prerequisites
 
@@ -18,11 +16,12 @@ Before starting, ensure the following requirements are met:
 ### Environment
 - GCP Project: A Google Cloud project must already exist for this deployment. Note the `PROJECT_ID`.
 - Make: Install the `make` tool (version >= 4.3 recommended).
-- GCLOUD CLI
-- OCI CLI
+- Subscribe to Oracle Database@Google Cloud
+- Connect GCP Project with Oracle OCI account
+- Create an Oracle SR to increase Exascale DB Storage Vault quota to at least 1T
 
-### Quota Requirements
-Before deploying Toolkit, verify that your GCP project has sufficient resource quotas in the target region.
+### GCP Quota Requirements
+Before deploying the Toolkit, verify that your GCP project has sufficient resource quotas in the target region.
 
 Minimum recommended quotas:
 - Persistent Disk SSD (GB): ≥ 1TB
@@ -57,13 +56,16 @@ Ensure your GCP account has the following IAM roles:
 - **Storage access (choose one):**  
   - `roles/storage.admin` – Full control of Cloud Storage (buckets and objects), **or**  
   - `roles/storage.objectAdmin` – Object-level control only (least privilege option) 
+- **Oracle @GCP:**  
+  - `roles/oracledatabase.exadbVmClusterAdmin` – Oracle Database@Google Cloud Exadata Database Service on Exascale Infrastructure VM Cluster Admin 
+  - `roles/oracledatabase.exascaleDbStorageVaultAdmin` – Oracle Database@Google Cloud Exadata Database Service on Exascale Infrastructure Storage Vault Admin
 
 #### Alternatively, the GCP account can have broad roles like:
 - `roles/owner`
 
 - `roles/editor`
 
-## Oracle EBS Vision Deployment
+## Oracle EBS Vision Deployment on Oracle Database@GCP
 
 All Makefile commands should be run from the project root for all the deployments.
 
@@ -92,21 +94,31 @@ gcloud auth application-default login
 
 ---
 
-### 3. Deploy EBS Vision Infrastructure
+### 3. Deploy EBS Vision Infrastructure on GCP and OCI (~2 hours)
 
 Run the commands below to deploy the Oracle EBS single-node vision environment:
+
+<i>Note: Oracle Exascale Infra setup takes is time consuming, make sure to have stable connections and TMUX session</i>
+
+This process will create following OCI resources:
+ - OCI Storage Vault
+ - OCI Exascale Cluster
+ - OCI Exascale Virtual Machine
+ - OCI Exascale CDB Database
 
 ```bash
 # Initialize Terraform backend and modules
 make init
 
 # IMPORTANT: Verify the disk type and disk sizes in the infra.auto.tfvars file
+# IMPORTANT: Need at least 1T quota on OCI cloud 
 
 # Plan the changes
-make vision_plan
+make exascale_plan
 
-# Deploy the changes
-make vision_deploy
+# Deploy the changes (runtime: ~ 2hours)
+# Make sure to have stable connection or run from screen/tmux
+make exascale_deploy
 ```
 
 ---
@@ -146,13 +158,16 @@ gcloud storage cp V*.zip gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/
 
 ---
 
+### @pythianasharma - everything below needs adjustemnts
+
+
 ### 5. Deploy Oracle EBS Vision environment
 
-This process lasts ~50-60 minutes
+This process lasts ~80-100 minutes
 
 ```bash
 # Deploy changes
-make vision_deploy_oracle_ebs
+make exascale_oracle_vision_deploy
 ```
 
 Add the following line (127.0.0.1 apps.example.com apps) to the local hosts file:
@@ -171,7 +186,7 @@ Open IAP tunnel
 
 ```bash
 # open tunnel
-gcloud compute ssh "oracle-vision" --tunnel-through-iap  \
+gcloud compute ssh "oracle-exascale-vision-app" --tunnel-through-iap  \
  --project "oracle-ebs-toolkit" -- -L 8000:localhost:8000
 
 ```
@@ -181,29 +196,11 @@ Open a browser and login to http://apps.example.com:8000 using sysadmin/SYSADMIN
 
 ---
 
-### 6. Available additional commands
-
-After the Oracle EBS Vision environment deployment process few extra functions are available.
-Also server can be stoped/started, and Oracle EBS will autostart/stop along.
+### 6. Destroy Vision Media
 
 ```bash
-# Review EBS Vision environment details for troubleshooting deployment
-make vision_ebs_troubleshoot
-
-# Start EBS Vision environment
-make vision_ebs_start
-
-# Stop EBS Vision environment
-make vision_ebs_stop
-```
-
----
-
-### 7. Destroy Vision Media
-
-```bash
-# Destroy Vision infrastructure (including buckets and VM)
-make vision_destroy
+# Destroy Vision infrastructure invluding Exascale cluster, Storage Vault and Container database (including buckets and VM)
+make exascale_destroy
 ```
 ---
 
