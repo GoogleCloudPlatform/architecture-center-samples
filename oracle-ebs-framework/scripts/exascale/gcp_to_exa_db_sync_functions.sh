@@ -71,7 +71,7 @@ create_exainfo() {
          --------------------------------------------------------------------"
     
     # Check if called by root
-    if ! is_oracle_user; then echo "This function must be run as root."; return 1; fi
+    if ! is_oracle_user; then echo "This function must be run as oracle."; return 1; fi
     
     ### actual function betweens these comments
     print_task "Fetching ExaScale details to GCP"
