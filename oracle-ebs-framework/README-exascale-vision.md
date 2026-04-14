@@ -158,9 +158,6 @@ gcloud storage cp V*.zip gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/
 
 ---
 
-### @pythianasharma - everything below needs adjustemnts
-
-
 ### 5. Deploy Oracle EBS Vision environment
 
 This process lasts ~80-100 minutes
