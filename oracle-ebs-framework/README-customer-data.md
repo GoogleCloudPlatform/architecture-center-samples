@@ -195,7 +195,7 @@ Copy packed media to the GCP bucket
 ```bash
 # Copy 
 GCP_BUCKET=$(gcloud storage ls | grep oracle-ebs-toolkit-storage-bucket)
-gcloud storage cp RDBMS_TO_GCP.tar.gz${GCP_BUCKET}
+gcloud storage cp RDBMS_TO_GCP.tar.gz ${GCP_BUCKET}
 gcloud storage cp EBSFS_TO_GCP.tar.gz ${GCP_BUCKET}
 gcloud storage cp -r RMAN_TO_GCP ${GCP_BUCKET}
 
