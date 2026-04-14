@@ -184,6 +184,12 @@ variable "vision_server_internal_ip" {
 
 }
 
+variable "trusted_ip_ranges" {
+  description = "List of trusted IP ranges allowed to access the firewall rules"
+  type        = list(string)
+  default     = []
+}
+
 variable "exascale_vision_server_internal_ip" {
   description = "The internal IP address for the Exascale Vision VM instance"
   type        = string

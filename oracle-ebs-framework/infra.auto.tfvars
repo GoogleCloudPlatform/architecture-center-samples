@@ -33,3 +33,6 @@ vision_machine_type          = "e2-standard-8"
 vision_boot_disk_size        = 1024
 vision_boot_disk_type        = "pd-balanced"
 vision_boot_disk_auto_delete = true
+
+# Trusted IP Ranges for External access
+trusted_ip_ranges = ["0.0.0.0/0"] # Please provide your own trusted IP ranges. Example -   trusted_ip_ranges = ["203.0.113.0/24", "198.51.100.0/24"]
