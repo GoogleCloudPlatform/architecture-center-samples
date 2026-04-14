@@ -355,7 +355,9 @@ exa_rman_dup() {
     source /scripts/EXAINFO
     
     print_task "Running rman duplicate to clone PDB from `hostname` to EXACS"
-    rman target sys/${SYSPASS}@${GCPTNS} auxiliary sys/${SYSPASS}@${EXATNS}<<EOF 
+    rman <<EOF 
+    CONNECT TARGET sys/${SYSPASS}@${GCPTNS}
+    CONNECT AUXILIARY sys/${SYSPASS}@${EXATNS}
     RUN {
       # Allocate multiple channels for parallel speed
       ALLOCATE CHANNEL c1 DEVICE TYPE DISK;
