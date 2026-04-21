@@ -1,0 +1,118 @@
+{
+  "module": "General Ledger (GL)",
+  "description": "Semantic mapping for Oracle EBS GL tables to business concepts.",
+  "tables": [
+    {
+      "table_name": "GL_JE_BATCHES",
+      "business_name": "Journal Batches",
+      "description": "Stores batch information for journals. Journals are often grouped into batches for processing.",
+      "columns": [
+        {"name": "JE_BATCH_ID", "description": "Unique identifier for the batch (Primary Key)."},
+        {"name": "NAME", "description": "The name of the batch."},
+        {"name": "STATUS", "description": "Status of the batch (P = Posted, U = Unposted)."},
+        {"name": "POSTED_DATE", "description": "The date the batch was posted to the GL."},
+        {"name": "DEFAULT_PERIOD_NAME", "description": "The accounting period (e.g., JAN-24)."}
+      ]
+    },
+    {
+      "table_name": "GL_JE_HEADERS",
+      "business_name": "Journal Headers",
+      "description": "Stores header information for individual journal entries.",
+      "columns": [
+        {"name": "JE_HEADER_ID", "description": "Unique identifier for the journal header (Primary Key)."},
+        {"name": "JE_BATCH_ID", "description": "Foreign Key to GL_JE_BATCHES."},
+        {"name": "NAME", "description": "The name of the journal entry."},
+        {"name": "DESCRIPTION", "description": "Description of the journal entry purpose."},
+        {"name": "LEDGER_ID", "description": "Foreign Key to GL_LEDGERS (Identifies the set of books)."},
+        {"name": "CURRENCY_CODE", "description": "Currency of the journal (e.g., USD)."},
+        {"name": "JE_SOURCE", "description": "Source of the journal (e.g., Manual, Payables, Receivables)."},
+        {"name": "JE_CATEGORY", "description": "Category of the journal (e.g., Adjustment, Accrual)."}
+      ]
+    },
+    {
+      "table_name": "GL_JE_LINES",
+      "business_name": "Journal Lines",
+      "description": "Stores the individual debit and credit lines for a journal entry.",
+      "columns": [
+        {"name": "JE_HEADER_ID", "description": "Foreign Key to GL_JE_HEADERS."},
+        {"name": "JE_LINE_NUM", "description": "Line number within the journal."},
+        {"name": "CODE_COMBINATION_ID", "description": "Foreign Key to GL_CODE_COMBINATIONS (The GL Account string)."},
+        {"name": "ENTERED_DR", "description": "Debit amount in the transaction currency."},
+        {"name": "ENTERED_CR", "description": "Credit amount in the transaction currency."},
+        {"name": "ACCOUNTED_DR", "description": "Debit amount in the functional currency."},
+        {"name": "ACCOUNTED_CR", "description": "Credit amount in the functional currency."},
+        {"name": "DESCRIPTION", "description": "Description of the line."}
+      ]
+    },
+    {
+      "table_name": "GL_CODE_COMBINATIONS",
+      "business_name": "Chart of Accounts / Account Segments",
+      "description": "Stores the valid combinations of segment values that make up a full GL account string.",
+      "columns": [
+        {"name": "CODE_COMBINATION_ID", "description": "Unique identifier for the account combination (Primary Key)."},
+        {"name": "SEGMENT1", "description": "Typically the Company or Entity segment."},
+        {"name": "SEGMENT2", "description": "Typically the Cost Center or Department segment."},
+        {"name": "SEGMENT3", "description": "Typically the Account (Natural Account) segment."},
+        {"name": "ACCOUNT_TYPE", "description": "Type of account (A=Asset, L=Liability, R=Revenue, E=Expense, O=Owner's Equity)."},
+        {"name": "ENABLED_FLAG", "description": "Whether the combination is active (Y/N)."}
+      ]
+    },
+    {
+      "table_name": "GL_BALANCES",
+      "business_name": "Account Balances",
+      "description": "Stores period-to-date and year-to-date balances for account combinations.",
+      "columns": [
+        {"name": "LEDGER_ID", "description": "Foreign Key to GL_LEDGERS."},
+        {"name": "CODE_COMBINATION_ID", "description": "Foreign Key to GL_CODE_COMBINATIONS."},
+        {"name": "PERIOD_NAME", "description": "The accounting period (e.g., JAN-24)."},
+        {"name": "PERIOD_NET_DR", "description": "Net debit activity for the period."},
+        {"name": "PERIOD_NET_CR", "description": "Net credit activity for the period."},
+        {"name": "BEGIN_BALANCE_DR", "description": "Beginning debit balance for the period."},
+        {"name": "BEGIN_BALANCE_CR", "description": "Beginning credit balance for the period."}
+      ]
+    },
+    {
+      "table_name": "GL_LEDGERS",
+      "business_name": "Ledgers",
+      "description": "Defines the accounting setup (Chart of Accounts, Currency, Calendar, Accounting Method).",
+      "columns": [
+        {"name": "LEDGER_ID", "description": "Unique identifier for the ledger (Primary Key)."},
+        {"name": "NAME", "description": "The name of the ledger (e.g., US Primary Ledger)."},
+        {"name": "SHORT_NAME", "description": "Short name for reports."},
+        {"name": "CURRENCY_CODE", "description": "The functional currency for the ledger."}
+      ]
+    }
+  ],
+  "common_joins": [
+    {
+      "description": "Link Journal Batch to Headers",
+      "join_condition": "GL_JE_BATCHES.JE_BATCH_ID = GL_JE_HEADERS.JE_BATCH_ID"
+    },
+    {
+      "description": "Link Journal Header to Lines",
+      "join_condition": "GL_JE_HEADERS.JE_HEADER_ID = GL_JE_LINES.JE_HEADER_ID"
+    },
+    {
+      "description": "Link Journal Line to Account",
+      "join_condition": "GL_JE_LINES.CODE_COMBINATION_ID = GL_CODE_COMBINATIONS.CODE_COMBINATION_ID"
+    },
+    {
+      "description": "Link Balances to Account",
+      "join_condition": "GL_BALANCES.CODE_COMBINATION_ID = GL_CODE_COMBINATIONS.CODE_COMBINATION_ID"
+    },
+    {
+      "description": "Link Header to Ledger",
+      "join_condition": "GL_JE_HEADERS.LEDGER_ID = GL_LEDGERS.LEDGER_ID"
+    }
+  ],
+  "example_queries": [
+    {
+      "description": "Get all lines for a specific journal entry, including account segments and amounts.",
+      "sql": "SELECT l.JE_LINE_NUM, c.SEGMENT1, c.SEGMENT2, c.SEGMENT3, l.ENTERED_DR, l.ENTERED_CR FROM GL_JE_LINES l JOIN GL_CODE_COMBINATIONS c ON l.CODE_COMBINATION_ID = c.CODE_COMBINATION_ID WHERE l.JE_HEADER_ID = :je_header_id"
+    },
+    {
+      "description": "Get period-to-date balances for all accounts in a specific ledger and period.",
+      "sql": "SELECT c.SEGMENT1, c.SEGMENT2, c.SEGMENT3, b.PERIOD_NET_DR, b.PERIOD_NET_CR FROM GL_BALANCES b JOIN GL_CODE_COMBINATIONS c ON b.CODE_COMBINATION_ID = c.CODE_COMBINATION_ID WHERE b.LEDGER_ID = :ledger_id AND b.PERIOD_NAME = :period_name"
+    }
+  ]
+}

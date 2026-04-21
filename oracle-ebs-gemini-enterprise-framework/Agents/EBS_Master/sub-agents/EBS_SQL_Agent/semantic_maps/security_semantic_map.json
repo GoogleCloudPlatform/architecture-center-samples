@@ -1,0 +1,101 @@
+{
+  "module": "EBS Security & Responsibilities",
+  "description": "Semantic mapping for Oracle EBS user security tables. Covers FND users, showing and setting responsibilities, and the assignment that grants a user access to a responsibility.",
+  "tables": [
+    {
+      "table_name": "FND_USER",
+      "business_name": "EBS Users",
+      "description": "Stores Oracle EBS application user accounts. Each row represents a login account that can be assigned responsibilities.",
+      "columns": [
+        {"name": "USER_ID", "description": "Unique numeric identifier for the user (Primary Key)."},
+        {"name": "USER_NAME", "description": "The login name of the user (e.g. JSMITH). Case-insensitive in practice; stored in upper-case."},
+        {"name": "START_DATE", "description": "Date from which the user account is active."},
+        {"name": "END_DATE", "description": "Date the user account expires. NULL means the account does not expire. Active users have END_DATE IS NULL or END_DATE > SYSDATE."},
+        {"name": "EMAIL_ADDRESS", "description": "Email address associated with the account."},
+        {"name": "DESCRIPTION", "description": "Free-text description of the user."},
+        {"name": "LAST_LOGON_DATE", "description": "Timestamp of the user's most recent successful login."},
+        {"name": "PERSON_PARTY_ID", "description": "Foreign Key to HZ_PARTIES — links the FND user to an HR or TCA person record."}
+      ]
+    },
+    {
+      "table_name": "FND_RESPONSIBILITY_TL",
+      "business_name": "Responsibilities (translated)",
+      "description": "Translated display names and descriptions for EBS responsibilities. Use this table to look up a responsibility by its human-readable name. Join to FND_RESPONSIBILITY on RESPONSIBILITY_ID + APPLICATION_ID.",
+      "columns": [
+        {"name": "RESPONSIBILITY_ID", "description": "Numeric identifier for the responsibility (part of composite PK with APPLICATION_ID and LANGUAGE)."},
+        {"name": "APPLICATION_ID", "description": "Identifier of the application that owns this responsibility (part of composite PK)."},
+        {"name": "LANGUAGE", "description": "NLS language code for this row (e.g. US). Filter on LANGUAGE = 'US' to get English names."},
+        {"name": "RESPONSIBILITY_NAME", "description": "The human-readable name of the responsibility as it appears in EBS (e.g. 'Payables Manager')."},
+        {"name": "DESCRIPTION", "description": "Free-text description of what the responsibility provides access to."}
+      ]
+    },
+    {
+      "table_name": "FND_RESPONSIBILITY",
+      "business_name": "Responsibilities (base)",
+      "description": "Base table for EBS responsibilities. Each row defines an access role that groups menus and functions. Responsibilities are assigned to users via FND_USER_RESP_GROUPS_ALL.",
+      "columns": [
+        {"name": "RESPONSIBILITY_ID", "description": "Numeric identifier for the responsibility (Primary Key with APPLICATION_ID)."},
+        {"name": "APPLICATION_ID", "description": "Identifier of the application that owns the responsibility."},
+        {"name": "RESPONSIBILITY_KEY", "description": "Short internal code / developer key for the responsibility (e.g. AP_MANAGER). Useful for programmatic references."},
+        {"name": "MENU_ID", "description": "Foreign Key to FND_MENUS — the top-level menu this responsibility exposes."},
+        {"name": "DATA_GROUP_ID", "description": "Controls which database schema the responsibility queries against."},
+        {"name": "START_DATE", "description": "Date from which the responsibility is active."},
+        {"name": "END_DATE", "description": "Date the responsibility expires. NULL means no expiry."}
+      ]
+    },
+    {
+      "table_name": "FND_USER_RESP_GROUPS_ALL",
+      "business_name": "User-Responsibility Assignments",
+      "description": "Junction / assignment table that grants a specific EBS user access to a specific responsibility, optionally scoped to a security group. One row per user-responsibility-security_group combination.",
+      "columns": [
+        {"name": "USER_ID", "description": "Foreign Key to FND_USER — the user being granted access."},
+        {"name": "RESPONSIBILITY_ID", "description": "Foreign Key to FND_RESPONSIBILITY — the responsibility being granted."},
+        {"name": "RESPONSIBILITY_APPLICATION_ID", "description": "Foreign Key to FND_RESPONSIBILITY.APPLICATION_ID — needed with RESPONSIBILITY_ID to uniquely identify the responsibility."},
+        {"name": "SECURITY_GROUP_ID", "description": "Security group scoping the grant. Typically 0 for the standard security group."},
+        {"name": "START_DATE", "description": "Date from which the assignment is effective."},
+        {"name": "END_DATE", "description": "Date the assignment expires. NULL means the grant does not expire. Active assignments have END_DATE IS NULL or END_DATE > SYSDATE."}
+      ]
+    },
+    {
+      "table_name": "FND_APPLICATION",
+      "business_name": "Applications",
+      "description": "Lookup table of Oracle EBS application modules. Used to decode APPLICATION_ID values found in FND_RESPONSIBILITY and related tables.",
+      "columns": [
+        {"name": "APPLICATION_ID", "description": "Numeric identifier for the application (Primary Key)."},
+        {"name": "APPLICATION_SHORT_NAME", "description": "Short code for the application (e.g. SQLAP for Payables, AR for Receivables, FND for Application Object Library)."}
+      ]
+    }
+  ],
+  "common_joins": [
+    {
+      "description": "List all active responsibilities for a given user (by USER_NAME)",
+      "join_condition": "FND_USER.USER_ID = FND_USER_RESP_GROUPS_ALL.USER_ID AND FND_USER_RESP_GROUPS_ALL.RESPONSIBILITY_ID = FND_RESPONSIBILITY_TL.RESPONSIBILITY_ID AND FND_USER_RESP_GROUPS_ALL.RESPONSIBILITY_APPLICATION_ID = FND_RESPONSIBILITY_TL.APPLICATION_ID AND FND_RESPONSIBILITY_TL.LANGUAGE = 'US' AND (FND_USER_RESP_GROUPS_ALL.END_DATE IS NULL OR FND_USER_RESP_GROUPS_ALL.END_DATE > SYSDATE)"
+    },
+    {
+      "description": "Include the owning application short name alongside the responsibility",
+      "join_condition": "FND_RESPONSIBILITY.APPLICATION_ID = FND_APPLICATION.APPLICATION_ID"
+    },
+    {
+      "description": "Join base responsibility to its translated name",
+      "join_condition": "FND_RESPONSIBILITY.RESPONSIBILITY_ID = FND_RESPONSIBILITY_TL.RESPONSIBILITY_ID AND FND_RESPONSIBILITY.APPLICATION_ID = FND_RESPONSIBILITY_TL.APPLICATION_ID AND FND_RESPONSIBILITY_TL.LANGUAGE = 'US'"
+    },
+    {
+      "description": "Filter for currently active user accounts only",
+      "join_condition": "FND_USER.END_DATE IS NULL OR FND_USER.END_DATE > SYSDATE"
+    }
+  ],
+  "example_queries": [
+    {
+      "description": "All active responsibilities assigned to a specific user",
+      "sql": "SELECT r.responsibility_key, a.application_short_name, rt.responsibility_name||' - '||a.application_short_name as description FROM fnd_user u JOIN fnd_user_resp_groups_all urg ON u.user_id = urg.user_id     JOIN fnd_responsibility       r ON urg.responsibility_id = r.responsibility_id                                  AND urg.responsibility_application_id = r.application_id     JOIN fnd_responsibility_tl    rt ON r.responsibility_id = rt.responsibility_id                                      AND r.application_id = rt.application_id                                      AND rt.language = 'US'     JOIN fnd_application          a ON r.application_id = a.application_id WHERE         upper(u.user_name) = upper(:username)     AND ( urg.end_date IS NULL           OR urg.end_date > sysdate ) ORDER BY     rt.responsibility_name"
+    },
+    {
+      "description": "All users who hold a specific responsibility (by name)",
+      "sql": "SELECT u.USER_NAME, u.EMAIL_ADDRESS, urg.START_DATE, urg.END_DATE FROM FND_USER u JOIN FND_USER_RESP_GROUPS_ALL urg ON u.USER_ID = urg.USER_ID JOIN FND_RESPONSIBILITY_TL rt ON urg.RESPONSIBILITY_ID = rt.RESPONSIBILITY_ID AND urg.RESPONSIBILITY_APPLICATION_ID = rt.APPLICATION_ID AND rt.LANGUAGE = 'US' WHERE UPPER(rt.RESPONSIBILITY_NAME) = UPPER(:responsibility_name) AND (urg.END_DATE IS NULL OR urg.END_DATE > SYSDATE) AND (u.END_DATE IS NULL OR u.END_DATE > SYSDATE) ORDER BY u.USER_NAME"
+    },
+    {
+      "description": "Set and initialize active responsibility for user",
+      "sql": "BEGIN fnd_global.apps_initialize( user_id => :user_id, resp_id => :resp_id, resp_appl_id => :resp_appl_id ); END;"
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "module": "Accounts Payable (AP)",
+  "description": "Semantic mapping for Oracle EBS AP tables to business concepts.",
+  "tables": [
+    {
+      "table_name": "AP_INVOICES_ALL",
+      "business_name": "Invoices",
+      "description": "Stores header information for supplier invoices.",
+      "columns": [
+        {"name": "INVOICE_ID", "description": "Unique identifier for the invoice (Primary Key)."},
+        {"name": "INVOICE_NUM", "description": "The supplier's invoice number."},
+        {"name": "INVOICE_DATE", "description": "The date of the invoice."},
+        {"name": "VENDOR_ID", "description": "Foreign Key to PO_VENDORS (The supplier)."},
+        {"name": "VENDOR_SITE_ID", "description": "Foreign Key to PO_VENDOR_SITES_ALL (The supplier site)."},
+        {"name": "INVOICE_AMOUNT", "description": "The total amount of the invoice."},
+        {"name": "AMOUNT_PAID", "description": "The amount paid so far on the invoice."},
+        {"name": "INVOICE_CURRENCY_CODE", "description": "Currency of the invoice (e.g., USD, EUR)."},
+        {"name": "PAYMENT_STATUS_FLAG", "description": "Status of payment (Y=Fully Paid, N=Not Paid, P=Partially Paid)."}
+      ]
+    },
+    {
+      "table_name": "AP_INVOICE_LINES_ALL",
+      "business_name": "Invoice Lines",
+      "description": "Stores line item details for supplier invoices.",
+      "columns": [
+        {"name": "INVOICE_ID", "description": "Foreign Key to AP_INVOICES_ALL."},
+        {"name": "LINE_NUMBER", "description": "The line number."},
+        {"name": "LINE_TYPE_LOOKUP_CODE", "description": "Type of line (ITEM, TAX, FREIGHT, MISC)."},
+        {"name": "DESCRIPTION", "description": "Description of the line item."},
+        {"name": "AMOUNT", "description": "The amount for the line item."}
+      ]
+    },
+    {
+      "table_name": "AP_CHECKS_ALL",
+      "business_name": "Payments / Checks",
+      "description": "Stores information about payments made to suppliers.",
+      "columns": [
+        {"name": "CHECK_ID", "description": "Unique identifier for the payment (Primary Key)."},
+        {"name": "CHECK_NUMBER", "description": "The check or payment reference number."},
+        {"name": "CHECK_DATE", "description": "The date of the payment."},
+        {"name": "AMOUNT", "description": "The total amount of the payment."},
+        {"name": "VENDOR_ID", "description": "Foreign Key to PO_VENDORS (The supplier paid)."},
+        {"name": "STATUS_LOOKUP_CODE", "description": "Status of the payment (NEGOTIABLE, CLEARED, VOIDED)."}
+      ]
+    },
+    {
+      "table_name": "AP_SUPPLIERS",
+      "business_name": "Suppliers",
+      "description": "Stores information about suppliers (vendors). Note: Replaces PO_VENDORS in newer R12 versions, but PO_VENDORS is often a view to this.",
+      "columns": [
+        {"name": "VENDOR_ID", "description": "Unique identifier for the supplier (Primary Key)."},
+        {"name": "VENDOR_NAME", "description": "The name of the supplier."},
+        {"name": "SEGMENT1", "description": "The supplier number."}
+      ]
+    },
+    {
+      "table_name": "AP_SUPPLIER_SITES_ALL",
+      "business_name": "Supplier Sites",
+      "description": "Stores addresses and site-specific information for suppliers.",
+      "columns": [
+        {"name": "VENDOR_SITE_ID", "description": "Unique identifier for the site (Primary Key)."},
+        {"name": "VENDOR_ID", "description": "Foreign Key to AP_SUPPLIERS."},
+        {"name": "VENDOR_SITE_CODE", "description": "The name or code for the site (e.g., HEADQUARTERS, SAN_FRANCISCO)."},
+        {"name": "ADDRESS_LINE1", "description": "Address line 1."},
+        {"name": "CITY", "description": "City."}
+      ]
+    }
+  ],
+  "common_joins": [
+    {
+      "description": "Link Invoice Header to Supplier Name",
+      "join_condition": "AP_INVOICES_ALL.VENDOR_ID = AP_SUPPLIERS.VENDOR_ID"
+    },
+    {
+      "description": "Link Invoice Header to Supplier Site",
+      "join_condition": "AP_INVOICES_ALL.VENDOR_SITE_ID = AP_SUPPLIER_SITES_ALL.VENDOR_SITE_ID"
+    },
+    {
+      "description": "Link Invoice Header to Lines",
+      "join_condition": "AP_INVOICES_ALL.INVOICE_ID = AP_INVOICE_LINES_ALL.INVOICE_ID"
+    }
+  ],
+  "example_queries": [
+    {
+      "description": "Get all unpaid invoices with supplier names and amounts.",
+      "sql": "SELECT i.INVOICE_NUM, s.VENDOR_NAME, i.INVOICE_AMOUNT FROM AP_INVOICES_ALL i JOIN AP_SUPPLIERS s ON i.VENDOR_ID = s.VENDOR_ID WHERE i.PAYMENT_STATUS_FLAG = 'N'"
+    },
+    {
+      "description": "Get all payments made in the last month with supplier names.",
+      "sql": "SELECT c.CHECK_NUMBER, c.CHECK_DATE, c.AMOUNT, s.VENDOR_NAME FROM AP_CHECKS_ALL c JOIN AP_SUPPLIERS s ON c.VENDOR_ID = s.VENDOR_ID WHERE c.CHECK_DATE >= ADD_MONTHS(SYSDATE, -1)"
+    }
+   ]
+}

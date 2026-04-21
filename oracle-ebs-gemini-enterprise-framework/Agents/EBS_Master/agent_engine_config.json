@@ -1,0 +1,5 @@
+{
+  "display_name": "EBS Agent",
+  "description": "A helpful assistant for user questions about Oracle EBS data.",
+  "service_account": "ebs-service-account@ai-ny-demo.iam.gserviceaccount.com"
+}
