@@ -224,3 +224,5 @@ experiments/*
 MCPServers/mcp-oracle-ebs/logging_config.py
 MCPServers/mcp-oracle-sql/logging_config.py
 Agents/EBS_Master/logging_config.py
+oracle-ebs-gemini-enterprise-framework/MCPServers/mcp-toolbox-ebs/tools.yaml
+Agents/.agent_id

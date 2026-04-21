@@ -24,6 +24,65 @@ Which sub-agents are active is controlled by the `enabled_agents` list in `EBS_M
 | `EBS_API_Agent` | `EBS_Master/agents/EBS_API_Agent/` | Interacts with Oracle EBS REST/SOAP web services. Handles authentication, session context, and API-layer operations such as invoice creation and supplier management. |
 | `EBS_Graphs_Agent` | `EBS_Master/agents/EBS_Graphs_Agent/` | Accepts tabular data (JSON array or CSV) from other sub-agents and renders bar charts, line charts, pie charts, or formatted Markdown tables. |
 
+## Deployment Steps
+All Makefile commands should be run from the project root for all the deployments.
+
+### 1. Setup the environment
+
+```bash
+# Install required tools
+make setup
+
+# Verify Google Cloud account and project
+gcloud config list
+
+# Verify Google Cloud access and IAM roles
+make verify-gcp-access
+```
+
+---
+
+### 2. Authenticate with Google Cloud and configure Application Default Credentials:
+
+Terraform uses Application Default Credentials (ADC) to interact with Google Cloud. Run the following command before initializing Terraform:
+
+```bash
+gcloud auth application-default login
+```
+
+---
+
+### 3. Deploy MCP Servers
+
+Run the commands below to deploy MCP Servers.
+
+```bash
+# Initialize Terraform backend and modules
+make init
+
+# Set the EBS URL, credentials and network details
+make set_config_mcp_servers
+
+# Plan the changes
+make plan_mcp_server
+
+# Deploy the changes
+make make deploy_mcp_server
+```
+### 4. Deploy Agents
+
+Run the commands to deploy the Agents
+
+```bash
+# Plan the changes
+make plan_ebs_agents
+
+# Deploy the changes
+make make deploy_ebs_agents
+```
+
+---
+
 ### [MCPOracleEBS](MCPServers/mcp-oracle-ebs/)
 An MCP server designed to call Oracle EBS APIs.
 - **Purpose**: Interface with Oracle EBS via API calls.

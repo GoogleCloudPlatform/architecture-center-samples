@@ -55,10 +55,12 @@ format: ## Format Terraform files
 lint: ## Run pre-commit linting
 	pre-commit run --all-files
 
-set_config_mcp_servers: ## Prompt for DB and Network configs and save to tfvars/tools.yaml
+set_config_mcp_servers: ## Set configuration for MCP Server (DB connection, VPC, Subnet)
 	@echo "Configuring MCP Server..."
-	@touch infra.auto.tfvars
-	@if grep -qE "apps.example.com:1521/EBSDB|connectionString:[[:space:]]*\"\"|connectionString:[[:space:]]*$$" MCPServers/mcp-toolbox-ebs/tools.yaml; then \
+	@if [ ! -f MCPServers/mcp-toolbox-ebs/tools.yaml ]; then \
+		cp MCPServers/mcp-toolbox-ebs/tools.yaml.example MCPServers/mcp-toolbox-ebs/tools.yaml; \
+	fi
+	@if grep -qE "apps.example.com|connectionString:[[:space:]]*\"\"|YOUR_PASSWORD" MCPServers/mcp-toolbox-ebs/tools.yaml; then \
 		read -p "Enter Oracle DB Connection String: " db_conn; \
 		read -p "Enter Oracle DB User: " db_user; \
 		read -p "Enter Oracle DB Password: " db_pass; \
@@ -66,19 +68,23 @@ set_config_mcp_servers: ## Prompt for DB and Network configs and save to tfvars/
 		sed -i.bak -E "s|^([[:space:]]*)user:.*|\1user: $$db_user|" MCPServers/mcp-toolbox-ebs/tools.yaml; \
 		sed -i.bak -E "s|^([[:space:]]*)password:.*|\1password: $$db_pass|" MCPServers/mcp-toolbox-ebs/tools.yaml; \
 		rm -f MCPServers/mcp-toolbox-ebs/*.bak; \
-		echo "tools.yaml updated successfully!"; \
-	else \
-		echo "tools.yaml is already configured."; \
 	fi
+	@touch infra.auto.tfvars
 	@if ! grep -q "vpc_name" infra.auto.tfvars; then \
-		read -p "Enter VPC Name: " vpc_name; \
-		echo "vpc_name = \"$$vpc_name\"" >> infra.auto.tfvars; \
+		read -p "Enter VPC Name: " vpc; echo "vpc_name = \"$$vpc\"" >> infra.auto.tfvars; \
 	fi
 	@if ! grep -q "subnet_name" infra.auto.tfvars; then \
-		read -p "Enter Subnet Name: " subnet_name; \
-		echo "subnet_name = \"$$subnet_name\"" >> infra.auto.tfvars; \
+		read -p "Enter Subnet Name: " sub; echo "subnet_name = \"$$sub\"" >> infra.auto.tfvars; \
 	fi
-	@echo "MCP Server configuration complete and saved to infra.auto.tfvars."
+
+reset_config: ## Clear local configs to force re-prompting
+	@echo "Resetting configurations..."
+	@# Replace current values with dummy values in tools.yaml to trigger the grep again
+	@sed -i.bak -E 's|^([[:space:]]*)connectionString:.*|\1connectionString: "apps.example.com:1521/EBSDB"|' MCPServers/mcp-toolbox-ebs/tools.yaml
+	@sed -i.bak -E 's|^([[:space:]]*)user:.*|\1user: apps_ai|' MCPServers/mcp-toolbox-ebs/tools.yaml
+	@sed -i.bak -E 's|^([[:space:]]*)password:.*|\1password: apps_ai|' MCPServers/mcp-toolbox-ebs/tools.yaml
+	@rm -f MCPServers/mcp-toolbox-ebs/*.bak *.bak
+	@echo "Done. You can now run 'make set_config_mcp_servers' to enter new values."
 
 plan_mcp_server: ## Plan Terraform for MCP Server
 	terraform -chdir=$(TF_DIR) plan -target="null_resource.oracle_ebs_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
@@ -91,11 +97,16 @@ destroy_mcp_server: ## Destroy MCP Server
 
 plan_ebs_agents: ## Plan Terraform for EBS agents
 	@touch infra.auto.tfvars
-	@read -p "Enter MCP Server EBS URL: " ebs_url; \
-	if grep -q "mcp_server_ebs_url" infra.auto.tfvars; then \
-		sed -i.bak "s|^mcp_server_ebs_url[[:space:]]*=.*|mcp_server_ebs_url = \"$$ebs_url\"|" infra.auto.tfvars && rm infra.auto.tfvars.bak; \
+	$(eval MCP_URL=$(shell gcloud run services describe mcp-toolbox-ebs --project $(PROJECT_ID) --region northamerica-northeast2 --format 'value(status.url)' 2>/dev/null))
+	@if [ -z "$(MCP_URL)" ]; then \
+		echo "Error: Could not find MCP Server URL. Is it deployed?"; \
+		exit 1; \
+	fi
+	@echo "Found MCP URL: $(MCP_URL)"
+	@if grep -q "mcp_server_ebs_url" infra.auto.tfvars; then \
+		sed -i.bak "s|^mcp_server_ebs_url[[:space:]]*=.*|mcp_server_ebs_url = \"$(MCP_URL)\"|" infra.auto.tfvars && rm infra.auto.tfvars.bak; \
 	else \
-		echo "mcp_server_ebs_url = \"$$ebs_url\"" >> infra.auto.tfvars; \
+		echo "mcp_server_ebs_url = \"$(MCP_URL)\"" >> infra.auto.tfvars; \
 	fi
 	terraform -chdir=$(TF_DIR) plan -target="null_resource.oracle_ebs_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
 
