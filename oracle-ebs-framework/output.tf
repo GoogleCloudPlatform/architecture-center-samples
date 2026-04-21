@@ -5,7 +5,7 @@ output "vision_instance_zone" {
 
 output "exascale_vision_instance_zone" {
   description = "The zone of the Oracle Exascale Vision instance."
-  value       = try(regex("zones/([^/]+)/", google_compute_instance.exascale_vision[0].self_link)[0], "")  
+  value       = try(regex("zones/([^/]+)/", google_compute_instance.exascale_vision[0].self_link)[0], "")
 }
 
 output "apps_instance_zone" {
@@ -27,7 +27,7 @@ output "dbs_instance_zone" {
 output "admin_password" {
   description = "Admin password for Oracle E-Business Suite. Retrieve securely using 'terraform output admin_password'."
   value       = one(random_password.admin_password[*].result)
-  sensitive   = true  
+  sensitive   = true
 }
 
 output "deployment_summary" {
