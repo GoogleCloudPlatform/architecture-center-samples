@@ -51,6 +51,10 @@ gcloud auth application-default login
 ```
 
 ---
+### Prerequisites
+To use the Gemini - EBS framework, ensure you have a functioning EBS environment. The framework can be executed from `architecture-center-samples/oracle-ebs-framework`.
+
+You will need the connection strings, VPC network name, and subnet name.
 
 ### 3. Deploy MCP Servers
 
@@ -67,7 +71,7 @@ make set_config_mcp_servers
 make plan_mcp_server
 
 # Deploy the changes
-make make deploy_mcp_server
+make deploy_mcp_server
 ```
 ### 4. Deploy Agents
 
@@ -78,7 +82,7 @@ Run the commands to deploy the Agents
 make plan_ebs_agents
 
 # Deploy the changes
-make make deploy_ebs_agents
+make deploy_ebs_agents
 ```
 
 ---
