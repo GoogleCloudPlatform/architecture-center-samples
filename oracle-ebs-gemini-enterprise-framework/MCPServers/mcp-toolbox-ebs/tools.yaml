@@ -1,0 +1,223 @@
+sources:
+    ebs-oracle-source:
+        kind: "oracle"
+        connectionString: "apps.example.com:1521/EBSDB"
+        user: apps_ai
+        password: apps_ai
+
+
+tools:
+    execute_sql:
+        kind: oracle-execute-sql
+        source: ebs-oracle-source
+        description: "Executes an arbitrary SQL statement against the connected Oracle EBS database. Use this tool when you need to run custom SELECT queries or administrative commands that are not covered by other specific tools. Note: This tool is read-only. Always verify table structures using list_tables before writing custom queries."
+        readOnly: true
+
+    ebs_init:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "REQUIRED INITIALIZATION STEP: Initializes the Oracle EBS session context. You MUST execute this tool successfully before running any other EBS-specific queries or tools. It configures the user ID (email address) and optional context like responsibility, organization, and application short name to ensure data access and security policies are applied correctly for the session."
+        statement: |
+          select
+            ge_ebs_mcp_tools.ebs_initialize_context(
+                    :user_id, 
+                    :operating_unit,
+                    :responsibility,  
+                    :application_short_name
+                    ) as initialization_result
+          from dual
+
+        parameters:
+          - name: user_id
+            type: string
+            required: true
+            description: The email address of the user to initialize.
+          - name: operating_unit
+            type: string
+            required: false
+            description: The name of the operating unit to use when initializing the session. 
+            default: NULL
+          - name: responsibility
+            type: string
+            required: false
+            description: The name of the responsibility to use when initializing the session. 
+            default: NULL
+          - name: application_short_name
+            type: string
+            required: false
+            description: The short name of the application to use when initializing the session. 
+            default: NULL
+
+    reserve_item:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Reserves an inventory item in Oracle EBS by calling the ge_ebs_mcp_tools.reserve_item procedure. This tool allows you to specify the item, quantity, and reservation details to create a reservation for that item. Use this tool when you need to programmatically reserve inventory items based on certain criteria or events. Note: Ensure that the session is initialized with 'ebs_init' before using this tool to avoid permission errors."
+        statement: |
+          select
+             ge_ebs_mcp_tools.reserve_item(
+                    :item_name, 
+                    :quantity,
+                    :location
+                    ) as reserve_item_result
+          from dual
+
+        parameters:
+          - name: item_name
+            type: string
+            required: true
+            description: The name of the item to reserve.
+          - name: quantity
+            type: integer
+            required: true
+            default: 1
+            description: The quantity of the item to reserve.
+          - name: location
+            type: string
+            required: false
+            description: The name of the location to use when reserving the item.
+            default: ""
+
+    delete_reserve_item:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Deletes a reservation for an inventory item in Oracle EBS by calling the ge_ebs_mcp_tools.delete_reserve_item procedure. This tool allows you to specify the item, quantity, and reservation details to delete a reservation for that item. Use this tool when you need to programmatically delete inventory item reservations based on certain criteria or events. Note: Ensure that the session is initialized with 'ebs_init' before using this tool to avoid permission errors."
+        statement: |
+          select
+             ge_ebs_mcp_tools.delete_reservation(
+                    :reservation_id
+                    ) as delete_reservation_result
+          from dual
+  
+        parameters:
+          - name: reservation_id
+            type: string
+            required: true
+            description: The ID of the reservation to delete.
+    
+    create_onhand:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Creates an onhand inventory item in Oracle EBS by calling the ge_ebs_mcp_tools.create_onhand procedure. This tool allows you to specify the item, quantity, and location details to create an onhand item. Use this tool when you need to programmatically create onhand inventory items based on certain criteria or events. Note: Ensure that the session is initialized with 'ebs_init' before using this tool to avoid permission errors."
+        statement: |
+          select
+            ge_ebs_mcp_tools.create_onhand(
+                  :item_name, 
+                  :quantity,
+                  :location
+                  ) as create_onhand_result
+          from dual
+
+        parameters:
+          - name: item_name
+            type: string
+            required: true
+            description: The name of the item to create onhand for.
+          - name: quantity
+            type: integer
+            required: true
+            default: 1
+            description: The quantity of the item to create onhand for.
+          - name: location
+            type: string
+            required: false
+            description: The name of the location to use when creating the onhand item.
+            default: ""
+
+    create_ap_invoice:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Creates an AP invoice in Oracle EBS by calling the ge_ebs_mcp_tools.create_ap_invoice procedure. This tool allows you to specify the invoice details to create an AP invoice. Use this tool when you need to programmatically create AP invoices based on certain criteria or events. Note: Ensure that the session is initialized with 'ebs_init' before using this tool to avoid permission errors."
+        statement: |
+          select
+            ge_ebs_mcp_tools.create_ap_invoice(
+                  :vendor_id,
+                  :invoice_number, 
+                  :invoice_amount,
+                  :location,
+                  :description
+                  ) as create_ap_invoice_result
+          from dual
+
+        parameters:
+          - name: vendor_id
+            type: string
+            required: true
+            description: The ID of the vendor to create the AP invoice for.
+          - name: invoice_number
+            type: string
+            required: true
+            description: The number of the invoice to create.
+          - name: invoice_amount
+            type: string
+            required: true
+            description: The amount of the invoice to create.
+          - name: location
+            type: string
+            required: false
+            description: The name of the location to use when creating the AP invoice.
+            default: ""
+          - name: description
+            type: string
+            required: false
+            description: A description to use when creating the AP invoice.
+            default: ""
+
+    list_ebs_responsibilities:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Searches and retrieves all available Oracle EBS responsibilities for a specific user based on their user ID. Returns the user ID, application name, responsibility name, and operating unit details. Use this tool to discover valid responsibility, application, and operating unit values that can be passed to the 'ebs_init' tool for session initialization."
+        statement: |
+          SELECT DISTINCT
+                fu.email_address as user_name,
+                fu.user_id,
+                fa.application_short_name,
+                fa.application_name,
+                fr.responsibility_name,
+                hou.organization_id AS operating_unit_id,
+                hou.name            AS operating_unit_name
+            FROM
+                    fnd_user fu
+                JOIN fnd_user_resp_groups_direct furg ON fu.user_id = furg.user_id
+                JOIN fnd_responsibility_vl       fr ON furg.responsibility_id = fr.responsibility_id AND furg.responsibility_application_id = fr.application_id
+                JOIN fnd_application_vl          fa ON fr.application_id = fa.application_id
+                JOIN fnd_profile_option_values   fpov ON fpov.level_value = furg.responsibility_id AND fpov.level_id = 10003 -- Level 10003 is 'Responsibility' level
+                JOIN fnd_profile_options         fp ON fpov.profile_option_id = fp.profile_option_id
+                JOIN hr_operating_units          hou ON hou.organization_id = TO_NUMBER(fpov.profile_option_value)
+            WHERE
+                    fp.profile_option_name = 'ORG_ID'
+                AND fu.email_address LIKE :user_id
+                AND fa.application_short_name NOT IN ( 'SYSADMIN', 'FND', 'XDO', 'ALR' )
+            ORDER BY
+                fr.responsibility_name
+        parameters:
+          - name: user_id
+            type: string
+            required: true
+            description: The ID of the user to get responsibilities for.
+
+    list_ebs_current_context:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Retrieves the active Oracle EBS session context. Call this tool after running 'ebs_init' to verify that the session was successfully initialized with the correct user, responsibility, application, and operating unit context. Returns current IDs and names for these session variables. Use this for troubleshooting if subsequent queries return unexpected results or permission errors."
+        statement: |
+          SELECT 
+                fu.email_address as user_name,
+                fr.responsibility_name,
+                fsg.security_group_name,    
+                fa.application_short_name,
+                hou.name AS operating_unit_name,
+                hou.organization_id AS operating_unit_id
+            FROM 
+                fnd_user fu,
+                fnd_responsibility_vl fr,
+                fnd_application fa,
+                hr_operating_units hou,
+                fnd_security_groups_vl fsg   
+            WHERE 
+                fu.user_id = fnd_global.user_id
+                AND fr.responsibility_id = fnd_global.resp_id
+                AND fr.application_id = fnd_global.resp_appl_id
+                AND fa.application_id = fnd_global.resp_appl_id
+                AND fsg.security_group_id = fnd_global.security_group_id 
+                AND hou.organization_id(+) = fnd_global.org_id
+        parameters: []

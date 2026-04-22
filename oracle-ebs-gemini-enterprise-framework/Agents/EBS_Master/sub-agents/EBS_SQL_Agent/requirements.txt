@@ -1,0 +1,4 @@
+mcp
+google-cloud-aiplatform
+google-adk
+opentelemetry-instrumentation-google-genai

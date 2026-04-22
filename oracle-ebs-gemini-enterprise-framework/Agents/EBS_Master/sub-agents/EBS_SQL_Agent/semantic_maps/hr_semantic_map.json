@@ -1,0 +1,372 @@
+{
+  "module": "Human Resources (HR)",
+  "description": "Semantic mapping for Oracle EBS Human Resources tables to business concepts.",
+  "tables": [
+    {
+      "table_name": "PER_ALL_PEOPLE_F",
+      "business_name": "People / Employees",
+      "description": "Date-tracked table storing personal information for all people in the system (employees, applicants, contacts). Always filter by EFFECTIVE_START_DATE and EFFECTIVE_END_DATE to get the current record.",
+      "columns": [
+        {"name": "PERSON_ID", "description": "Unique identifier for the person (Primary Key)."},
+        {"name": "EMPLOYEE_NUMBER", "description": "The employee number (user-visible identifier for employees)."},
+        {"name": "APPLICANT_NUMBER", "description": "Applicant number if the person is an applicant."},
+        {"name": "FIRST_NAME", "description": "First name of the person."},
+        {"name": "LAST_NAME", "description": "Last/family name of the person."},
+        {"name": "FULL_NAME", "description": "System-generated full name (Last, First)."},
+        {"name": "KNOWN_AS", "description": "Preferred name or nickname."},
+        {"name": "DATE_OF_BIRTH", "description": "Date of birth of the person."},
+        {"name": "SEX", "description": "Gender: M (Male), F (Female)."},
+        {"name": "NATIONAL_IDENTIFIER", "description": "National ID such as Social Security Number (SSN) or equivalent."},
+        {"name": "NATIONALITY", "description": "Nationality of the person."},
+        {"name": "MARITAL_STATUS", "description": "Marital status lookup code."},
+        {"name": "EMAIL_ADDRESS", "description": "Work email address."},
+        {"name": "CURRENT_EMPLOYEE_FLAG", "description": "Y if the person is currently an employee."},
+        {"name": "CURRENT_APPLICANT_FLAG", "description": "Y if the person currently has an active application."},
+        {"name": "PERSON_TYPE", "description": "Indicates the type(s) of person record (EMP, APL, EX-EMP, etc.)."},
+        {"name": "EFFECTIVE_START_DATE", "description": "Start date of this date-tracked record version."},
+        {"name": "EFFECTIVE_END_DATE", "description": "End date of this date-tracked record version (use SYSDATE for current)."},
+        {"name": "CREATION_DATE", "description": "Date the person record was first created."},
+        {"name": "BUSINESS_GROUP_ID", "description": "Foreign Key to HR_ALL_ORGANIZATION_UNITS (the business group)."}
+      ]
+    },
+    {
+      "table_name": "PER_ALL_ASSIGNMENTS_F",
+      "business_name": "Employee Assignments",
+      "description": "Date-tracked table storing job assignment details for employees, including their position, grade, location, and manager. Always filter by EFFECTIVE_START_DATE / EFFECTIVE_END_DATE and ASSIGNMENT_TYPE = 'E' for employees.",
+      "columns": [
+        {"name": "ASSIGNMENT_ID", "description": "Unique identifier for the assignment (Primary Key)."},
+        {"name": "PERSON_ID", "description": "Foreign Key to PER_ALL_PEOPLE_F."},
+        {"name": "ASSIGNMENT_NUMBER", "description": "User-visible assignment number."},
+        {"name": "ASSIGNMENT_TYPE", "description": "Type of assignment: E (Employee), A (Applicant), C (Contingent Worker)."},
+        {"name": "PRIMARY_FLAG", "description": "Y if this is the employee's primary assignment."},
+        {"name": "ORGANIZATION_ID", "description": "Foreign Key to HR_ALL_ORGANIZATION_UNITS (the department/org unit)."},
+        {"name": "JOB_ID", "description": "Foreign Key to PER_JOBS (the job role)."},
+        {"name": "POSITION_ID", "description": "Foreign Key to HR_ALL_POSITIONS_F (the specific position)."},
+        {"name": "GRADE_ID", "description": "Foreign Key to PER_GRADES (the salary/pay grade)."},
+        {"name": "LOCATION_ID", "description": "Foreign Key to HR_LOCATIONS_ALL (the work location)."},
+        {"name": "SUPERVISOR_ID", "description": "Foreign Key to PER_ALL_PEOPLE_F (the direct manager's PERSON_ID)."},
+        {"name": "PAYROLL_ID", "description": "Foreign Key to PAY_ALL_PAYROLLS_F (the payroll this employee belongs to)."},
+        {"name": "PAY_BASIS_ID", "description": "Foreign Key to PER_PAY_BASES (salary basis: Annual, Monthly, Hourly)."},
+        {"name": "EMPLOYMENT_CATEGORY", "description": "Employment category lookup (e.g., FR=Full Time Regular, PR=Part Time Regular)."},
+        {"name": "ASSIGNMENT_STATUS_TYPE_ID", "description": "Foreign Key to PER_ASSIGNMENT_STATUS_TYPES (Active, Suspended, Terminated)."},
+        {"name": "EFFECTIVE_START_DATE", "description": "Start date of this assignment version."},
+        {"name": "EFFECTIVE_END_DATE", "description": "End date of this assignment version."},
+        {"name": "BUSINESS_GROUP_ID", "description": "Foreign Key to HR_ALL_ORGANIZATION_UNITS (the business group)."},
+        {"name": "NORMAL_HOURS", "description": "Normal hours worked per week."}
+      ]
+    },
+    {
+      "table_name": "HR_ALL_ORGANIZATION_UNITS",
+      "business_name": "Organizations / Departments",
+      "description": "Stores all organization units including business groups, legal entities, operating units, and departments.",
+      "columns": [
+        {"name": "ORGANIZATION_ID", "description": "Unique identifier for the organization unit (Primary Key)."},
+        {"name": "NAME", "description": "Name of the organization unit (e.g., department name, company name)."},
+        {"name": "TYPE", "description": "Classification type of the organization."},
+        {"name": "DATE_FROM", "description": "Date the organization became effective."},
+        {"name": "DATE_TO", "description": "Date the organization was deactivated (NULL if still active)."},
+        {"name": "BUSINESS_GROUP_ID", "description": "Foreign Key to the parent business group organization."},
+        {"name": "INTERNAL_EXTERNAL_FLAG", "description": "INT for internal organizations, EXT for external."}
+      ]
+    },
+    {
+      "table_name": "PER_JOBS",
+      "business_name": "Jobs",
+      "description": "Stores job definitions (generic roles, e.g., Software Engineer, Accountant) used across positions.",
+      "columns": [
+        {"name": "JOB_ID", "description": "Unique identifier for the job (Primary Key)."},
+        {"name": "JOB_DEFINITION_ID", "description": "Foreign Key to the job group definition."},
+        {"name": "NAME", "description": "The job name (e.g., Software Engineer Level 2)."},
+        {"name": "DATE_FROM", "description": "Date the job became effective."},
+        {"name": "DATE_TO", "description": "Date the job was deactivated (NULL if active)."},
+        {"name": "BUSINESS_GROUP_ID", "description": "Foreign Key to the business group."}
+      ]
+    },
+    {
+      "table_name": "HR_ALL_POSITIONS_F",
+      "business_name": "Positions",
+      "description": "Date-tracked table storing specific positions (a position is a specific instance of a job in an organization, e.g., CFO of Finance Dept).",
+      "columns": [
+        {"name": "POSITION_ID", "description": "Unique identifier for the position (Primary Key)."},
+        {"name": "NAME", "description": "The position name."},
+        {"name": "JOB_ID", "description": "Foreign Key to PER_JOBS."},
+        {"name": "ORGANIZATION_ID", "description": "Foreign Key to HR_ALL_ORGANIZATION_UNITS (the owning department)."},
+        {"name": "LOCATION_ID", "description": "Foreign Key to HR_LOCATIONS_ALL."},
+        {"name": "STATUS", "description": "Position status: VALID, FROZEN, ELIMINATED."},
+        {"name": "EFFECTIVE_START_DATE", "description": "Start date of this position version."},
+        {"name": "EFFECTIVE_END_DATE", "description": "End date of this position version."},
+        {"name": "BUSINESS_GROUP_ID", "description": "Foreign Key to the business group."}
+      ]
+    },
+    {
+      "table_name": "PER_GRADES",
+      "business_name": "Grades",
+      "description": "Stores salary/pay grade definitions used to group jobs and positions into pay bands.",
+      "columns": [
+        {"name": "GRADE_ID", "description": "Unique identifier for the grade (Primary Key)."},
+        {"name": "NAME", "description": "The grade name (e.g., Band 1, Grade A, Pay Level 5)."},
+        {"name": "DATE_FROM", "description": "Effective start date for the grade."},
+        {"name": "DATE_TO", "description": "Effective end date (NULL if active)."},
+        {"name": "BUSINESS_GROUP_ID", "description": "Foreign Key to the business group."}
+      ]
+    },
+    {
+      "table_name": "HR_LOCATIONS_ALL",
+      "business_name": "Work Locations",
+      "description": "Stores physical work location information (offices, sites, buildings).",
+      "columns": [
+        {"name": "LOCATION_ID", "description": "Unique identifier for the location (Primary Key)."},
+        {"name": "LOCATION_CODE", "description": "Short code for the location (e.g., NY-HQ, LON-01)."},
+        {"name": "DESCRIPTION", "description": "Description or full name of the location."},
+        {"name": "ADDRESS_LINE_1", "description": "Address line 1."},
+        {"name": "ADDRESS_LINE_2", "description": "Address line 2."},
+        {"name": "TOWN_OR_CITY", "description": "City or town."},
+        {"name": "REGION_2", "description": "State or province."},
+        {"name": "POSTAL_CODE", "description": "ZIP or postal code."},
+        {"name": "COUNTRY", "description": "Country code."},
+        {"name": "INACTIVE_DATE", "description": "Date the location was deactivated (NULL if active)."}
+      ]
+    },
+    {
+      "table_name": "PER_PERSON_TYPES",
+      "business_name": "Person Types",
+      "description": "Defines the different person types used to classify people (e.g., Employee, Applicant, Ex-Employee).",
+      "columns": [
+        {"name": "PERSON_TYPE_ID", "description": "Unique identifier for the person type (Primary Key)."},
+        {"name": "USER_PERSON_TYPE", "description": "User-defined name for the person type."},
+        {"name": "SYSTEM_PERSON_TYPE", "description": "System classification: EMP, APL, EX-EMP, CWK, EX-CWK, CON."},
+        {"name": "ACTIVE_FLAG", "description": "Indicates if the person type is active (Y/N)."},
+        {"name": "BUSINESS_GROUP_ID", "description": "Foreign Key to the business group."}
+      ]
+    },
+    {
+      "table_name": "PER_PERSON_TYPE_USAGES_F",
+      "business_name": "Person Type Usages",
+      "description": "Date-tracked table linking a person to their current person type(s).",
+      "columns": [
+        {"name": "PERSON_TYPE_USAGE_ID", "description": "Unique identifier (Primary Key)."},
+        {"name": "PERSON_ID", "description": "Foreign Key to PER_ALL_PEOPLE_F."},
+        {"name": "PERSON_TYPE_ID", "description": "Foreign Key to PER_PERSON_TYPES."},
+        {"name": "EFFECTIVE_START_DATE", "description": "Start date of this person type assignment."},
+        {"name": "EFFECTIVE_END_DATE", "description": "End date of this person type assignment."}
+      ]
+    },
+    {
+      "table_name": "PER_ASSIGNMENT_STATUS_TYPES",
+      "business_name": "Assignment Status Types",
+      "description": "Defines the valid assignment statuses (e.g., Active Assignment, Terminated, Suspended).",
+      "columns": [
+        {"name": "ASSIGNMENT_STATUS_TYPE_ID", "description": "Unique identifier for the status type (Primary Key)."},
+        {"name": "USER_STATUS", "description": "User-defined status name (e.g., Active, Suspended, Terminated)."},
+        {"name": "PER_SYSTEM_STATUS", "description": "System status: ACTIVE_ASSIGN, SUSP_ASSIGN, TERM_ASSIGN."},
+        {"name": "ACTIVE_FLAG", "description": "Y if the status is active."},
+        {"name": "BUSINESS_GROUP_ID", "description": "Foreign Key to the business group (NULL for global types)."}
+      ]
+    },
+    {
+      "table_name": "PER_PERIODS_OF_SERVICE",
+      "business_name": "Periods of Service / Employment History",
+      "description": "Stores the employment period for each employee, including hire date and termination date.",
+      "columns": [
+        {"name": "PERIOD_OF_SERVICE_ID", "description": "Unique identifier for the period of service (Primary Key)."},
+        {"name": "PERSON_ID", "description": "Foreign Key to PER_ALL_PEOPLE_F."},
+        {"name": "DATE_START", "description": "The employee's hire date (start of employment)."},
+        {"name": "ACTUAL_TERMINATION_DATE", "description": "The date the employee was terminated (NULL if currently employed)."},
+        {"name": "FINAL_PROCESS_DATE", "description": "Date all HR/payroll processing is complete for this service period."},
+        {"name": "LEAVING_REASON", "description": "Lookup code for the reason for leaving (termination reason)."},
+        {"name": "BUSINESS_GROUP_ID", "description": "Foreign Key to the business group."}
+      ]
+    },
+    {
+      "table_name": "PAY_ELEMENT_TYPES_F",
+      "business_name": "Pay Element Types",
+      "description": "Date-tracked table defining payroll elements (e.g., Basic Salary, Overtime, Bonus, Health Insurance).",
+      "columns": [
+        {"name": "ELEMENT_TYPE_ID", "description": "Unique identifier for the element type (Primary Key)."},
+        {"name": "ELEMENT_NAME", "description": "The name of the payroll element (e.g., Regular Salary, Bonus)."},
+        {"name": "DESCRIPTION", "description": "Description of the element."},
+        {"name": "CLASSIFICATION_ID", "description": "Foreign Key to PAY_ELEMENT_CLASSIFICATIONS (earnings, deductions, taxes)."},
+        {"name": "PROCESSING_TYPE", "description": "N=Non-recurring (one-time), R=Recurring (each payroll period)."},
+        {"name": "EFFECTIVE_START_DATE", "description": "Start date of this element type version."},
+        {"name": "EFFECTIVE_END_DATE", "description": "End date of this element type version."},
+        {"name": "BUSINESS_GROUP_ID", "description": "Foreign Key to the business group."}
+      ]
+    },
+    {
+      "table_name": "PAY_ELEMENT_ENTRIES_F",
+      "business_name": "Pay Element Entries",
+      "description": "Date-tracked table storing the pay element entries assigned to employee assignments (the actual salary and benefit values).",
+      "columns": [
+        {"name": "ELEMENT_ENTRY_ID", "description": "Unique identifier for the element entry (Primary Key)."},
+        {"name": "ASSIGNMENT_ID", "description": "Foreign Key to PER_ALL_ASSIGNMENTS_F."},
+        {"name": "ELEMENT_TYPE_ID", "description": "Foreign Key to PAY_ELEMENT_TYPES_F."},
+        {"name": "ELEMENT_LINK_ID", "description": "Foreign Key to PAY_ELEMENT_LINKS_F (the link defining eligibility)."},
+        {"name": "EFFECTIVE_START_DATE", "description": "Start date of this element entry."},
+        {"name": "EFFECTIVE_END_DATE", "description": "End date of this element entry."},
+        {"name": "ENTRY_TYPE", "description": "Type of entry: E=Normal, A=Adjustment, D=Override, S=Replacement."}
+      ]
+    },
+    {
+      "table_name": "PAY_ELEMENT_ENTRY_VALUES_F",
+      "business_name": "Pay Element Entry Values",
+      "description": "Stores the actual values (amounts, rates, hours) for each element entry input value.",
+      "columns": [
+        {"name": "ELEMENT_ENTRY_VALUE_ID", "description": "Unique identifier (Primary Key)."},
+        {"name": "ELEMENT_ENTRY_ID", "description": "Foreign Key to PAY_ELEMENT_ENTRIES_F."},
+        {"name": "INPUT_VALUE_ID", "description": "Foreign Key to PAY_INPUT_VALUES_F (defines what this value represents, e.g., Pay Value, Hours)."},
+        {"name": "SCREEN_ENTRY_VALUE", "description": "The actual entry value stored as a VARCHAR2 (e.g., '5000', '40')."},
+        {"name": "EFFECTIVE_START_DATE", "description": "Start date of this value."},
+        {"name": "EFFECTIVE_END_DATE", "description": "End date of this value."}
+      ]
+    },
+    {
+      "table_name": "PAY_INPUT_VALUES_F",
+      "business_name": "Pay Input Values",
+      "description": "Defines the input values (parameters) for each pay element type (e.g., Pay Value, Number of Hours, Rate).",
+      "columns": [
+        {"name": "INPUT_VALUE_ID", "description": "Unique identifier for the input value (Primary Key)."},
+        {"name": "ELEMENT_TYPE_ID", "description": "Foreign Key to PAY_ELEMENT_TYPES_F."},
+        {"name": "NAME", "description": "The name of the input value (e.g., Pay Value, Hours, Rate)."},
+        {"name": "UOM", "description": "Unit of measure: M=Money, N=Number, T=Text, D=Date, H_HH=Hours."},
+        {"name": "EFFECTIVE_START_DATE", "description": "Start date."},
+        {"name": "EFFECTIVE_END_DATE", "description": "End date."}
+      ]
+    },
+    {
+      "table_name": "PER_ABSENCE_ATTENDANCES",
+      "business_name": "Absences",
+      "description": "Records employee absences (e.g., sick leave, vacation, leave of absence).",
+      "columns": [
+        {"name": "ABSENCE_ATTENDANCE_ID", "description": "Unique identifier for the absence record (Primary Key)."},
+        {"name": "PERSON_ID", "description": "Foreign Key to PER_ALL_PEOPLE_F."},
+        {"name": "ABSENCE_ATTENDANCE_TYPE_ID", "description": "Foreign Key to PER_ABSENCE_ATTENDANCE_TYPES (type of leave)."},
+        {"name": "DATE_START", "description": "Start date of the absence."},
+        {"name": "DATE_END", "description": "End date of the absence."},
+        {"name": "ABSENCE_DAYS", "description": "Total number of absence days."},
+        {"name": "ABSENCE_HOURS", "description": "Total number of absence hours."},
+        {"name": "AUTHORISING_PERSON_ID", "description": "Foreign Key to PER_ALL_PEOPLE_F (the manager who authorized the absence)."},
+        {"name": "BUSINESS_GROUP_ID", "description": "Foreign Key to the business group."}
+      ]
+    },
+    {
+      "table_name": "PER_ABSENCE_ATTENDANCE_TYPES",
+      "business_name": "Absence Types",
+      "description": "Defines the categories of absence/leave (e.g., Annual Leave, Sick Leave, Maternity Leave).",
+      "columns": [
+        {"name": "ABSENCE_ATTENDANCE_TYPE_ID", "description": "Unique identifier for the absence type (Primary Key)."},
+        {"name": "NAME", "description": "The name of the absence type (e.g., Vacation, Sick Leave)."},
+        {"name": "ABSENCE_CATEGORY", "description": "Category lookup code (e.g., S=Sickness, O=Other)."},
+        {"name": "DATE_EFFECTIVE", "description": "Date the absence type became effective."},
+        {"name": "DATE_END", "description": "Date the absence type was deactivated (NULL if active)."},
+        {"name": "BUSINESS_GROUP_ID", "description": "Foreign Key to the business group."}
+      ]
+    },
+    {
+      "table_name": "PER_PAY_PROPOSALS",
+      "business_name": "Salary Proposals",
+      "description": "Stores salary proposals (pay changes) for employees including proposed salary and change reason.",
+      "columns": [
+        {"name": "PAY_PROPOSAL_ID", "description": "Unique identifier for the salary proposal (Primary Key)."},
+        {"name": "ASSIGNMENT_ID", "description": "Foreign Key to PER_ALL_ASSIGNMENTS_F."},
+        {"name": "PROPOSED_SALARY_N", "description": "The proposed salary amount."},
+        {"name": "CHANGE_DATE", "description": "Effective date of the salary change."},
+        {"name": "LAST_CHANGE_DATE", "description": "Date of the previous salary change."},
+        {"name": "CHANGE_REASON", "description": "Lookup code for the reason for the salary change (e.g., ANNUAL_REVIEW, PROMOTION)."},
+        {"name": "APPROVED", "description": "Y if the proposal has been approved."},
+        {"name": "DATE_TO", "description": "End date of this proposal (start date of the next proposal)."}
+      ]
+    }
+  ],
+  "common_joins": [
+    {
+      "description": "Get current employee personal info (always apply date filter for date-tracked tables)",
+      "join_condition": "PER_ALL_PEOPLE_F.EFFECTIVE_START_DATE <= SYSDATE AND PER_ALL_PEOPLE_F.EFFECTIVE_END_DATE >= SYSDATE"
+    },
+    {
+      "description": "Link current employee assignment to person",
+      "join_condition": "PER_ALL_ASSIGNMENTS_F.PERSON_ID = PER_ALL_PEOPLE_F.PERSON_ID AND PER_ALL_ASSIGNMENTS_F.EFFECTIVE_START_DATE <= SYSDATE AND PER_ALL_ASSIGNMENTS_F.EFFECTIVE_END_DATE >= SYSDATE AND PER_ALL_ASSIGNMENTS_F.ASSIGNMENT_TYPE = 'E' AND PER_ALL_ASSIGNMENTS_F.PRIMARY_FLAG = 'Y'"
+    },
+    {
+      "description": "Link assignment to department/organization",
+      "join_condition": "PER_ALL_ASSIGNMENTS_F.ORGANIZATION_ID = HR_ALL_ORGANIZATION_UNITS.ORGANIZATION_ID"
+    },
+    {
+      "description": "Link assignment to job",
+      "join_condition": "PER_ALL_ASSIGNMENTS_F.JOB_ID = PER_JOBS.JOB_ID"
+    },
+    {
+      "description": "Link assignment to position",
+      "join_condition": "PER_ALL_ASSIGNMENTS_F.POSITION_ID = HR_ALL_POSITIONS_F.POSITION_ID AND HR_ALL_POSITIONS_F.EFFECTIVE_START_DATE <= SYSDATE AND HR_ALL_POSITIONS_F.EFFECTIVE_END_DATE >= SYSDATE"
+    },
+    {
+      "description": "Link assignment to grade",
+      "join_condition": "PER_ALL_ASSIGNMENTS_F.GRADE_ID = PER_GRADES.GRADE_ID"
+    },
+    {
+      "description": "Link assignment to work location",
+      "join_condition": "PER_ALL_ASSIGNMENTS_F.LOCATION_ID = HR_LOCATIONS_ALL.LOCATION_ID"
+    },
+    {
+      "description": "Link assignment to manager/supervisor",
+      "join_condition": "PER_ALL_ASSIGNMENTS_F.SUPERVISOR_ID = MGR.PERSON_ID AND MGR.EFFECTIVE_START_DATE <= SYSDATE AND MGR.EFFECTIVE_END_DATE >= SYSDATE (alias PER_ALL_PEOPLE_F as MGR)"
+    },
+    {
+      "description": "Link assignment to assignment status",
+      "join_condition": "PER_ALL_ASSIGNMENTS_F.ASSIGNMENT_STATUS_TYPE_ID = PER_ASSIGNMENT_STATUS_TYPES.ASSIGNMENT_STATUS_TYPE_ID"
+    },
+    {
+      "description": "Link person to hire/termination date via period of service",
+      "join_condition": "PER_PERIODS_OF_SERVICE.PERSON_ID = PER_ALL_PEOPLE_F.PERSON_ID"
+    },
+    {
+      "description": "Link element entry to assignment",
+      "join_condition": "PAY_ELEMENT_ENTRIES_F.ASSIGNMENT_ID = PER_ALL_ASSIGNMENTS_F.ASSIGNMENT_ID AND PAY_ELEMENT_ENTRIES_F.EFFECTIVE_START_DATE <= SYSDATE AND PAY_ELEMENT_ENTRIES_F.EFFECTIVE_END_DATE >= SYSDATE"
+    },
+    {
+      "description": "Link element entry values to element entry and input value",
+      "join_condition": "PAY_ELEMENT_ENTRY_VALUES_F.ELEMENT_ENTRY_ID = PAY_ELEMENT_ENTRIES_F.ELEMENT_ENTRY_ID AND PAY_ELEMENT_ENTRY_VALUES_F.INPUT_VALUE_ID = PAY_INPUT_VALUES_F.INPUT_VALUE_ID AND PAY_ELEMENT_ENTRY_VALUES_F.EFFECTIVE_START_DATE <= SYSDATE AND PAY_ELEMENT_ENTRY_VALUES_F.EFFECTIVE_END_DATE >= SYSDATE"
+    },
+    {
+      "description": "Link current salary proposal to assignment",
+      "join_condition": "PER_PAY_PROPOSALS.ASSIGNMENT_ID = PER_ALL_ASSIGNMENTS_F.ASSIGNMENT_ID AND PER_PAY_PROPOSALS.APPROVED = 'Y' AND PER_PAY_PROPOSALS.DATE_TO IS NULL"
+    },
+    {
+      "description": "Link absences to person and absence type",
+      "join_condition": "PER_ABSENCE_ATTENDANCES.PERSON_ID = PER_ALL_PEOPLE_F.PERSON_ID AND PER_ABSENCE_ATTENDANCES.ABSENCE_ATTENDANCE_TYPE_ID = PER_ABSENCE_ATTENDANCE_TYPES.ABSENCE_ATTENDANCE_TYPE_ID"
+    }
+  ],
+  "example_queries": [
+    {
+      "description": "Get all active employees with their department, job, location, and manager.",
+      "sql": "SELECT p.EMPLOYEE_NUMBER, p.FULL_NAME, o.NAME AS DEPARTMENT, j.NAME AS JOB, l.LOCATION_CODE AS WORK_LOCATION, mgr.FULL_NAME AS MANAGER_NAME, pos.DATE_START AS HIRE_DATE FROM PER_ALL_PEOPLE_F p JOIN PER_ALL_ASSIGNMENTS_F a ON p.PERSON_ID = a.PERSON_ID AND a.EFFECTIVE_START_DATE <= SYSDATE AND a.EFFECTIVE_END_DATE >= SYSDATE AND a.ASSIGNMENT_TYPE = 'E' AND a.PRIMARY_FLAG = 'Y' JOIN HR_ALL_ORGANIZATION_UNITS o ON a.ORGANIZATION_ID = o.ORGANIZATION_ID JOIN PER_JOBS j ON a.JOB_ID = j.JOB_ID JOIN HR_LOCATIONS_ALL l ON a.LOCATION_ID = l.LOCATION_ID LEFT JOIN PER_ALL_PEOPLE_F mgr ON a.SUPERVISOR_ID = mgr.PERSON_ID AND mgr.EFFECTIVE_START_DATE <= SYSDATE AND mgr.EFFECTIVE_END_DATE >= SYSDATE JOIN PER_PERIODS_OF_SERVICE pos ON p.PERSON_ID = pos.PERSON_ID AND pos.ACTUAL_TERMINATION_DATE IS NULL WHERE p.EFFECTIVE_START_DATE <= SYSDATE AND p.EFFECTIVE_END_DATE >= SYSDATE AND p.CURRENT_EMPLOYEE_FLAG = 'Y' ORDER BY o.NAME, p.LAST_NAME"
+    },
+    {
+      "description": "Get headcount by department for active employees.",
+      "sql": "SELECT o.NAME AS DEPARTMENT, COUNT(DISTINCT p.PERSON_ID) AS HEADCOUNT FROM PER_ALL_PEOPLE_F p JOIN PER_ALL_ASSIGNMENTS_F a ON p.PERSON_ID = a.PERSON_ID AND a.EFFECTIVE_START_DATE <= SYSDATE AND a.EFFECTIVE_END_DATE >= SYSDATE AND a.ASSIGNMENT_TYPE = 'E' AND a.PRIMARY_FLAG = 'Y' JOIN PER_ASSIGNMENT_STATUS_TYPES ast ON a.ASSIGNMENT_STATUS_TYPE_ID = ast.ASSIGNMENT_STATUS_TYPE_ID AND ast.PER_SYSTEM_STATUS = 'ACTIVE_ASSIGN' JOIN HR_ALL_ORGANIZATION_UNITS o ON a.ORGANIZATION_ID = o.ORGANIZATION_ID WHERE p.EFFECTIVE_START_DATE <= SYSDATE AND p.EFFECTIVE_END_DATE >= SYSDATE AND p.CURRENT_EMPLOYEE_FLAG = 'Y' GROUP BY o.NAME ORDER BY HEADCOUNT DESC"
+    },
+    {
+      "description": "Get all employees hired in the last 90 days (new hires).",
+      "sql": "SELECT p.EMPLOYEE_NUMBER, p.FULL_NAME, pos.DATE_START AS HIRE_DATE, o.NAME AS DEPARTMENT, j.NAME AS JOB FROM PER_ALL_PEOPLE_F p JOIN PER_PERIODS_OF_SERVICE pos ON p.PERSON_ID = pos.PERSON_ID AND pos.ACTUAL_TERMINATION_DATE IS NULL JOIN PER_ALL_ASSIGNMENTS_F a ON p.PERSON_ID = a.PERSON_ID AND a.EFFECTIVE_START_DATE <= SYSDATE AND a.EFFECTIVE_END_DATE >= SYSDATE AND a.ASSIGNMENT_TYPE = 'E' AND a.PRIMARY_FLAG = 'Y' JOIN HR_ALL_ORGANIZATION_UNITS o ON a.ORGANIZATION_ID = o.ORGANIZATION_ID JOIN PER_JOBS j ON a.JOB_ID = j.JOB_ID WHERE p.EFFECTIVE_START_DATE <= SYSDATE AND p.EFFECTIVE_END_DATE >= SYSDATE AND pos.DATE_START >= SYSDATE - 90 ORDER BY pos.DATE_START DESC"
+    },
+    {
+      "description": "Get terminations for a given period with leaving reason.",
+      "sql": "SELECT p.EMPLOYEE_NUMBER, p.FULL_NAME, pos.DATE_START AS HIRE_DATE, pos.ACTUAL_TERMINATION_DATE, pos.LEAVING_REASON FROM PER_ALL_PEOPLE_F p JOIN PER_PERIODS_OF_SERVICE pos ON p.PERSON_ID = pos.PERSON_ID WHERE pos.ACTUAL_TERMINATION_DATE BETWEEN :start_date AND :end_date AND p.EFFECTIVE_START_DATE <= pos.ACTUAL_TERMINATION_DATE AND p.EFFECTIVE_END_DATE >= pos.ACTUAL_TERMINATION_DATE ORDER BY pos.ACTUAL_TERMINATION_DATE DESC"
+    },
+    {
+      "description": "Get current approved salary for all active employees.",
+      "sql": "SELECT p.EMPLOYEE_NUMBER, p.FULL_NAME, o.NAME AS DEPARTMENT, j.NAME AS JOB, g.NAME AS GRADE, pp.PROPOSED_SALARY_N AS CURRENT_SALARY, pp.CHANGE_DATE AS EFFECTIVE_FROM FROM PER_ALL_PEOPLE_F p JOIN PER_ALL_ASSIGNMENTS_F a ON p.PERSON_ID = a.PERSON_ID AND a.EFFECTIVE_START_DATE <= SYSDATE AND a.EFFECTIVE_END_DATE >= SYSDATE AND a.ASSIGNMENT_TYPE = 'E' AND a.PRIMARY_FLAG = 'Y' JOIN HR_ALL_ORGANIZATION_UNITS o ON a.ORGANIZATION_ID = o.ORGANIZATION_ID JOIN PER_JOBS j ON a.JOB_ID = j.JOB_ID JOIN PER_GRADES g ON a.GRADE_ID = g.GRADE_ID JOIN PER_PAY_PROPOSALS pp ON a.ASSIGNMENT_ID = pp.ASSIGNMENT_ID AND pp.APPROVED = 'Y' AND pp.DATE_TO IS NULL WHERE p.EFFECTIVE_START_DATE <= SYSDATE AND p.EFFECTIVE_END_DATE >= SYSDATE AND p.CURRENT_EMPLOYEE_FLAG = 'Y' ORDER BY pp.PROPOSED_SALARY_N DESC"
+    },
+    {
+      "description": "Get total absence days per employee by absence type for the current year.",
+      "sql": "SELECT p.EMPLOYEE_NUMBER, p.FULL_NAME, at.NAME AS ABSENCE_TYPE, SUM(aa.ABSENCE_DAYS) AS TOTAL_DAYS FROM PER_ALL_PEOPLE_F p JOIN PER_ABSENCE_ATTENDANCES aa ON p.PERSON_ID = aa.PERSON_ID JOIN PER_ABSENCE_ATTENDANCE_TYPES at ON aa.ABSENCE_ATTENDANCE_TYPE_ID = at.ABSENCE_ATTENDANCE_TYPE_ID WHERE p.EFFECTIVE_START_DATE <= SYSDATE AND p.EFFECTIVE_END_DATE >= SYSDATE AND p.CURRENT_EMPLOYEE_FLAG = 'Y' AND aa.DATE_START >= TRUNC(SYSDATE, 'YYYY') GROUP BY p.EMPLOYEE_NUMBER, p.FULL_NAME, at.NAME ORDER BY TOTAL_DAYS DESC"
+    }
+  ],
+  "important_notes": [
+    "All tables ending in _F are date-tracked. Always join with EFFECTIVE_START_DATE <= SYSDATE AND EFFECTIVE_END_DATE >= SYSDATE to get the current record.",
+    "PER_ALL_ASSIGNMENTS_F: Use ASSIGNMENT_TYPE = 'E' for employees (A = Applicant, C = Contingent Worker) and PRIMARY_FLAG = 'Y' for the primary assignment.",
+    "PER_ALL_PEOPLE_F: Use CURRENT_EMPLOYEE_FLAG = 'Y' to filter for active employees.",
+    "PER_PERIODS_OF_SERVICE: ACTUAL_TERMINATION_DATE IS NULL means the employee is currently active.",
+    "Salary information is in PER_PAY_PROPOSALS (reviewed/approved amounts) or in PAY_ELEMENT_ENTRIES_F / PAY_ELEMENT_ENTRY_VALUES_F for payroll element-level salary.",
+    "The BUSINESS_GROUP_ID groups all HR data within a legal entity. Always ensure queries are scoped to the correct business group if multi-org is configured."
+  ]
+}

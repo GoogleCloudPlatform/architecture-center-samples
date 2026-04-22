@@ -1,0 +1,109 @@
+{
+  "module": "Accounts Receivable (AR)",
+  "description": "Semantic mapping for Oracle EBS AR tables to business concepts.",
+  "tables": [
+    {
+      "table_name": "RA_CUSTOMER_TRX_ALL",
+      "business_name": "Invoices / Transactions",
+      "description": "Stores the header information for all AR transactions, including Invoices, Credit Memos, and Debit Memos.",
+      "columns": [
+        {"name": "CUSTOMER_TRX_ID", "description": "Unique identifier for the transaction (Primary Key)."},
+        {"name": "TRX_NUMBER", "description": "The visible Invoice Number or Transaction Number."},
+        {"name": "TRX_DATE", "description": "The date the transaction was created/invoiced."},
+        {"name": "BILL_TO_CUSTOMER_ID", "description": "Foreign Key to HZ_CUST_ACCOUNTS.CUST_ACCOUNT_ID (The customer who was billed)."},
+        {"name": "CT_REFERENCE", "description": "Customer Reference, often used for the Customer's Purchase Order (PO) Number."},
+        {"name": "INTERFACE_HEADER_ATTRIBUTE1", "description": "Often used to store the Sales Order Number from Order Management."}
+      ]
+    },
+    {
+      "table_name": "RA_CUSTOMER_TRX_LINES_ALL",
+      "business_name": "Invoice Lines",
+      "description": "Stores the individual line items for each transaction.",
+      "columns": [
+        {"name": "CUSTOMER_TRX_LINE_ID", "description": "Unique identifier for the line (Primary Key)."},
+        {"name": "CUSTOMER_TRX_ID", "description": "Foreign Key to RA_CUSTOMER_TRX_ALL (Links line to header)."},
+        {"name": "LINE_NUMBER", "description": "The line number (1, 2, 3...)."},
+        {"name": "DESCRIPTION", "description": "Description of the item or service billed."},
+        {"name": "QUANTITY_INVOICED", "description": "The quantity of items invoiced."},
+        {"name": "UNIT_SELLING_PRICE", "description": "Price per unit."},
+        {"name": "EXTENDED_AMOUNT", "description": "Total amount for the line (Quantity * Price)."}
+      ]
+    },
+    {
+      "table_name": "AR_PAYMENT_SCHEDULES_ALL",
+      "business_name": "Payment Schedules / Balances",
+      "description": "Tracks the outstanding balance and due dates for each transaction. Critical for determining if an invoice is 'Open' or 'Paid'.",
+      "columns": [
+        {"name": "PAYMENT_SCHEDULE_ID", "description": "Unique identifier for the schedule (Primary Key)."},
+        {"name": "CUSTOMER_TRX_ID", "description": "Foreign Key to RA_CUSTOMER_TRX_ALL."},
+        {"name": "DUE_DATE", "description": "The date payment is due."},
+        {"name": "AMOUNT_DUE_ORIGINAL", "description": "The original total amount of the invoice."},
+        {"name": "AMOUNT_DUE_REMAINING", "description": "The current outstanding balance. If 0, the invoice is fully paid."},
+        {"name": "STATUS", "description": "Status of the schedule (OP = Open, CL = Closed)."},
+        {"name": "CLASS", "description": "Transaction class (INV = Invoice, CM = Credit Memo, DM = Debit Memo)."}
+      ]
+    },
+    {
+      "table_name": "HZ_CUST_ACCOUNTS",
+      "business_name": "Customer Accounts",
+      "description": "Stores customer account details. Links the transaction to the party.",
+      "columns": [
+        {"name": "CUST_ACCOUNT_ID", "description": "Unique identifier for the customer account (Primary Key)."},
+        {"name": "ACCOUNT_NUMBER", "description": "The unique customer account number."},
+        {"name": "PARTY_ID", "description": "Foreign Key to HZ_PARTIES (Links account to the party name)."},
+        {"name": "STATUS", "description": "Account status (A = Active, I = Inactive)."}
+      ]
+    },
+    {
+      "table_name": "HZ_PARTIES",
+      "business_name": "Parties / Customer Names",
+      "description": "Stores the master party information, including names and addresses.",
+      "columns": [
+        {"name": "PARTY_ID", "description": "Unique identifier for the party (Primary Key)."},
+        {"name": "PARTY_NAME", "description": "The name of the customer or organization."},
+        {"name": "PARTY_NUMBER", "description": "Unique registry ID for the party."}
+      ]
+    },
+    {
+      "table_name": "AR_CASH_RECEIPTS_ALL",
+      "business_name": "Receipts / Payments",
+      "description": "Stores information about payments received from customers.",
+      "columns": [
+        {"name": "CASH_RECEIPT_ID", "description": "Unique identifier for the receipt (Primary Key)."},
+        {"name": "RECEIPT_NUMBER", "description": "The check number or transaction reference for the payment."},
+        {"name": "RECEIPT_DATE", "description": "The date the payment was received."},
+        {"name": "AMOUNT", "description": "The amount of the payment."},
+        {"name": "PAY_FROM_CUSTOMER", "description": "Foreign Key to HZ_CUST_ACCOUNTS (The customer who paid)."},
+        {"name": "STATUS", "description": "Status of the receipt (APP = Applied, UNAPP = Unapplied)."}
+      ]
+    }
+  ],
+  "common_joins": [
+    {
+      "description": "Link Invoice Header to Customer Name",
+      "join_condition": "RA_CUSTOMER_TRX_ALL.BILL_TO_CUSTOMER_ID = HZ_CUST_ACCOUNTS.CUST_ACCOUNT_ID AND HZ_CUST_ACCOUNTS.PARTY_ID = HZ_PARTIES.PARTY_ID"
+    },
+    {
+      "description": "Link Invoice Header to Lines",
+      "join_condition": "RA_CUSTOMER_TRX_ALL.CUSTOMER_TRX_ID = RA_CUSTOMER_TRX_LINES_ALL.CUSTOMER_TRX_ID"
+    },
+    {
+      "description": "Link Invoice to its Balance/Status",
+      "join_condition": "RA_CUSTOMER_TRX_ALL.CUSTOMER_TRX_ID = AR_PAYMENT_SCHEDULES_ALL.CUSTOMER_TRX_ID"
+    },
+    {
+      "description": "Link Receipt to Customer",
+      "join_condition": "AR_CASH_RECEIPTS_ALL.PAY_FROM_CUSTOMER = HZ_CUST_ACCOUNTS.CUST_ACCOUNT_ID"
+    }
+  ],
+  "example_queries": [
+    {
+      "description": "Get all open invoices with customer names and outstanding balances.",
+      "sql": "SELECT t.TRX_NUMBER, p.PARTY_NAME, s.AMOUNT_DUE_REMAINING FROM RA_CUSTOMER_TRX_ALL t JOIN HZ_CUST_ACCOUNTS a ON t.BILL_TO_CUSTOMER_ID = a.CUST_ACCOUNT_ID JOIN HZ_PARTIES p ON a.PARTY_ID = p.PARTY_ID JOIN AR_PAYMENT_SCHEDULES_ALL s ON t.CUSTOMER_TRX_ID = s.CUSTOMER_TRX_ID WHERE s.STATUS = 'OP'"
+    },
+    {
+      "description": "Get all payments received in the last month with customer names.",
+      "sql": "SELECT r.RECEIPT_NUMBER, r.RECEIPT_DATE, r.AMOUNT, p.PARTY_NAME FROM AR_CASH_RECEIPTS_ALL r JOIN HZ_CUST_ACCOUNTS a ON r.PAY_FROM_CUSTOMER = a.CUST_ACCOUNT_ID JOIN HZ_PARTIES p ON a.PARTY_ID = p.PARTY_ID WHERE r.RECEIPT_DATE >= ADD_MONTHS(SYSDATE, -1)"
+    }
+  ]
+}
