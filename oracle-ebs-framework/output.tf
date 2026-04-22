@@ -1,99 +1,123 @@
 output "vision_instance_zone" {
   description = "The zone of the Oracle Vision instance."
-  value       = try(var.oracle_ebs_vision ? google_compute_instance.vision[0].zone : "", "")
+  value       = try(regex("zones/([^/]+)/", google_compute_instance.vision[0].self_link)[0], "")
+}
+
+output "exascale_vision_instance_zone" {
+  description = "The zone of the Oracle Exascale Vision instance."
+  value       = try(regex("zones/([^/]+)/", google_compute_instance.exascale_vision[0].self_link)[0], "")
 }
 
 output "apps_instance_zone" {
   description = "The zone where the EBS apps instance is deployed"
-  value       = try(!var.oracle_ebs_vision ? google_compute_instance.apps[0].zone : "", "")
+  value = try(
+    !var.oracle_ebs_vision ? regex("zones/([^/]+)/", google_compute_instance.apps[0].self_link)[0] : "",
+    ""
+  )
 }
 
 output "dbs_instance_zone" {
   description = "The zone where the EBS database instance is deployed"
-  value       = try(!var.oracle_ebs_vision ? google_compute_instance.dbs[0].zone : "", "")
+  value = try(
+    !var.oracle_ebs_vision ? regex("zones/([^/]+)/", google_compute_instance.dbs[0].self_link)[0] : "",
+    ""
+  )
 }
 
-output "ebs_storage_bucket_url" {
-  description = "The URL of the storage bucket."
-  value       = module.ebs_storage_bucket.url
+output "admin_password" {
+  description = "Admin password for Oracle E-Business Suite. Retrieve securely using 'terraform output admin_password'."
+  value       = one(random_password.admin_password[*].result)
+  sensitive   = true
 }
 
 output "deployment_summary" {
-  value = var.oracle_ebs_vision ? (
-    <<EOT
+  description = "Dynamic summary of the deployed Oracle EBS infrastructure."
+  value       = <<EOT
 =========================================
+%{if var.oracle_ebs_vision || var.oracle_ebs_exascale~}
         Oracle Vision VM Deployment
-=========================================
-
- Project ID         : ${var.project_id}
- Region             : ${var.region}
- Zone               : ${var.zone}
- VPC Network        : ${module.network.network_name}
-
------------------------------------------
- Vision Instance
------------------------------------------
-   • Name           : ${google_compute_instance.vision[0].name}
-   • Internal IP    : ${google_compute_instance.vision[0].network_interface[0].network_ip}
-   • External IP    : ${try(google_compute_instance.vision[0].network_interface[0].access_config[0].nat_ip, "N/A")}
-   • SSH Command    :
-       gcloud compute ssh --zone "${var.zone}" "${google_compute_instance.vision[0].name}" --tunnel-through-iap --project "${var.project_id}"
-
------------------------------------------
- Storage
------------------------------------------
-   • Bucket Name    : ${module.ebs_storage_bucket.name}
-   • Bucket URL     : ${module.ebs_storage_bucket.url}
-
------------------------------------------
- Summary
------------------------------------------
-   • Total Instances: 1
-   • Instance Name  : ${google_compute_instance.vision[0].name}
-   • Generated At   : ${timestamp()}
-=========================================
-EOT
-    ) : (
-    <<EOT
-=========================================
+%{else~}
         Oracle E-Business Suite Setup
+%{endif~}
 =========================================
-
  Project ID         : ${var.project_id}
  Region             : ${var.region}
  Zone               : ${var.zone}
- VPC Network        : ${module.network.network_name}
+ VPC Network        : ${try(module.network.network_name, "N/A")}
 
 -----------------------------------------
- Apps Instance
+ %{if var.oracle_ebs_vision || var.oracle_ebs_exascale}Vision Instance%{else}Apps Tier%{endif}
 -----------------------------------------
-   • Name           : ${google_compute_instance.apps[0].name}
-   • Internal IP    : ${google_compute_instance.apps[0].network_interface[0].network_ip}
+%{if var.oracle_ebs_exascale~}
+   • Name           : ${try(google_compute_instance.exascale_vision[0].name, "N/A")}
+   • Internal IP    : ${try(google_compute_instance.exascale_vision[0].network_interface[0].network_ip, "N/A")}
    • SSH Command    :
-      gcloud compute ssh --zone "${var.zone}" "${google_compute_instance.apps[0].name}" --tunnel-through-iap --project "${var.project_id}" -- -L 8000:localhost:8000
+       gcloud compute ssh --zone "${var.zone}" "${try(google_compute_instance.exascale_vision[0].name, "N/A")}" --tunnel-through-iap --project "${var.project_id}"
+%{else~}
+%{if var.oracle_ebs_vision~}
+   • Name           : ${try(google_compute_instance.vision[0].name, "N/A")}
+   • Internal IP    : ${try(google_compute_instance.vision[0].network_interface[0].network_ip, "N/A")}
+   • SSH Command    :
+       gcloud compute ssh --zone "${var.zone}" "${try(google_compute_instance.vision[0].name, "N/A")}" --tunnel-through-iap --project "${var.project_id}"
+%{else~}
+   • Name           : ${try(google_compute_instance.apps[0].name, "N/A")}
+   • Internal IP    : ${try(google_compute_instance.apps[0].network_interface[0].network_ip, "N/A")}
+   • SSH Command    :
+       gcloud compute ssh --zone "${var.zone}" "${try(google_compute_instance.apps[0].name, "N/A")}" --tunnel-through-iap --project "${var.project_id}" -- -L 8000:localhost:8000
+%{endif~}
+%{endif~}
 
 -----------------------------------------
- DB Instance
+ Database Tier
 -----------------------------------------
-   • Name           : ${google_compute_instance.dbs[0].name}
-   • Internal IP    : ${google_compute_instance.dbs[0].network_interface[0].network_ip}
+%{if var.oracle_ebs_exascale~}
+   • Type           : Oracle Database@Google Cloud (Exascale)
+   • Cluster Name   : ${try(google_oracle_database_exadb_vm_cluster.exadb_vm_cluster[0].display_name, "N/A")}
+   • SSH Key        : ./exadb_private_key.pem
+   • Connection Info: Saved securely to ./exascale_outputs.yaml (TNS, SCAN DNS)
+   • Connection String: ${try(yamldecode(file("${path.module}/exascale_outputs.yaml")).connection_strings.cdbIpDefault, "Pending generation (Available after apply)")}
+%{else~}
+%{if var.oracle_ebs_vision~}
+   • Type           : Integrated Compute Engine DB (Included on Vision VM)
+%{else~}
+   • Type           : Google Compute Engine VM
+   • Name           : ${try(google_compute_instance.dbs[0].name, "N/A")}
+   • Internal IP    : ${try(google_compute_instance.dbs[0].network_interface[0].network_ip, "N/A")}
    • SSH Command    :
-       gcloud compute ssh --zone "${var.zone}" "${google_compute_instance.dbs[0].name}" --tunnel-through-iap --project "${var.project_id}"
+       gcloud compute ssh --zone "${var.zone}" "${try(google_compute_instance.dbs[0].name, "N/A")}" --tunnel-through-iap --project "${var.project_id}"
+%{endif~}
+%{endif~}
 
 -----------------------------------------
  Storage
 -----------------------------------------
-   • Bucket Name    : ${module.ebs_storage_bucket.name}
-   • Bucket URL     : ${module.ebs_storage_bucket.url}
+   • Bucket Name    : ${try(module.ebs_storage_bucket.name, "N/A")}
+   • Bucket URL     : ${try(module.ebs_storage_bucket.url, "N/A")}
+
+-----------------------------------------
+ User Credentials
+-----------------------------------------
+   • Username       : admin
+   • Admin Password : Run this command to retrieve the admin password securely:
+       
+       terraform output admin_password
 
 =========================================
  Summary
 -----------------------------------------
-   • Total Instances: 2
-   • Storage Bucket : ${module.ebs_storage_bucket.name}
+%{if var.oracle_ebs_exascale~}
+   • Total Instances: 1 Exascale Vision VM + 1 Exascale Cluster
+%{else~}
+%{if var.oracle_ebs_vision~}
+   • Total Instances: 1 Compute VM 
+%{else~}
+   • Apps Instances : ${try(length(google_compute_instance.apps), 0)}
+   • DB Instances   : ${try(length(google_compute_instance.dbs), 0)}
+%{endif~}
+%{endif~}
+   • Storage Bucket : ${try(module.ebs_storage_bucket.name, "N/A")}
+   • Admin Password : Run "terraform output admin_password" to retrieve securely
    • Generated At   : ${timestamp()}
 =========================================
 EOT
-  )
-  description = "Auto-calculated summary of either Oracle Vision VM or Oracle E-Business Suite deployment, depending on the toggle."
 }

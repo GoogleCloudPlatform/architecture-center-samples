@@ -22,7 +22,7 @@ module "nat_gateway_route" {
       name              = "nat-egress-internet"
       description       = "Public NAT GW - route through IGW to access internet"
       destination_range = "0.0.0.0/0"
-      tags              = "egress-nat"
+      tags              = ["egress-nat"]
       next_hop_internet = "true"
     }
   ]
@@ -66,7 +66,7 @@ module "cloud_router" {
 }
 
 resource "google_compute_address" "ebs_apps_server_internal_ip" {
-  count        = var.oracle_ebs_vision ? 0 : 1
+  count        = local.is_standard_ebs ? 1 : 0
   name         = "ebs-apps-server-internal-ip"
   region       = var.region
   address_type = "INTERNAL"
@@ -75,7 +75,7 @@ resource "google_compute_address" "ebs_apps_server_internal_ip" {
 }
 
 resource "google_compute_address" "ebs_db_server_internal_ip" {
-  count        = var.oracle_ebs_vision ? 0 : 1
+  count        = local.is_standard_ebs ? 1 : 0
   name         = "ebs-db-server-internal-ip"
   region       = var.region
   address_type = "INTERNAL"
@@ -84,10 +84,19 @@ resource "google_compute_address" "ebs_db_server_internal_ip" {
 }
 
 resource "google_compute_address" "vision_server_internal_ip" {
-  count        = var.oracle_ebs_vision ? 1 : 0
+  count        = local.is_vision_gce ? 1 : 0
   name         = "vision-server-internal-ip"
   region       = var.region
   address_type = "INTERNAL"
   subnetwork   = values(module.network.subnets)[0].name
   address      = var.vision_server_internal_ip
+}
+
+resource "google_compute_address" "exascale_vision_server_internal_ip" {
+  count        = local.is_vision_exa ? 1 : 0
+  name         = "exascale-vision-server-internal-ip"
+  region       = var.region
+  address_type = "INTERNAL"
+  subnetwork   = values(module.network.subnets)[0].name
+  address      = var.exascale_vision_server_internal_ip
 }
