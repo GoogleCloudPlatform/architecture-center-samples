@@ -29,7 +29,7 @@ variable "service_account_key" {
 variable "mcp_server_ebs_url" {
   description = "Cloud Run URL of mcp-oracle-ebs"
   type        = string
-  default = ""
+  default     = ""
 }
 
 variable "vpc_name" {
