@@ -1,6 +1,7 @@
 from google.adk import Agent
 from google.adk.tools import ToolContext
 from google.genai.types import (
+    AutomaticFunctionCallingConfig,
     SafetySetting,
     HarmCategory,
     HarmBlockThreshold,
@@ -485,8 +486,6 @@ async def render_pie_chart(
         }
 
 
-from google.adk.tools import google_maps_grounding
-
 # ---------------------------------------------------------------------------
 # Root agent
 # ---------------------------------------------------------------------------
@@ -496,8 +495,9 @@ root_agent = Agent(
     model=agent_config.model,
     description=agent_config.description,
     instruction=agent_config.instruction,
-    tools=[render_table, render_bar_chart, render_line_chart, render_pie_chart, google_maps_grounding],
+    tools=[render_table, render_bar_chart, render_line_chart, render_pie_chart],
     generate_content_config=GenerateContentConfig(
+        automatic_function_calling=AutomaticFunctionCallingConfig(disable=True),
         temperature=0,
         safety_settings=[
             SafetySetting(
@@ -519,4 +519,3 @@ root_agent = Agent(
         ],
     ),
 )
-

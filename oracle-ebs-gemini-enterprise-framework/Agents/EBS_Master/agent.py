@@ -1,6 +1,7 @@
 from google.adk.agents.llm_agent import Agent
 from google.adk.tools.agent_tool import AgentTool
 from google.genai.types import (
+    # AutomaticFunctionCallingConfig,
     GenerateContentConfig,
     HarmBlockThreshold,
     HarmCategory,
@@ -25,7 +26,8 @@ import uuid
 from datetime import datetime, timezone
 from contextlib import contextmanager
 
-# gemini 3 endpoints are currently only accessible in global, so we need to set this env var for the agent to work properly.
+# gemini 3 endpoints are currently only accessible in global, so we need to overwrite this env var 
+# for the agent to work properly.
 os.environ['GOOGLE_CLOUD_LOCATION'] = 'global'
 
 try:
@@ -165,9 +167,7 @@ ebs_sql_agent = _load_sub_agent("sub-agents.EBS_SQL_Agent.agent", "root_agent", 
 # ebs_api_agent = _load_sub_agent("sub-agents.EBS_API_Agent.agent", "root_agent", "EBS_API_Agent")
 ebs_graphs_agent = _load_sub_agent("sub-agents.EBS_Graphs_Agent.agent", "root_agent", "EBS_Graphs_Agent")
 mrgoogle_agent = _load_sub_agent("sub-agents.MrGoogle.agent", "root_agent", "MrGoogle")
-mrgooglemaps_agent = _load_sub_agent("sub-agents.MrGoogleMaps.agent", "root_agent", "MrGoogleMaps")
-# gemini_user_agent = _load_sub_agent("sub-agents.Gemini_User_Agent.agent", "root_agent", "Gemini_User_Agent")
-# ebs_docs_agent = _load_sub_agent("sub-agents.EBS_Docs_Agent.agent", "root_agent", "EBS_Docs_Agent")
+# mrgooglemaps_agent = _load_sub_agent("sub-agents.MrGoogleMaps.agent", "root_agent", "MrGoogleMaps")
 
 def get_sub_agent_health() -> dict:
     """Return availability and startup errors for each sub-agent."""
@@ -364,7 +364,7 @@ def get_user_id(tool_context: ToolContext):
             except Exception:
                 state_dict = {}
 
-        auth_id = os.environ.get("GOOGLE_CLOUD_AUTH_ID", "")
+        auth_id = os.environ.get("GOOGLE_CLOUD_AUTH_ID", "ebs-vision-master-auth")
         auth_key = next((k for k in state_dict.keys() if auth_id and k.startswith(auth_id)), None)
         
         # google.adk.sessions.state.State object has a get() method 
@@ -449,14 +449,14 @@ def get_user_id(tool_context: ToolContext):
 _tools = [get_sub_agent_health]
 if ebs_sql_agent is not None:
     _tools.append(AgentTool(agent=ebs_sql_agent))
-#if ebs_api_agent is not None:
-#    _tools.append(AgentTool(agent=ebs_api_agent))
+# #if ebs_api_agent is not None:
+# #    _tools.append(AgentTool(agent=ebs_api_agent))
 if ebs_graphs_agent is not None:
     _tools.append(AgentTool(agent=ebs_graphs_agent))
 if mrgoogle_agent is not None:
     _tools.append(AgentTool(agent=mrgoogle_agent))
-if mrgooglemaps_agent is not None:
-    _tools.append(AgentTool(agent=mrgooglemaps_agent))
+# if mrgooglemaps_agent is not None:
+    # _tools.append(AgentTool(agent=mrgooglemaps_agent))
 # if gemini_user_agent is not None:
 #     _tools.append(AgentTool(agent=gemini_user_agent))
 # if ebs_docs_agent is not None:
@@ -477,7 +477,6 @@ root_agent = Agent(
     description=agent_config.description,
     instruction=agent_config.instruction,
     tools=_tools,
-    # output_schema=MasterResponseSchema, # Enforce structured output from the master
     generate_content_config=GenerateContentConfig(
         temperature=0,
         safety_settings=[

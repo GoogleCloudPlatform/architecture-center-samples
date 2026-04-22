@@ -1,7 +1,6 @@
 name = 'EBS_Master'
 # model = 'gemini-2.5-flash'
 model = 'gemini-3.1-flash-lite-preview'
-# model = 'gemini-3.1-flash-lite'
 # model = 'gemini-3.0-pro-preview'
 # model = 'gemini-2.5-pro'
 
@@ -12,12 +11,9 @@ max_instances = 5
 # If None or not set, all sub-agents will be loaded by default.
 enabled_agents = [
     "EBS_SQL_Agent",
-    #"EBS_API_Agent",
     "EBS_Graphs_Agent",
     "MrGoogle",
-    "MrGoogleMaps",
-    # "Gemini_User_Agent",  # EBS user / FND_USER management via API
-    # "EBS_Docs_Agent",     # Document analysis and extraction
+    # "MrGoogleMaps",
 ]
 
 # auth_scopes = ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"]

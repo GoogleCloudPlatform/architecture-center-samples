@@ -1,6 +1,6 @@
 name = 'EBS_graph_Agent'
-# model = 'gemini-3.1-flash-lite-preview'
-model = 'gemini-2.5-flash'
+model = 'gemini-3.1-flash-lite-preview'
+# model = 'gemini-2.5-flash'
 
 description = (
     'A visualisation agent that accepts tabular data in JSON or CSV format and produces '

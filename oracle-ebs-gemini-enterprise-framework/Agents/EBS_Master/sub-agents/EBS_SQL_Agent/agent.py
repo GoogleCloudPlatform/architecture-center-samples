@@ -3,6 +3,7 @@ from google.adk.tools.tool_context import ToolContext
 from google.genai.types import (SafetySetting,
                                 HarmCategory,
                                 HarmBlockThreshold,
+                                AutomaticFunctionCallingConfig,
                                 GenerateContentConfig)
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset, StreamableHTTPConnectionParams
 import sys
@@ -366,6 +367,7 @@ root_agent = Agent(
     # instruction=f" {instruction_text}\n\n{semantic_context}",
     tools=_tools,
     generate_content_config=GenerateContentConfig(
+        # automatic_function_calling=AutomaticFunctionCallingConfig(disable=True),
         temperature=0,
         safety_settings = [
             SafetySetting(
