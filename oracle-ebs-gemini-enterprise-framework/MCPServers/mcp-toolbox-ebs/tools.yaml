@@ -1,7 +1,7 @@
 sources:
     ebs-oracle-source:
         kind: "oracle"
-        connectionString: "exadb-node-scan-mfrdy.uqfgldwhxu.va3109add.oraclevcn.com:1521/EBSDB"
+        connectionString: "apps.example.com:1521/EBSDB"
         user: apps_ai
         password: apps_ai
 
