@@ -16,7 +16,7 @@ BEGIN
     INTO   l_item_id
     FROM   mtl_system_items_b
     WHERE  segment1 = l_part_number 
-    AND    organization_id = l_org_id;
+    AND    organization_id =  l_inv_org_id;
 
     -- 2. Get Next Sequence for Interface ID
     SELECT MTL_CROSS_REF_INTERFACE_S.NEXTVAL  
