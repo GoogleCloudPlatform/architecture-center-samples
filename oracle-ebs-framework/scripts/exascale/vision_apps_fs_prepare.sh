@@ -139,6 +139,7 @@ mv -v /etc/hosts.new /etc/hosts
 # adding reboot cront to ROOT user
 
 # add reboot script to cron
+echo "Checking crontab for FS mount on startup"
  if [ $(crontab  -l | grep vision_apps_fs_mount | wc -l) -eq 0 ]; then
     echo "Add crontab: mount FS on startup";
     job="@reboot bash /scripts/vision_apps_fs_mount.sh | tee -a /scripts/vision_apps_fs_mount.sh.log 2>&1"
@@ -152,10 +153,11 @@ echo "### step: hostname update to apps"
 hostnamectl set-hostname apps
 hostname
 
+echo "Checking crontab for hostname set on startup"
 # add reboot script to cron
- if [ $(crontab  -l | grep vision_apps_fs_mount | wc -l) -eq 0 ]; then
+ if [ $(crontab  -l | grep hostnamectl | wc -l) -eq 0 ]; then
     echo "Add crontab: set hostname on startup";
-    job="@reboot hostnamectl set-hostname apps"
+    job="@reboot sleep 5 && hostnamectl set-hostname apps"
     ( crontab -l 2>/dev/null; echo "$job" ) | crontab -
  fi
 
