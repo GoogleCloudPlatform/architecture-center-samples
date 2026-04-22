@@ -9,8 +9,7 @@ This repository contains a comprehensive suite of SQL and PL/SQL scripts designe
 
 # 1. APPS_AI Database Integration Guide 
 # execute user creation script against Oracle EBS PDB database
-Execution Instructions to create APPS_AI schema
-To execute this file using the SYSTEM or SYSDBA account:
+Execution Instructions to create APPS_AI schema, To be executed using SYSTEM or SYSDBA account:
 
 # Step A: Move the file to the Database Server
 If you are working on a remote server, upload create_apps_ai.sql to a directory where the oracle user has read permissions (e.g., /tmp or your home directory).
