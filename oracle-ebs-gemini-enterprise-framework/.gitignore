@@ -211,8 +211,6 @@ __marimo__/
 config.yaml
 config.env
 .DS_Store
-*.wadl
-*.xsd
 *.BU
 *.out
 *.err
