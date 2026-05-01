@@ -2,7 +2,7 @@
 # Keep pinned versions in sync with sub-agent requirements.txt files.
 google-adk==1.31.1
 google-cloud-aiplatform==1.148.1
-google-auth==2.49.2
+google-auth==2.50.0
 mcp==1.27.0
 matplotlib==3.10.8
 opentelemetry-instrumentation-google-genai==0.7b0
