@@ -1,15 +1,9 @@
-# Oracle EBS Toolkit on GCP | Oracle EBS Vision
-
-This repository provides Terraform configurations and Makefile automation to deploy Oracle EBS infrastructure on Google Cloud Platform.
- - follow [this README.md](README.md) to Setup Oracle **EBS R12.2 Vision** Environment on Google Cloud Platform Compute Instances
- - follow [README-exascale-vision.md](README-exascale-vision.md) to Setup Oracle **EBS R12.2 Vision** Environment on **Oracle ExaScale@GCP**
- - follow [README-customer-data.md](README-customer-data.md) to Setup Oracle **EBS R12.2** environment with customer data
-
+# Oracle PeopleSoft Toolkit on GCP | Oracle Peoplesoft PUM (Demo data)
 
 ## Architectural Diagram
 
-### Oracle Vision on GCP
-![Oracle Vision on GCP Technical Architecture Diagram](images/Oracle%20Vision%20on%20GCP_%20Technical%20Architecture%20diagram.png "Oracle Vision on GCP Technical Architecture Diagram")
+### Oracle Peoplesoft on GCP
+![Oracle Peoplesoft on GCP Technical Architecture Diagram](images/Oracle%20Vision%20on%20GCP_%20Technical%20Architecture%20diagram.png "Oracle Peoplesoft Demo on GCP Technical Architecture Diagram")
 
 
 ## Prerequisites
@@ -26,7 +20,7 @@ Before starting, ensure the following requirements are met:
 Before deploying Toolkit, verify that your GCP project has sufficient resource quotas in the target region.
 
 Minimum recommended quotas:
-- Persistent Disk SSD (GB): ≥ 1TB
+- Persistent Disk SSD (GB): ≥ 300GB
 
 Check your current quotas with:
 
@@ -64,7 +58,7 @@ Ensure your GCP account has the following IAM roles:
 
 - `roles/editor`
 
-## Oracle EBS Vision Deployment
+## Oracle PeopleSoft PUM (Demo data) Deployment
 
 All Makefile commands should be run from the project root for all the deployments.
 
@@ -93,9 +87,9 @@ gcloud auth application-default login
 
 ---
 
-### 3. Deploy EBS Vision Infrastructure
+### 3. Deploy Peoplesoft PUM (Demo) Infrastructure
 
-Run the commands below to deploy the Oracle EBS single-node vision environment:
+Run the commands below to deploy the Oracle Peoplesoft single-node demo environment:
 
 ```bash
 # Initialize Terraform backend and modules
@@ -104,10 +98,10 @@ make init
 # IMPORTANT: Verify the disk type and disk sizes in the infra.auto.tfvars file
 
 # Plan the changes
-make vision_plan
+make plan
 
 # Deploy the changes
-make vision_deploy
+make deploy
 ```
 
 ---
@@ -115,87 +109,81 @@ make vision_deploy
 ### 4. Stage Vision Media files
 
 1) Login to https://edelivery.oracle.com using your Oracle account
-2) Search for "Oracle VM Virtual Appliance for Oracle E-Business Suite" and download the media (~ 19 V*.zip files)
-3) Copy those Oracle EBS vision media to the GCP bucket created by the steps above 
+2) Search for "PeopleSoft Human Capital Management 9.2 Update Image 54" or later and download the media (~ 15 V*.zip files)
+3) Copy those Oracle Peoplsesoft media to the GCP bucket created by the steps above 
 
-* NOTE: deploy process will do md5sum, in case of data issues comapare README_DISK -> assemble_12212.zip -> md5sumwhenshipped.txt"
 
 ```bash
 # Example
-gcloud storage cp V*.zip gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/
+gcloud storage cp V*.zip gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/
 
-    Copying file://V1034614-01_1of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034614-01_1of2.zip
-    Copying file://V1034614-01_2of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034614-01_2of2.zip
-    Copying file://V1034637-01_1of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034637-01_1of2.zip
-    Copying file://V1034637-01_2of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034637-01_2of2.zip
-    Copying file://V1034645-01_1of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034645-01_1of2.zip
-    Copying file://V1034645-01_2of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034645-01_2of2.zip
-    Copying file://V1034652-01_1of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034652-01_1of2.zip
-    Copying file://V1034652-01_2of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034652-01_2of2.zip
-    Copying file://V1034656-01_1of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034656-01_1of2.zip
-    Copying file://V1034656-01_2of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034656-01_2of2.zip
-    Copying file://V1034663-01_1of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034663-01_1of2.zip
-    Copying file://V1034663-01_2of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034663-01_2of2.zip
-    Copying file://V1034669-01_1of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034669-01_1of2.zip
-    Copying file://V1034669-01_2of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034669-01_2of2.zip
-    Copying file://V1034670-01_1of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034670-01_1of2.zip
-    Copying file://V1034670-01_2of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034670-01_2of2.zip
-    Copying file://V1034671-01_1of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034671-01_1of2.zip
-    Copying file://V1034671-01_2of2.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1034671-01_2of2.zip
-    Copying file://V1035290-01.zip to gs://oracle-ebs-toolkit-storage-bucket-9e70a5a7/V1035290-01.zip
+gcloud storage ls //oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/
+gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/V100750-01.zip
+gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/V1054248-01.zip
+gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/V1054561-01.zip
+gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/V1054687-01_1of4.zip
+gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/V1054687-01_2of4.zip
+gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/V1054687-01_3of4.zip
+gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/V1054687-01_4of4.zip
+gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/V1054688-01_1of4.zip
+gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/V1054688-01_2of4.zip
+gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/V1054688-01_3of4.zip
+gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/V1054688-01_4of4.zip
+gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/V1054689-01_1of2.zip
+gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/V1054689-01_2of2.zip
+gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/V1054690-01_1of2.zip
+gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/V1054690-01_2of2.zip
+
 ```
 
 ---
 
-### 5. Deploy Oracle EBS Vision environment
+### 5. Deploy Oracle Peoplesoft Demo environment
 
-This process lasts ~50-60 minutes
+This process lasts ~90-120 minutes
 
 ```bash
 # Deploy changes
-make vision_deploy_oracle_ebs
+make peoplesoft
 ```
 
-Add the following line (127.0.0.1 apps.example.com apps) to the local hosts file:
+Add the following line (127.0.0.1 oracle-peoplesoft-apps.c.oracle-ebs-toolkit-demo.internal oracle-peoplesoft-apps) to the local hosts file:
 
 ```bash
 # Mac hosts file 
 cat /etc/hosts
-    127.0.0.1 apps.example.com apps
+    127.0.0.1 oracle-peoplesoft-apps.c.oracle-ebs-toolkit-demo.internal oracle-peoplesoft-apps
 
 # Windows hosts file
 C:\windows\system32\drivers\etc\hosts
-    127.0.0.1 apps.example.com apps
+    127.0.0.1 oracle-peoplesoft-apps.c.oracle-ebs-toolkit-demo.internal oracle-peoplesoft-apps
 ```
 
 Open IAP tunnel
 
 ```bash
 # open tunnel
-gcloud compute ssh "oracle-vision" --tunnel-through-iap  \
+gcloud compute ssh "oracle-peoplesoft-apps" --tunnel-through-iap  \
  --project "oracle-ebs-toolkit" -- -L 8000:localhost:8000
 
 ```
 
-Add http://apps.example.com:8000 to the Java Security Exception list.
-Open a browser and login to http://apps.example.com:8000 using sysadmin/SYSADMIN12 (case sensitive)
+Open a browser and login to http://oracle-peoplesoft-apps.c.oracle-ebs-toolkit-demo.internal:8000 using PS/Manager123
 
 ---
 
 ### 6. Available additional commands
 
-After the Oracle EBS Vision environment deployment process few extra functions are available.
-Also server can be stoped/started, and Oracle EBS will autostart/stop along.
+After the Oracle Peoplesoft Demo environment deployment process few extra functions are available.
+Also server can be stoped/started, and Oracle Peoplesoft will autostart/stop along.
 
 ```bash
-# Review EBS Vision environment details for troubleshooting deployment
-make vision_ebs_troubleshoot
+# Review Peoplesoft Demo environment details for troubleshooting deployment
+make peoplesoft_stop
 
-# Start EBS Vision environment
-make vision_ebs_start
+# Start Peoplesoft Demo environment
+make peoplesoft_start
 
-# Stop EBS Vision environment
-make vision_ebs_stop
 ```
 
 ---
@@ -204,7 +192,7 @@ make vision_ebs_stop
 
 ```bash
 # Destroy Vision infrastructure (including buckets and VM)
-make vision_destroy
+make destroy
 ```
 ---
 

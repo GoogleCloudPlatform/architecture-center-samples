@@ -12,12 +12,9 @@
 ## initialization and variables
 log_path=/scripts/logs
 if [ ! -d "$log_path" ]; then  mkdir -p "$log_path"; fi
+if [ -z "$BUCKET" ]; then BUCKET=$(gcloud storage ls | grep oracle-peoplesoft-toolkit-storage-bucket); fi
 
-if [ -z "$BUCKET" ]; then BUCKET=$(gcloud storage ls | grep oracle-media); fi
-# testin override
-#BUCKET="gs://oracle-media/hcm"
-BUCKET="gs://oracle-media/peoplesoft"
-#
+# paths
 local_media=/u01/install/
 
 ## function list | Common

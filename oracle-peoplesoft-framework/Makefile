@@ -109,6 +109,13 @@ destroy:
 	  -var="project_id=$(PROJECT_ID)" \
 	  -var="project_service_account_email=$(PROJECT_SA_EMAIL)"
 
+deploy_peoplesoft:
+	@echo ""
+	@echo "\033[1m >>>Oracle Peoplesoft PUM (DEMO) Setup \033[0m"
+	@peoplesoft_gce_zone=$$(terraform -chdir=$(TF_DIR) output -raw apps_instance_zone); \
+	gcloud compute ssh --zone "$$peoplesoft_gce_zone" "oracle-peoplesoft-db" --tunnel-through-iap --project $(PROJECT_ID) \
+	  --command "sudo su - oracle -c 'date; stage_poeplesoft_media; install_poeplesoft '"
+
 deploy_oracle_peoplesoft_scripts:
 	@echo ""
 	@echo "\033[1m>>> Getting peoplesoft instance zone from Terraform output \033[0m"
