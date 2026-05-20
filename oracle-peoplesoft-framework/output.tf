@@ -1,3 +1,8 @@
+output "apps_instance_zone" {
+   description = "The zone where the PeopleSoft application VM is deployed."
+   value       = google_compute_instance.apps.zone
+}
+
 output "deployment_summary" {
   description = "Summary of the Oracle PeopleSoft deployment."
   value       = <<-EOT
