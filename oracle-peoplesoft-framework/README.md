@@ -149,7 +149,7 @@ This process lasts ~90-120 minutes
 
 ```bash
 # Deploy changes
-make peoplesoft
+make deploy_peoplesoft
 ```
 
 Add the following line (127.0.0.1 oracle-peoplesoft-apps.c.oracle-ebs-toolkit-demo.internal oracle-peoplesoft-apps) to the local hosts file:

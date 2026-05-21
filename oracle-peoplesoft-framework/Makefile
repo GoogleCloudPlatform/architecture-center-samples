@@ -138,19 +138,11 @@ deploy_oracle_peoplesoft_scripts:
 	echo ""; \
 	echo "\033[1m>>> Creating /scripts on oracle-peoplesoft-apps \033[0m"; \
 	gcloud compute ssh --zone "$$peoplesoft_gce_zone" "oracle-peoplesoft-apps" --tunnel-through-iap --project $(PROJECT_ID) \
-	  --command "sudo mkdir -vp /scripts && sudo chmod -v 777 /scripts"; \
+	  --command "sudo mkdir -vp /scripts && sudo chmod -v 755 /scripts"; \
 	echo ""; \
 	echo "\033[1m>>> Copying /scripts/* to oracle-peoplesoft-apps \033[0m"; \
 	gcloud compute scp --tunnel-through-iap --zone "$$peoplesoft_gce_zone" --project=$(PROJECT_ID) \
-	scripts/peoplesoft/* oracle-peoplesoft-apps:/scripts; \
-	echo ""; \
-	echo "\033[1m>>> Creating /scripts on oracle-peoplesoft-apps \033[0m"; \
-	gcloud compute ssh --zone "$$peoplesoft_gce_zone" "oracle-peoplesoft-apps" --tunnel-through-iap --project $(PROJECT_ID) \
-	  --command "sudo mkdir -vp /scripts && sudo chmod -v 777 /scripts"; \
-	echo ""; \
-	echo "\033[1m>>> Copying /scripts/* to oracle-peoplesoft-apps \033[0m"; \
-	gcloud compute scp --tunnel-through-iap --zone "$$peoplesoft_gce_zone" --project=$(PROJECT_ID) \
-	scripts/peoplesoft/* oracle-peoplesoft-apps:/scripts
+	scripts/peoplesoft/* oracle-peoplesoft-apps:/scripts; 
 
 
 

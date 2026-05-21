@@ -96,7 +96,7 @@ resource "null_resource" "push_scripts" {
           sudo mkdir -p /scripts && \
           sudo mv /tmp/*.sh /scripts/ && \
           sudo chown -R oracle:oinstall /scripts && \
-          sudo chmod 777 /scripts && \
+          sudo chmod 755 /scripts && \
           sudo chmod a+x /scripts/*.sh \
         "
         
