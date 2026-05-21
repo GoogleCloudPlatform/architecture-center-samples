@@ -15,7 +15,7 @@ if [ ! -d "$log_path" ]; then  mkdir -p "$log_path"; fi
 if [ -z "$BUCKET" ]; then BUCKET=$(gcloud storage ls | grep oracle-peoplesoft-toolkit-storage-bucket); fi
 
 # paths
-local_media=/u01/install/
+local_media=/u01/install
 
 ## function list | Common
 is_root_user() {
@@ -107,7 +107,7 @@ stage_poeplesoft_media() {
     gcloud storage ls -l ${BUCKET}
 
     print_task "Fetching files from: ${BUCKET} to local disk: ${local_media}"
-    gcloud storage cp ${BUCKET}/*.zip ${local_media}/
+    gcloud storage cp ${BUCKET}*.zip ${local_media}/
 
     print_task "Files on local disk: ${local_media}"
     ls -l ${local_media}
@@ -126,19 +126,6 @@ stage_poeplesoft_media() {
         break
     fi
     done
-
-    print_task "Veirifing psft-dpk-setup.sh is in place for installation"
-    if ! TARGET_FILE=$(find /u01/install/ -name "psft-dpk-setup.sh" 2>/dev/null | grep .); then
-        echo -e "\033[1;31m
-        ERROR: Install media not found!
-        Make sure to upload the correct Peoplesoft install media from Oracle E-Delivery:
-         - PeopleSoft Human Capital Management 9.2 Update Image 54 or later 
-         - PeopleSoft Customer Relationship Management 9.2 Update Image 23 or later 
-         \033[0m" >&2
-        exit 1
-    else    
-        print_task "All Good: $TARGET_FILE found - proceeding with installation"
-    fi
     
     ### EOF actual function betweens these comments
     echo -e "\nlog: $logfile"
@@ -164,6 +151,19 @@ install_poeplesoft() {
     print_task "Peoplesoft install files"
     cd ${local_media}/setup
     ls -la
+
+    print_task "Veirifing psft-dpk-setup.sh is in place for installation"
+    if ! TARGET_FILE=$(find ${local_media} -name "psft-dpk-setup.sh" 2>/dev/null | grep .); then
+        echo -e "\033[1;31m
+        ERROR: Install media not found!
+        Make sure to upload the correct Peoplesoft install media from Oracle E-Delivery:
+         - PeopleSoft Human Capital Management 9.2 Update Image 54 or later 
+         - PeopleSoft Customer Relationship Management 9.2 Update Image 23 or later 
+         \033[0m" >&2
+        exit 1
+    else    
+        print_task "All Good: $TARGET_FILE found - proceeding with installation"
+    fi
 
     print_task "Preparing Installation"
     cp -v /scripts/wrapper.sh ${local_media}/setup

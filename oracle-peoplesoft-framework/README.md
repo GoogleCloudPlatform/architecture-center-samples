@@ -3,7 +3,7 @@
 ## Architectural Diagram
 
 ### Oracle Peoplesoft on GCP
-![Oracle Peoplesoft on GCP Technical Architecture Diagram](images/Oracle%20Vision%20on%20GCP_%20Technical%20Architecture%20diagram.png "Oracle Peoplesoft Demo on GCP Technical Architecture Diagram")
+![Oracle Peoplesoft on GCP Technical Architecture Diagram](images/plpsft_diag.png "Oracle Peoplesoft Demo on GCP Technical Architecture Diagram")
 
 
 ## Prerequisites
@@ -111,6 +111,11 @@ make deploy
 1) Login to https://edelivery.oracle.com using your Oracle account
 2) Search for "PeopleSoft Human Capital Management 9.2 Update Image 54" or later and download the media (~ 15 V*.zip files)
 3) Copy those Oracle Peoplsesoft media to the GCP bucket created by the steps above 
+
+![EDelivery search](images/edel1.png  "Oracle Peoplesoft Search")
+![EDelivery downlaod](images/edel2.png "Oracle Peoplesoft Download")
+
+*Note: this toolkit can be used to deploy all Peoplesoft pillars like hcm, crm, cs, elm, fscm, ih* 
 
 
 ```bash

@@ -113,8 +113,22 @@ deploy_peoplesoft:
 	@echo ""
 	@echo "\033[1m >>>Oracle Peoplesoft PUM (DEMO) Setup \033[0m"
 	@peoplesoft_gce_zone=$$(terraform -chdir=$(TF_DIR) output -raw apps_instance_zone); \
-	gcloud compute ssh --zone "$$peoplesoft_gce_zone" "oracle-peoplesoft-db" --tunnel-through-iap --project $(PROJECT_ID) \
+	gcloud compute ssh --zone "$$peoplesoft_gce_zone" "oracle-peoplesoft-apps" --tunnel-through-iap --project $(PROJECT_ID) \
 	  --command "sudo su - oracle -c 'date; stage_poeplesoft_media; install_poeplesoft '"
+
+peoplesoft_stop:
+	@echo ""
+	@echo "\033[1m >>>Oracle Peoplesoft PUM (DEMO) stop procedure \033[0m"
+	@peoplesoft_gce_zone=$$(terraform -chdir=$(TF_DIR) output -raw apps_instance_zone); \
+	gcloud compute ssh --zone "$$peoplesoft_gce_zone" "oracle-peoplesoft-apps" --tunnel-through-iap --project $(PROJECT_ID) \
+	  --command "sudo su - oracle -c 'date; stop_poeplesoft '"
+
+peoplesoft_start:
+	@echo ""
+	@echo "\033[1m >>>Oracle Peoplesoft PUM (DEMO) start procedure \033[0m"
+	@peoplesoft_gce_zone=$$(terraform -chdir=$(TF_DIR) output -raw apps_instance_zone); \
+	gcloud compute ssh --zone "$$peoplesoft_gce_zone" "oracle-peoplesoft-apps" --tunnel-through-iap --project $(PROJECT_ID) \
+	  --command "sudo su - oracle -c 'date; start_poeplesoft '"
 
 deploy_oracle_peoplesoft_scripts:
 	@echo ""
@@ -122,13 +136,13 @@ deploy_oracle_peoplesoft_scripts:
 	@peoplesoft_gce_zone=$$(terraform -chdir=$(TF_DIR) output -raw apps_instance_zone); \
 	echo "Zone: $$peoplesoft_gce_zone"; \
 	echo ""; \
-	echo "\033[1m>>> Creating /scripts on oracle-peoplesoft-db \033[0m"; \
-	gcloud compute ssh --zone "$$peoplesoft_gce_zone" "oracle-peoplesoft-db" --tunnel-through-iap --project $(PROJECT_ID) \
+	echo "\033[1m>>> Creating /scripts on oracle-peoplesoft-apps \033[0m"; \
+	gcloud compute ssh --zone "$$peoplesoft_gce_zone" "oracle-peoplesoft-apps" --tunnel-through-iap --project $(PROJECT_ID) \
 	  --command "sudo mkdir -vp /scripts && sudo chmod -v 777 /scripts"; \
 	echo ""; \
-	echo "\033[1m>>> Copying /scripts/* to oracle-peoplesoft-db \033[0m"; \
+	echo "\033[1m>>> Copying /scripts/* to oracle-peoplesoft-apps \033[0m"; \
 	gcloud compute scp --tunnel-through-iap --zone "$$peoplesoft_gce_zone" --project=$(PROJECT_ID) \
-	scripts/peoplesoft/* oracle-peoplesoft-db:/scripts; \
+	scripts/peoplesoft/* oracle-peoplesoft-apps:/scripts; \
 	echo ""; \
 	echo "\033[1m>>> Creating /scripts on oracle-peoplesoft-apps \033[0m"; \
 	gcloud compute ssh --zone "$$peoplesoft_gce_zone" "oracle-peoplesoft-apps" --tunnel-through-iap --project $(PROJECT_ID) \
