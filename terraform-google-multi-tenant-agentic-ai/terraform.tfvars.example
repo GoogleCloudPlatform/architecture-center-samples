@@ -1,0 +1,21 @@
+# terraform.tfvars.example
+
+# --- 1. The "Handshake" IDs (Basic Setup) ---
+billing_account  = "012345-567890-ABCDEF"
+folder_id        = "123456789012"
+hub_project_id   = "agent-factory-hub-v1"
+tenant_id_suffix = "prod-v1"              # Ensures uniqueness for mkt/hr projects
+
+# --- 2. Organization & Governance (Required for PAB Isolation) ---
+org_id           = "112233445566"         # Required for Principal Access Boundaries
+region           = "us-central1"
+
+# --- 3. Hub Configuration (Required for VPC-SC & PAB) ---
+# Tip: Find this in the Google Cloud Console "Dashboard" for the hub project
+access_policy_id   = "778899001122"       # The Access Context Manager Policy ID
+hub_project_number = "100000000001"       
+
+# --- 4. Networking & Security (The Hybrid Toggle) ---
+# PUBLIC MODE: Leave the list below as []
+# INTERNAL-ONLY MODE: Add your Corporate VPN or Office Egress IPs
+trusted_corporate_ip_ranges = ["203.0.113.0/24", "198.51.100.5/32"]
