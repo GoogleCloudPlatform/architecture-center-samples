@@ -28,7 +28,7 @@ variable "tenant_projects" {
 variable "trusted_corporate_ip_ranges" {
   description = "List of public IP ranges (CIDR) for Internal-Only access."
   type        = list(string)
-  default     = [] 
+  default     = []
 }
 
 variable "enforce_edge_lockdown" {
@@ -40,13 +40,13 @@ variable "enforce_edge_lockdown" {
 variable "frontend_image_name" {
   description = "The base name/URL of the container image for the frontend portal."
   type        = string
-  default     = "us-docker.pkg.dev/cloudrun/container/hello" 
+  default     = "us-docker.pkg.dev/cloudrun/container/hello"
 }
 
 variable "frontend_image_tag" {
   description = "The specific tag or version of the container image to deploy. WARNING: The default 'latest' should only be used for dev/testing. For production, always override this with a specific immutable tag (e.g., 'v1.2.3' or a Git SHA)."
   type        = string
-  default     = "latest" 
+  default     = "latest"
 }
 
 variable "support_email" {

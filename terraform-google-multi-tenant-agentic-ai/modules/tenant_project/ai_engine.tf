@@ -19,7 +19,7 @@ resource "google_discovery_engine_search_engine" "tenant_engine" {
   collection_id  = "default_collection"
   data_store_ids = [google_discovery_engine_data_store.tenant_ds.data_store_id]
   display_name   = "Search Engine for ${var.tenant_name}"
-  
+
   common_config {
     company_name = var.tenant_name
   }

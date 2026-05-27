@@ -40,9 +40,9 @@ variable "enabled_apis" {
   description = "List of Google Cloud APIs to enable for the tenant project."
   type        = list(string)
   default = [
-    "run.googleapis.com", 
+    "run.googleapis.com",
     "aiplatform.googleapis.com",
-    "bigquery.googleapis.com", 
+    "bigquery.googleapis.com",
     "storage.googleapis.com",
     "modelarmor.googleapis.com",
     "securitycenter.googleapis.com",
@@ -74,29 +74,29 @@ variable "cloud_run_iam_bindings" {
 variable "agent_image_name" {
   description = "The base name/URL of the container image for the Agent runtime."
   type        = string
-  default     = "us-docker.pkg.dev/cloudrun/container/hello" 
+  default     = "us-docker.pkg.dev/cloudrun/container/hello"
 }
 
 variable "agent_image_tag" {
   description = "The specific tag or version of the Agent container image to deploy. WARNING: The default 'latest' should only be used for dev/testing. For production, always override this with a specific immutable tag (e.g., 'v1.2.3' or a Git SHA)."
   type        = string
-  default     = "latest" 
+  default     = "latest"
 }
 
 variable "mcp_server_image_name" {
   description = "The base name/URL of the container image for the MCP server."
   type        = string
-  default     = "us-docker.pkg.dev/cloudrun/container/hello" 
+  default     = "us-docker.pkg.dev/cloudrun/container/hello"
 }
 
 variable "mcp_server_image_tag" {
   description = "The specific tag or version of the MCP server container image to deploy. WARNING: The default 'latest' should only be used for dev/testing. For production, always override this with a specific immutable tag (e.g., 'v1.2.3' or a Git SHA)."
   type        = string
-  default     = "latest" 
+  default     = "latest"
 }
 
 variable "rag_bucket_retention_days" {
   description = "The number of days to keep objects in the RAG bucket before deleting them."
   type        = number
-  default     = 365 
+  default     = 365
 }

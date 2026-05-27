@@ -8,12 +8,12 @@ resource "google_iam_principal_access_boundary_policy" "tenant_isolation" {
   location      = "global"
   pab_policy_id = "${var.tenant_id}-isolation-policy"
   display_name  = "Isolation Policy for ${var.tenant_name}"
-  
+
   rules {
     description = "Restrict ${var.tenant_name} Agent identity to its own project resources"
     effect      = "ALLOW"
     # Directly references the project resource created in this module
-    resources   = ["cloudresourcemanager.googleapis.com/projects/${google_project.tenant.number}"]
+    resources = ["cloudresourcemanager.googleapis.com/projects/${google_project.tenant.number}"]
   }
 }
 

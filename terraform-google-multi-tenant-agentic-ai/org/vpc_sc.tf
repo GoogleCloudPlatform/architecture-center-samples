@@ -3,7 +3,7 @@ resource "google_access_context_manager_service_perimeter" "platform_macro_perim
   parent = "accessPolicies/${var.access_policy_id}"
   name   = "accessPolicies/${var.access_policy_id}/servicePerimeters/agent_factory_macro_boundary"
   title  = "Agent Factory Macro Perimeter"
-  
+
   status {
     # Combine the Hub project and all Tenant Spoke project numbers
     resources = concat(
@@ -19,7 +19,7 @@ resource "google_access_context_manager_service_perimeter" "platform_macro_perim
       "discoveryengine.googleapis.com", # Vertex AI Search
       "logging.googleapis.com"
     ]
-    
+
     # IMPORTANT: We no longer need "Bridges" or "VPC-SC Peerings" 
     # because every project is now inside the same perimeter.
   }

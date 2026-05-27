@@ -28,7 +28,7 @@ check "iam_resource_scoped_enforcement" {
         for binding in policy.bindings : binding.role == "roles/run.invoker"
       ]
     ]))
-    
+
     error_message = <<EOT
       Access Control Violation: 'roles/run.invoker' detected at the Project level.
       This violates the Multi-Tenant Isolation Architecture. 
