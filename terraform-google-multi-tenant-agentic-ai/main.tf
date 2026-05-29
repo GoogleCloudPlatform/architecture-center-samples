@@ -6,6 +6,7 @@ module "routing_hub" {
   hub_project_id     = var.hub_project_id
   hub_project_number = var.hub_project_number
   region             = var.region
+  support_email      = var.support_email
 
   # NEW: Pass all tenants as a single map variable
   tenant_projects = {

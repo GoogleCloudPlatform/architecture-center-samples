@@ -49,7 +49,8 @@ variable "enabled_apis" {
     "iamcredentials.googleapis.com",
     "serviceusage.googleapis.com",
     "monitoring.googleapis.com",
-    "logging.googleapis.com"
+    "logging.googleapis.com",
+    "discoveryengine.googleapis.com"
   ]
 }
 
@@ -62,13 +63,13 @@ variable "agent_sa_project_roles" {
   ]
 }
 
-# REMOVED the default block to enforce explicit configuration
 variable "cloud_run_iam_bindings" {
   description = "An object defining the IAM bindings for the Cloud Run agent service. Must be explicitly provided."
   type = map(object({
     role   = string
     member = string
   }))
+  default = {}
 }
 
 variable "agent_image_name" {

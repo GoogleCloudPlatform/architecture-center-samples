@@ -1,8 +1,8 @@
-# modules/central_hub/iam.tf
-
-# =============================================================================
-# Cross-Project Service Invocation (Resource-Scoped)
-# =============================================================================
+resource "google_service_account" "hub_sa" {
+  project      = var.hub_project_id
+  account_id   = "central-hub-sa"
+  display_name = "Central Hub Service Account"
+}
 
 # Dynamically grants Hub access to ALL tenant Cloud Run services passed into the module
 resource "google_cloud_run_v2_service_iam_member" "tenant_agent_invoker" {

@@ -12,7 +12,7 @@ resource "google_cloud_run_v2_service" "agent" {
   name     = "${var.tenant_name}-agent"
   location = var.region
   project  = google_project.tenant.project_id
-  ingress  = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
+  ingress  = "INGRESS_TRAFFIC_ALL"
 
   template {
     service_account = google_service_account.agent_sa.email

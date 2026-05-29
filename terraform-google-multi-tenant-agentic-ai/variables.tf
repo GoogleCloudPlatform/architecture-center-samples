@@ -67,3 +67,8 @@ variable "tenant_project_numbers" {
   type        = list(string)
   default     = [] # Optional, but good practice
 }
+
+variable "support_email" {
+  type        = string
+  description = "The support email associated with the IAP brand."
+}
