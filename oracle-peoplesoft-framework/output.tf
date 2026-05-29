@@ -1,6 +1,6 @@
 output "apps_instance_zone" {
-   description = "The zone where the PeopleSoft application VM is deployed."
-   value       = google_compute_instance.apps.zone
+  description = "The zone where the PeopleSoft application VM is deployed."
+  value       = google_compute_instance.apps.zone
 }
 
 output "deployment_summary" {
