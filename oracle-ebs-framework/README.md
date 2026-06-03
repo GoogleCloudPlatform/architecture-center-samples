@@ -5,6 +5,17 @@ This repository provides Terraform configurations and Makefile automation to dep
  - follow [README-exascale-vision.md](README-exascale-vision.md) to Setup Oracle **EBS R12.2 Vision** Environment on **Oracle ExaScale@GCP**
  - follow [README-customer-data.md](README-customer-data.md) to Setup Oracle **EBS R12.2** environment with customer data
 
+## Purpose
+
+This artifact provides a fully automated framework to deploy a single-node **Oracle E-Business Suite (EBS) R12.2 Vision** environment onto a clean Google Cloud Platform (GCP) project. Utilizing Terraform for infrastructure-as-code and automated staging/installation scripts, this toolkit eliminates the manual complexity typically associated with provisioning Oracle EBS.
+
+The primary goals of this repository are to:
+
+* **Accelerate Evaluation:** Allow enterprise architects, administrators, and business users to rapidly stand up an operational Oracle EBS Vision instance to evaluate its functionality, workflow engine, and user experience on GCP.
+* **Benchmark Performance:** Provide an isolated sandbox environment to test, review, and baseline the performance capabilities of Oracle workloads running on Google Cloud Compute Engine and SSD Persistent Disks.
+* **Demonstrate Best Practices:**  Serve as a reference implementation for cloud infrastructure layout, Identity-Aware Proxy (IAP) secure tunneling, and automated deployment patterns for legacy enterprise applications.
+
+*Note: This environment is intended for demonstration, testing, and proof-of-concept (PoC) purposes and is not intended for production workloads.*
 
 ## Architectural Diagram
 
