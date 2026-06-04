@@ -1,7 +1,5 @@
 # Oracle PeopleSoft Toolkit on GCP | Oracle Peoplesoft PUM (Demo data)
 
-# Oracle PeopleSoft Toolkit on GCP | Oracle Peoplesoft PUM (Demo data)
-
 ## Purpose
 
 This artifact provides a fully automated framework to deploy a single-node **Oracle Peoplesoft (PUM) Demo** environment onto a clean Google Cloud Platform (GCP) project. Utilizing Terraform for infrastructure-as-code and automated staging/installation scripts, this toolkit eliminates the manual complexity typically associated with provisioning Oracle Peoplesoft. 
