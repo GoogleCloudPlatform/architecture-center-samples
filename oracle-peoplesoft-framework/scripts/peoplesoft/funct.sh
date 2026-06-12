@@ -55,7 +55,7 @@ print_summary(){
 
           hosts file entry   : 127.0.0.1 $(hostname -f) $(hostname)
           IAP tunneling      : 
-          	gcloud compute ssh "${hostname}" --tunnel-through-iap --project $(gcloud config get-value project) -- -L 8000:localhost:8000
+          	gcloud compute ssh $(hostname) --tunnel-through-iap --project $(gcloud config get-value project) -- -L 8000:localhost:8000
          -----------------------------------------
     \033[0m"    
 }
