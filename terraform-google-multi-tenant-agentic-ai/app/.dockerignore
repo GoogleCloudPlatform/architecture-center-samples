@@ -1,0 +1,34 @@
+# Git
+.git
+.gitignore
+
+# Environments and Secrets
+.env
+*.env
+credentials.json
+secrets/
+
+# Python Virtual Environments
+venv/
+.venv/
+env/
+.env_dir/
+
+# Python Cache and Compiled Files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Terraform (Just in case the app is in the same repo as your IaC)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# IDEs and OS Files
+.vscode/
+.idea/
+*.swp
+.DS_Store
