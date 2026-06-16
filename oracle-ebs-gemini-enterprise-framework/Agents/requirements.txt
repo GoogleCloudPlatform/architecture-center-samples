@@ -4,7 +4,7 @@ google-adk==1.32.0
 google-cloud-aiplatform==1.150.0
 google-auth==2.51.0
 mcp==1.27.0
-matplotlib==3.10.9
+matplotlib==3.11.0
 opentelemetry-instrumentation-google-genai==0.7b0
 opentelemetry-instrumentation-httpx==0.62b1
 opentelemetry-instrumentation-fastapi==0.62b1
