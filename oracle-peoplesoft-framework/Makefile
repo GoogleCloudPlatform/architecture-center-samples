@@ -116,6 +116,13 @@ deploy_peoplesoft:
 	gcloud compute ssh --zone "$$peoplesoft_gce_zone" "oracle-peoplesoft-apps" --tunnel-through-iap --project $(PROJECT_ID) \
 	  --command "sudo su - oracle -c 'date; stage_poeplesoft_media; install_poeplesoft '"
 
+deploy_customer_peoplesoft:
+	@echo ""
+	@echo "\033[1m >>>Oracle Peoplesoft Customer Setup \033[0m"
+	@peoplesoft_gce_zone=$$(terraform -chdir=$(TF_DIR) output -raw apps_instance_zone); \
+	gcloud compute ssh --zone "$$peoplesoft_gce_zone" "oracle-peoplesoft-apps" --tunnel-through-iap --project $(PROJECT_ID) \
+	  --command "sudo su - oracle -c 'date; stage_cust_data; rdbms_stage_oh; rdbms_rman_restore; setup_cust_app '"
+
 peoplesoft_stop:
 	@echo ""
 	@echo "\033[1m >>>Oracle Peoplesoft PUM (DEMO) stop procedure \033[0m"
@@ -143,8 +150,3 @@ deploy_oracle_peoplesoft_scripts:
 	echo "\033[1m>>> Copying /scripts/* to oracle-peoplesoft-apps \033[0m"; \
 	gcloud compute scp --tunnel-through-iap --zone "$$peoplesoft_gce_zone" --project=$(PROJECT_ID) \
 	scripts/peoplesoft/* oracle-peoplesoft-apps:/scripts; 
-
-
-
-
-

@@ -43,6 +43,10 @@ mkdir -v -p /u01 /u02
 chown oracle:oinstall /u01
 chown oracle:oinstall /u02
 
+# for customer data
+mkdir -p /opt/oracle
+chown -Rf oracle:oinstall /opt/oracle
+
 # Peoplesoft directories for PUM preinstall prerequisites
 mkdir -pv  /u01/install/ /ds2 /srv/dpk/oracle /ds2/dpk/PT862P05B_2509240500-retail-orasrvlnx/oracleserver-2623528/oracle-server/product/19.3.0.0/bin/ /u02/db/oracle-server/admin/CDBCRM/adump
 chown -Rf oracle:oinstall /u02 /u01 /ds2 /srv/

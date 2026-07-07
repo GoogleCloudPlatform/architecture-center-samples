@@ -1,11 +1,14 @@
-# Oracle PeopleSoft Toolkit on GCP | Oracle Peoplesoft PUM (Demo data)
+# Oracle PeopleSoft Toolkit on GCP | Oracle PeopleSoft PUM (Demo data)
+
+ - follow [README_customer_data.md](README_customer_data.md) to Setup Oracle PeopleSoft environment with customer data
 
 ## Purpose
 
-This artifact provides a fully automated framework to deploy a single-node **Oracle Peoplesoft (PUM) Demo** environment onto a clean Google Cloud Platform (GCP) project. Utilizing Terraform for infrastructure-as-code and automated staging/installation scripts, this toolkit eliminates the manual complexity typically associated with provisioning Oracle Peoplesoft. 
+This artifact provides a fully automated framework for deploying a single-node **Oracle PeopleSoft (PUM)** Demo environment to a clean Google Cloud Platform (GCP) project. Utilizing Terraform for infrastructure-as-code and automated staging/installation scripts, this toolkit eliminates the manual complexity typically associated with provisioning Oracle PeopleSoft.
+
 
 The primary goals of this repository are to:
-* **Accelerate Evaluation:** Allow enterprise architects, administrators, and business users to rapidly stand up an operational Oracle Peoplesoft Demo instance to evaluate its functionality, workflow engine, and user experience on GCP.
+* **Accelerate Evaluation:** Enable enterprise architects, administrators, and business users to rapidly stand up an operational Oracle PeopleSoft Demo instance to evaluate its functionality, workflow engine, and user experience on GCP.
 * **Benchmark Performance:** Provide an isolated sandbox environment to test, review, and baseline the performance capabilities of Oracle workloads running on Google Cloud Compute Engine and SSD Persistent Disks.
 * **Demonstrate Best Practices:** Serve as a reference implementation for cloud infrastructure layout, Identity-Aware Proxy (IAP) secure tunneling, and automated deployment patterns for legacy enterprise applications.
 
@@ -13,8 +16,8 @@ The primary goals of this repository are to:
 
 ## Architectural Diagram
 
-### Oracle Peoplesoft on GCP
-![Oracle Peoplesoft on GCP Technical Architecture Diagram](images/plpsft_diag.png "Oracle Peoplesoft Demo on GCP Technical Architecture Diagram")
+### Oracle PeopleSoft on GCP
+![Oracle PeopleSoft on GCP Technical Architecture Diagram](images/plpsft_diag.png "Oracle PeopleSoft Demo on GCP Technical Architecture Diagram")
 
 
 ## Prerequisites
@@ -95,9 +98,9 @@ gcloud auth application-default login
 
 ---
 
-### 3. Deploy Peoplesoft PUM (Demo) Infrastructure
+### 3. Deploy PeopleSoft PUM (Demo) Infrastructure
 
-Run the commands below to deploy the Oracle Peoplesoft single-node demo environment:
+Run the commands below to deploy the Oracle PeopleSoft single-node demo environment:
 
 ```bash
 # Initialize Terraform backend and modules
@@ -120,10 +123,10 @@ make deploy
 2) Search for "PeopleSoft Human Capital Management 9.2 Update Image 54" or later and download the media (~ 15 V*.zip files)
 3) Copy those Oracle Peoplsesoft media to the GCP bucket created by the steps above 
 
-![EDelivery search](images/edel1.png  "Oracle Peoplesoft Search")
-![EDelivery downlaod](images/edel2.png "Oracle Peoplesoft Download")
+![EDelivery search](images/edel1.png  "Oracle PeopleSoft Search")
+![EDelivery downlaod](images/edel2.png "Oracle PeopleSoft Download")
 
-*Note: this toolkit can be used to deploy all Peoplesoft pillars like hcm, crm, cs, elm, fscm, ih* 
+*Note: this toolkit can be used to deploy all PeopleSoft pillars like hcm, crm, cs, elm, fscm, ih* 
 
 
 ```bash
@@ -151,7 +154,7 @@ gs://oracle-peoplesoft-toolkit-storage-bucket-d184e6a3/V1054690-01_2of2.zip
 
 ---
 
-### 5. Deploy Oracle Peoplesoft Demo environment
+### 5. Deploy Oracle PeopleSoft Demo environment
 
 This process lasts ~90-120 minutes
 
@@ -187,14 +190,14 @@ Open a browser and login to http://oracle-peoplesoft-apps.c.oracle-ebs-toolkit-d
 
 ### 6. Available additional commands
 
-After the Oracle Peoplesoft Demo environment deployment process few extra functions are available.
-Also server can be stoped/started, and Oracle Peoplesoft will autostart/stop along.
+After the Oracle PeopleSoft Demo environment deployment process, a few extra functions are available. 
+Also, the server can be stoped/started, and Oracle PeopleSoft will autostart/stop along.
 
 ```bash
-# Review Peoplesoft Demo environment details for troubleshooting deployment
+# Review PeopleSoft Demo environment details for troubleshooting deployment
 make peoplesoft_stop
 
-# Start Peoplesoft Demo environment
+# Start PeopleSoft Demo environment
 make peoplesoft_start
 
 ```
