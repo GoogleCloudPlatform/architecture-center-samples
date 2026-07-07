@@ -248,10 +248,10 @@ use your normal credentials to login.
 
 ---
 
-### 5. Destroy Vision Media
+### 5. Destroy Oracle PeopleSoft infrastructure
 
 ```bash
-# Destroy Vision infrastructure (including buckets and VM)
+# Destroy Oracle PeopleSoft infrastructure (including networking, buckets and VM)
 make destroy
 ```
 ---
