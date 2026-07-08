@@ -392,7 +392,11 @@ rdbms_stage_oh() {
 	
 	# Create tnsnames.ora and copy it over to $ORACLE_HOME/network/admin
 	print_task "Setting up tnsnames.ora and listener.ora"
-	CDBNAME=`ls ${local_media}/rman/*.bkp | tail -1 | awk -F_ '{ print $2 }'`
+	CDBNAME=$(ls ${local_media}/rman/*.bkp 2>/dev/null | tail -1 | awk -F_ '{ print $2 }')
+	if [ -z "$CDBNAME" ]; then
+		echo "ERROR: CDBNAME could not be determined from backup files."
+		return 1
+	fi
 	full_hname=$(hostname -f)
 	
 echo "
