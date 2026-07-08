@@ -203,7 +203,7 @@ Copy packed media to the GCP bucket
 
 # Copy 
 
-GCP_BUCKET=$(gcloud storage ls | grep oracle-ebs-toolkit-storage-bucket)
+GCP_BUCKET=$(gcloud storage ls | grep oracle-peoplesoft-toolkit-storage-bucket)
 gcloud storage cp RDBMS_TO_GCP.tar.gz ${GCP_BUCKET}
 gcloud storage cp PT_TO_GCP.tar.gz ${GCP_BUCKET}
 gcloud storage cp PS_CFG_HOME_TO_GCP.tar.gz ${GCP_BUCKET}
