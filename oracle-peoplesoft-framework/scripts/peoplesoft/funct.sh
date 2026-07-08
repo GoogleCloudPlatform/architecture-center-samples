@@ -343,8 +343,8 @@ rdbms_stage_oh() {
          =========================================
          Function restores RDBMS HOME from backup
          -----------------------------------------"
-    # Check if called by root
-    if ! is_oracle_user; then echo "This function must be run as root."; return 1; fi
+    # Check if called by oracle
+    if ! is_oracle_user; then echo "This function must be run as oracle."; return 1; fi
 
     ### actual function betweens these comments
 
