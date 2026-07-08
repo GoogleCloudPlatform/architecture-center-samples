@@ -697,7 +697,7 @@ psadmin -p start -d ${PRCSD};
     chmod u+x /scripts/peoplesoft_cust_start.sh 
 
     # add reboot script to cron
-    if [ $(crontab  -l | grep peoplesoft_cust_start | wc -l) -eq 0 ]; then
+    if [ $(crontab -l 2>/dev/null | grep peoplesoft_cust_start | wc -l) -eq 0 ]; then
         job="@reboot /scripts/peoplesoft_cust_start.sh | tee -a /scripts/logs/peoplesoft_cust_start.sh 2>&1"
         ( crontab -l 2>/dev/null; echo "$job" ) | crontab -
     fi
