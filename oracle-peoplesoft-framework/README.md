@@ -4,18 +4,6 @@
 
 ## Purpose
 
-This artifact provides a fully automated framework for deploying a single-node **Oracle PeopleSoft (PUM)** Demo environment to a clean Google Cloud Platform (GCP) project. Utilizing Terraform for infrastructure-as-code and automated staging/installation scripts, this toolkit eliminates the manual complexity typically associated with provisioning Oracle PeopleSoft.
-
-
-The primary goals of this repository are to:
-* **Accelerate Evaluation:** Enable enterprise architects, administrators, and business users to rapidly stand up an operational Oracle PeopleSoft Demo instance to evaluate its functionality, workflow engine, and user experience on GCP.
-* **Benchmark Performance:** Provide an isolated sandbox environment to test, review, and baseline the performance capabilities of Oracle workloads running on Google Cloud Compute Engine and SSD Persistent Disks.
-* **Demonstrate Best Practices:** Serve as a reference implementation for cloud infrastructure layout, Identity-Aware Proxy (IAP) secure tunneling, and automated deployment patterns for legacy enterprise applications.
-
-*Note: This environment is intended for demonstration, testing, and proof-of-concept (PoC) purposes and is not intended for production workloads.*
-
-## Purpose
-
 This artifact provides a fully automated framework to deploy a single-node **Oracle Peoplesoft (PUM) Demo** environment onto a clean Google Cloud Platform (GCP) project. Utilizing Terraform for infrastructure-as-code and automated staging/installation scripts, this toolkit eliminates the manual complexity typically associated with provisioning Oracle Peoplesoft. 
 
 The primary goals of this repository are to:

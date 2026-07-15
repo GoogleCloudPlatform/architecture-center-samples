@@ -1,5 +1,5 @@
 resource "google_service_account" "project_sa" {
-  account_id   = "project-service-account"
+  account_id   = "ps-project-service-account"
   display_name = "Project Service Account"
   project      = var.project_id
 }

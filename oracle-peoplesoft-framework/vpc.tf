@@ -19,7 +19,7 @@ module "nat_gateway_route" {
 
   routes = [
     {
-      name              = "nat-egress-internet"
+      name              = "ps-nat-egress-internet"
       description       = "Public NAT GW - route through IGW to access internet"
       destination_range = "0.0.0.0/0"
       tags              = ["egress-nat"]

@@ -3,7 +3,7 @@ PROJECT_NAME := oracle-ebs-toolkit
 PROJECT ?= $(PROJECT_NAME)
 PROJECT_ID ?= $(shell gcloud config get-value project 2>/dev/null)
 export TF_VAR_project_id := $(PROJECT_ID)
-PROJECT_SA_EMAIL := project-service-account@$(PROJECT_ID).iam.gserviceaccount.com
+PROJECT_SA_EMAIL := ps-project-service-account@$(PROJECT_ID).iam.gserviceaccount.com
 
 
 # Directory for Terraform

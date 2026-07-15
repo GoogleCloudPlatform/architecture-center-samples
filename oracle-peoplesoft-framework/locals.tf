@@ -1,5 +1,5 @@
 locals {
-  service_account_prefix = "project-service-account"
+  service_account_prefix = "ps-project-service-account"
   ebs_apps_label         = "oracle-ebs-apps"
   vm_network_tags = {
     app = [

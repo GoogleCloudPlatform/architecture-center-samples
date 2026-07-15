@@ -6,7 +6,7 @@ module "firewall_rules" {
 
   ingress_rules = [
     {
-      name          = "allow-http-in"
+      name          = "ps-allow-http-in"
       description   = "Allow HTTP traffic inbound"
       source_ranges = var.trusted_ip_ranges
       allow = [
@@ -21,7 +21,7 @@ module "firewall_rules" {
       target_tags = ["http-server"]
     },
     {
-      name          = "allow-https-in"
+      name          = "ps-allow-https-in"
       description   = "Allow HTTPS traffic inbound"
       source_ranges = var.trusted_ip_ranges
       allow = [
@@ -36,7 +36,7 @@ module "firewall_rules" {
       target_tags = ["https-server"]
     },
     {
-      name        = "allow-icmp-in"
+      name        = "ps-allow-icmp-in"
       description = "Allow ICMP traffic inbound"
       source_ranges = [
         var.iap_cidr
@@ -52,7 +52,7 @@ module "firewall_rules" {
       target_tags = ["icmp-access"]
     },
     {
-      name          = "allow-iap-in"
+      name          = "ps-allow-iap-in"
       description   = "Allow IAP traffic inbound"
       source_ranges = [var.iap_cidr]
       allow = [
@@ -66,7 +66,7 @@ module "firewall_rules" {
       target_tags = ["iap-access"]
     },
     {
-      name          = "allow-internal-access"
+      name          = "ps-allow-internal-access"
       description   = "Allow internal HTTP traffic within the VPC"
       source_ranges = [values(module.network.subnets)[0].ip_cidr_range]
       allow = [
@@ -80,8 +80,8 @@ module "firewall_rules" {
       target_tags = ["internal-access"]
     },
     {
-      name          = "allow-external-app-access"
-      description   = "Allow external access to Oracle EBS Apps"
+      name          = "ps-allow-external-app-access"
+      description   = "Allow external access to Oracle PeopleSoft Apps"
       source_ranges = var.trusted_ip_ranges
       allow = [
         {
@@ -95,8 +95,8 @@ module "firewall_rules" {
       target_tags = ["external-app-access"]
     },
     {
-      name          = "allow-external-db-access"
-      description   = "Allow external access to Oracle EBS DB"
+      name          = "ps-allow-external-db-access"
+      description   = "Allow external access to Oracle PeopleSoft DB"
       source_ranges = var.trusted_ip_ranges
       allow = [
         {
