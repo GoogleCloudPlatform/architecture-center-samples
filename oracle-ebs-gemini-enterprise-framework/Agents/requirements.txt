@@ -1,6 +1,6 @@
 # Union of all sub-agent requirements plus master-agent dependencies.
 # Keep pinned versions in sync with sub-agent requirements.txt files.
-google-adk==1.36.2
+google-adk==1.39.0
 google-cloud-aiplatform==1.165.0
 google-auth==2.56.2
 mcp==1.29.0
