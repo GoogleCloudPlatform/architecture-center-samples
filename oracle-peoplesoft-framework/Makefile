@@ -248,15 +248,11 @@ exascale_deploy_peoplesoft:
 	echo ""; \
 	echo "\033[1m>>> Creating /scripts on oracle-exascale-peoplesoft-app \033[0m"; \
 	gcloud compute ssh --zone "$$psft_gce_zone" "oracle-exascale-peoplesoft-app" --tunnel-through-iap --project $(PROJECT_ID) \
-	  --quiet --ssh-flag="-o LogLevel=ERROR" --command "sudo mkdir -vp /scripts && sudo chmod -v 777 /scripts" 2>/dev/null; \
+	  --quiet --ssh-flag="-o LogLevel=ERROR" --command "sudo mkdir -vp /scripts/logs && sudo chown -R oracle:oinstall /scripts" 2>/dev/null; \
 	echo ""; \
 	echo "\033[1m>>> Copying /scripts/* to oracle-exascale-peoplesoft-app \033[0m"; \
-	gcloud compute scp --tunnel-through-iap --zone "$$psft_gce_zone" --project=$(PROJECT_ID) --quiet \
-		scripts/exascale/* oracle-exascale-peoplesoft-app:/scripts 2>/dev/null; \
-	echo ""; \
-	echo "\033[1m>>> Ownership updates /scripts/ on oracle-exascale-peoplesoft-app \033[0m"; \
-	gcloud compute ssh --zone "$$psft_gce_zone" "oracle-exascale-peoplesoft-app" --tunnel-through-iap --project $(PROJECT_ID) \
-	  --quiet --ssh-flag="-o LogLevel=ERROR" --command "sudo chown -Rfv root:root /scripts && sudo mkdir -p /scripts/logs && sudo chmod -Rfv 777 /scripts/*" 2>/dev/null; \
+	tar czf - -C ./scripts/exascale . | gcloud compute ssh --zone "$$psft_gce_zone" "oracle-exascale-peoplesoft-app" --tunnel-through-iap --project $(PROJECT_ID) \
+	  --quiet --ssh-flag="-o LogLevel=ERROR" --command "sudo -u oracle tar xzf - -C /scripts/ && sudo -u oracle chmod +x /scripts/*.sh" 2>/dev/null; \
 	echo ""; \
 	echo "\033[1m>>> Setting up nfs share @GCP \033[0m"; \
 	gcloud compute ssh --zone "$$psft_gce_zone" "oracle-exascale-peoplesoft-app" --tunnel-through-iap --project $(PROJECT_ID) \

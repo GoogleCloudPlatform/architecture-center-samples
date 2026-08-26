@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+#set -e
 
 ## initialization and variables
 log_path=/scripts/logs
