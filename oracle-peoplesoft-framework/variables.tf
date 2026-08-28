@@ -171,12 +171,6 @@ variable "peoplesoft_apps_server_internal_ip" {
   default     = "10.115.0.10"
 }
 
-variable "trusted_ip_ranges" {
-  description = "List of trusted IP ranges allowed to access the firewall rules"
-  type        = list(string)
-  default     = []
-}
-
 variable "apps_image_family" {
   description = "Image family for the apps instance"
   default     = "oracle-linux-8"

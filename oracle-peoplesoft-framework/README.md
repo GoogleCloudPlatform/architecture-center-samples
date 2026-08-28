@@ -1,6 +1,8 @@
 # Oracle PeopleSoft Toolkit on GCP | Oracle PeopleSoft PUM (Demo data)
 
  - follow [README_customer_data.md](README_customer_data.md) to Setup Oracle PeopleSoft environment with customer data
+ - follow [README_customer_data_Exascale.md](README_customer_data_Exascale.md) to Setup Oracle PeopleSoft environment with customer data on Exascale@GCP
+ 
 
 ## Purpose
 

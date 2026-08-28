@@ -66,6 +66,7 @@ module "cloud_router" {
 }
 
 resource "google_compute_address" "peoplesoft_apps_server_internal_ip" {
+  count        = var.oracle_peoplesoft_exascale ? 0 : 1
   name         = "peoplesoft-apps-server-internal-ip"
   region       = var.region
   address_type = "INTERNAL"

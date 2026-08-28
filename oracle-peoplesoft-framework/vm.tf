@@ -4,6 +4,7 @@ data "google_compute_image" "apps_image" {
 }
 
 resource "google_compute_instance" "apps" {
+  count        = var.oracle_peoplesoft_exascale ? 0 : 1
   name         = "oracle-peoplesoft-apps"
   machine_type = var.apps_machine_type
   zone         = var.zone
@@ -19,7 +20,7 @@ resource "google_compute_instance" "apps" {
 
   network_interface {
     subnetwork = values(module.network.subnets)[0].self_link
-    network_ip = google_compute_address.peoplesoft_apps_server_internal_ip.address
+    network_ip = google_compute_address.peoplesoft_apps_server_internal_ip[0].address
   }
 
   metadata = {
@@ -65,6 +66,7 @@ resource "google_compute_instance" "apps" {
 }
 
 resource "null_resource" "push_scripts" {
+  count      = var.oracle_peoplesoft_exascale ? 0 : 1
   depends_on = [google_compute_instance.apps]
 
   triggers = {
@@ -77,13 +79,13 @@ resource "null_resource" "push_scripts" {
       sleep 30
 
       echo "Pushing .sh files to /tmp via IAP..."
-      gcloud compute scp ${path.module}/scripts/peoplesoft/*.sh ${google_compute_instance.apps.name}:/tmp/ \
+      gcloud compute scp ${path.module}/scripts/peoplesoft/*.sh ${google_compute_instance.apps[0].name}:/tmp/ \
         --zone="${var.zone}" \
         --project="${var.project_id}" \
         --tunnel-through-iap
 
       echo "Setting up /scripts directory and assigning to oracle user..."
-      gcloud compute ssh ${google_compute_instance.apps.name} \
+      gcloud compute ssh ${google_compute_instance.apps[0].name} \
         --zone="${var.zone}" \
         --project="${var.project_id}" \
         --tunnel-through-iap \
