@@ -269,7 +269,7 @@ resource "null_resource" "exascale_db_provisioning" {
     oci_api_version = var.oci_api_version
   }
 
-    provisioner "local-exec" {
+  provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
     command     = <<EOT
       set -e
