@@ -269,12 +269,16 @@ resource "null_resource" "exascale_db_provisioning" {
     oci_api_version = var.oci_api_version
   }
 
-  provisioner "local-exec" {
+    provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
     command     = <<EOT
       set -e
 
-      CLUSTER_URI="${self.triggers.cluster_uri}"
+      if ! command -v jq &> /dev/null; then
+        echo "Error: jq is required but not installed." >&2
+        exit 1
+      fi
+
       CLUSTER_OCID=$(echo "$CLUSTER_URI" | grep -oE 'ocid1\.[^/?&]+' | head -1)
       OCI_REGION=$(echo "$CLUSTER_OCID" | cut -d'.' -f4)
 
@@ -282,17 +286,14 @@ resource "null_resource" "exascale_db_provisioning" {
         exit 1
       fi
 
-      CDB_NAME_RAW="${self.triggers.cdb_name}"
-      DB_NAME_CLEAN=$(echo "$CDB_NAME_RAW" | sed 's/[-_]//g')
-      DISPLAY_NAME="Home_19c_$CDB_NAME_RAW"
+      DB_NAME_CLEAN=$(echo "$CDB_NAME" | sed 's/[-_]//g')
+      DISPLAY_NAME="Home_19c_$CDB_NAME"
 
-      API_URL="https://database.$${OCI_REGION}.oraclecloud.com/${self.triggers.oci_api_version}/dbHomes"
-
+      API_URL="https://database.$${OCI_REGION}.oraclecloud.com/$OCI_API_VERSION/dbHomes"
       LIST_URL="$API_URL?vmClusterId=$CLUSTER_OCID&displayName=$DISPLAY_NAME"
       
       LIST_RESULT=$(oci raw-request --http-method GET --target-uri "$LIST_URL" 2>/dev/null || true)
-      
-      EXISTING_STATE=$(echo "$LIST_RESULT" | grep -io '"lifecycle-state": *"[^"]*"' | head -1 | cut -d'"' -f4)
+      EXISTING_STATE=$(echo "$LIST_RESULT" | jq -r '.data[0]["lifecycle-state"] // empty')
 
       if [ -n "$EXISTING_STATE" ] && [ "$EXISTING_STATE" != "TERMINATED" ] && [ "$EXISTING_STATE" != "FAILED" ]; then
         exit 0
@@ -301,29 +302,33 @@ resource "null_resource" "exascale_db_provisioning" {
       BODY_FILE=$(mktemp /tmp/dbhome_body_XXXXXX.json)
       trap 'rm -f "$BODY_FILE"' EXIT
 
-      cat <<EOF > "$BODY_FILE"
-{
-  "vmClusterId": "$CLUSTER_OCID",
-  "displayName": "Home_19c_$CDB_NAME_RAW",
-  "dbVersion": "${local.exascale_db_version}",
-  "source": "VM_CLUSTER_NEW",
-  "database": {
-    "adminPassword": "${try(random_password.admin_password[0].result, "")}",
-    "dbName": "$DB_NAME_CLEAN",
-    "characterSet": "AL32UTF8",
-    "ncharacterSet": "AL16UTF16",
-    "dbWorkload": "OLTP",
-    "pdbName": "pdb1",
-    "storageSizeDetails": {
-      "dataStorageSizeInGBs": 650,
-      "recoStorageSizeInGBs": 150
-    },
-    "dbBackupConfig": {
-      "autoBackupEnabled": false
-    }
-  }
-}
-EOF
+      jq -n \
+        --arg vmClusterId "$CLUSTER_OCID" \
+        --arg displayName "$DISPLAY_NAME" \
+        --arg dbVersion "$DB_VERSION" \
+        --arg adminPassword "$ADMIN_PASSWORD" \
+        --arg dbName "$DB_NAME_CLEAN" \
+        '{
+          vmClusterId: $vmClusterId,
+          displayName: $displayName,
+          dbVersion: $dbVersion,
+          source: "VM_CLUSTER_NEW",
+          database: {
+            adminPassword: $adminPassword,
+            dbName: $dbName,
+            characterSet: "AL32UTF8",
+            ncharacterSet: "AL16UTF16",
+            dbWorkload: "OLTP",
+            pdbName: "pdb1",
+            storageSizeDetails: {
+              dataStorageSizeInGBs: 650,
+              recoStorageSizeInGBs: 150
+            },
+            dbBackupConfig: {
+              autoBackupEnabled: false
+            }
+          }
+        }' > "$BODY_FILE"
 
       RAW_RESULT=$(oci raw-request \
         --http-method POST \
@@ -338,7 +343,10 @@ EOF
         exit 1
       fi
 
-      WORK_REQUEST_ID=$(echo "$RAW_RESULT" | grep -io '"opc-work-request-id": *"[^"]*"' | head -1 | cut -d'"' -f4)
+      WORK_REQUEST_ID=$(echo "$RAW_RESULT" | jq -r '.headers["opc-work-request-id"] // empty')
+      if [ -z "$WORK_REQUEST_ID" ]; then
+        WORK_REQUEST_ID=$(echo "$RAW_RESULT" | grep -io '"opc-work-request-id": *"[^"]*"' | head -1 | cut -d'"' -f4)
+      fi
 
       if [ -z "$WORK_REQUEST_ID" ]; then
         exit 1
@@ -352,7 +360,10 @@ EOF
         sleep 60
 
         WR_RESULT=$(oci work-requests work-request get --work-request-id "$WORK_REQUEST_ID" 2>&1)
-        WR_STATUS=$(echo "$WR_RESULT" | grep -o '"status": *"[^"]*"' | head -1 | cut -d'"' -f4)
+        WR_STATUS=$(echo "$WR_RESULT" | jq -r '.status // empty')
+        if [ -z "$WR_STATUS" ]; then
+          WR_STATUS=$(echo "$WR_RESULT" | grep -o '"status": *"[^"]*"' | head -1 | cut -d'"' -f4)
+        fi
         
         if [ "$WR_STATUS" = "SUCCEEDED" ]; then
           exit 0
@@ -365,6 +376,14 @@ EOF
 
       exit 1
     EOT
+
+    environment = {
+      CLUSTER_URI     = self.triggers.cluster_uri
+      CDB_NAME        = self.triggers.cdb_name
+      DB_VERSION      = local.exascale_db_version
+      ADMIN_PASSWORD  = try(random_password.admin_password[0].result, "")
+      OCI_API_VERSION = self.triggers.oci_api_version
+    }
   }
 
   provisioner "local-exec" {
