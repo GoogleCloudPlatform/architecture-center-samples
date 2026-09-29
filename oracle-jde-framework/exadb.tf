@@ -85,7 +85,7 @@ resource "google_oracle_database_exadb_vm_cluster" "exadb_vm_cluster" {
 
   depends_on = [google_oracle_database_odb_subnet.client_subnet, google_oracle_database_odb_subnet.backup_subnet, google_oracle_database_odb_network.odb_network]
 
-  deletion_protection = false
+  deletion_protection = var.exascale_deletion_protection
 }
 
 resource "google_oracle_database_exascale_db_storage_vault" "exascale_vault" {
@@ -102,7 +102,7 @@ resource "google_oracle_database_exascale_db_storage_vault" "exascale_vault" {
     }
   }
 
-  deletion_protection = false
+  deletion_protection = var.exascale_deletion_protection
 }
 
 resource "null_resource" "exascale_ingress_rules" {

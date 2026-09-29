@@ -10,16 +10,20 @@ resource "google_dns_managed_zone" "jde_demo_dns" {
 }
 
 locals {
-  jde_demo_dns_records = var.oracle_jde_vision ? {
-    (var.jde_demo_prov_vm_name) = try(google_compute_address.jde_demo_prov_server_internal_ip[0].address, "")
-    (var.jde_demo_db_vm_name)   = try(google_compute_address.jde_demo_db_server_internal_ip[0].address, "")
-    (var.jde_demo_ent_vm_name)  = try(google_compute_address.jde_demo_ent_server_internal_ip[0].address, "")
-    (var.jde_demo_web_vm_name)  = try(google_compute_address.jde_demo_web_server_internal_ip[0].address, "")
-    (var.jde_demo_dep_vm_name)  = try(google_compute_address.jde_demo_dep_server_internal_ip[0].address, "")
+  raw_jde_demo_dns_records = var.oracle_jde_vision ? {
+    (var.jde_demo_prov_vm_name) = one(google_compute_address.jde_demo_prov_server_internal_ip[*].address)
+    (var.jde_demo_db_vm_name)   = one(google_compute_address.jde_demo_db_server_internal_ip[*].address)
+    (var.jde_demo_ent_vm_name)  = one(google_compute_address.jde_demo_ent_server_internal_ip[*].address)
+    (var.jde_demo_web_vm_name)  = one(google_compute_address.jde_demo_web_server_internal_ip[*].address)
+    (var.jde_demo_dep_vm_name)  = one(google_compute_address.jde_demo_dep_server_internal_ip[*].address)
   } : {}
+
+  jde_demo_dns_records = {
+    for k, v in local.raw_jde_demo_dns_records : k => v if v != null && v != ""
+  }
 }
 
-# 1. Global DNS Records
+# 1. Global DNS Records (Demo)
 resource "google_dns_record_set" "jde_demo_server_global" {
   for_each     = local.jde_demo_dns_records
   name         = "${each.key}.c.${var.project_id}.internal."
@@ -29,7 +33,7 @@ resource "google_dns_record_set" "jde_demo_server_global" {
   rrdatas      = [each.value]
 }
 
-# 2. Zonal DNS Records
+# 2. Zonal DNS Records (Demo)
 resource "google_dns_record_set" "jde_demo_server_zonal" {
   for_each     = local.jde_demo_dns_records
   name         = "${each.key}.${var.zone}.c.${var.project_id}.internal."
@@ -51,16 +55,24 @@ resource "google_dns_managed_zone" "jde_dns" {
 }
 
 locals {
-  jde_dns_records = (var.oracle_jde_vision ? {} : {
-    (var.jde_prov_vm_name) = try(google_compute_address.jde_prov_server_internal_ip[0].address, "")
-    (var.jde_db_vm_name)   = try(google_compute_address.jde_db_server_internal_ip[0].address, "")
-    (var.jde_ent_vm_name)  = try(google_compute_address.jde_ent_server_internal_ip[0].address, "")
-    (var.jde_web_vm_name)  = try(google_compute_address.jde_web_server_internal_ip[0].address, "")
-    (var.jde_dep_vm_name)  = try(google_compute_address.jde_dep_server_internal_ip[0].address, "")
-  })
+  raw_jde_dns_records = merge(
+    (var.oracle_jde_vision ? {} : {
+      (var.jde_prov_vm_name) = one(google_compute_address.jde_prov_server_internal_ip[*].address)
+      (var.jde_db_vm_name)   = one(google_compute_address.jde_db_server_internal_ip[*].address)
+      (var.jde_ent_vm_name)  = one(google_compute_address.jde_ent_server_internal_ip[*].address)
+      (var.jde_web_vm_name)  = one(google_compute_address.jde_web_server_internal_ip[*].address)
+      (var.jde_dep_vm_name)  = one(google_compute_address.jde_dep_server_internal_ip[*].address)
+    }),
+    (var.oracle_jde_exascale ? {
+      "oracle-exascale-jde-app" = one(google_compute_address.exascale_jde_server_internal_ip[*].address)
+    } : {})
+  )
+  jde_dns_records = {
+    for k, v in local.raw_jde_dns_records : k => v if v != null && v != ""
+  }
 }
 
-# 1. Global DNS Records
+# 1. Global DNS Records (Customer Data)
 resource "google_dns_record_set" "jde_server_global" {
   for_each     = local.jde_dns_records
   name         = "${each.key}.c.${var.project_id}.internal."
@@ -70,7 +82,7 @@ resource "google_dns_record_set" "jde_server_global" {
   rrdatas      = [each.value]
 }
 
-# 2. Zonal DNS Records
+# 2. Zonal DNS Records (Customer Data)
 resource "google_dns_record_set" "jde_server_zonal" {
   for_each     = local.jde_dns_records
   name         = "${each.key}.${var.zone}.c.${var.project_id}.internal."

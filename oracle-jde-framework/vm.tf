@@ -36,7 +36,7 @@ resource "google_compute_instance" "jde_demo_prov" {
 
   network_interface {
     subnetwork = values(module.network.subnets)[0].self_link
-    network_ip = google_compute_address.jde_demo_prov_server_internal_ip[0].address
+    network_ip = try(google_compute_address.jde_demo_prov_server_internal_ip[0].address, "")
   }
 
   metadata = {
@@ -70,7 +70,6 @@ resource "google_compute_instance" "jde_demo_prov" {
   reservation_affinity {
     type = "ANY_RESERVATION"
   }
-
 }
 
 resource "google_compute_instance" "jde_demo_db" {
@@ -90,7 +89,7 @@ resource "google_compute_instance" "jde_demo_db" {
 
   network_interface {
     subnetwork = values(module.network.subnets)[0].self_link
-    network_ip = google_compute_address.jde_demo_db_server_internal_ip[0].address
+    network_ip = try(google_compute_address.jde_demo_db_server_internal_ip[0].address, "")
   }
 
   metadata = {
@@ -124,7 +123,6 @@ resource "google_compute_instance" "jde_demo_db" {
   reservation_affinity {
     type = "ANY_RESERVATION"
   }
-
 }
 
 resource "google_compute_instance" "jde_demo_ent" {
@@ -144,7 +142,7 @@ resource "google_compute_instance" "jde_demo_ent" {
 
   network_interface {
     subnetwork = values(module.network.subnets)[0].self_link
-    network_ip = google_compute_address.jde_demo_ent_server_internal_ip[0].address
+    network_ip = try(google_compute_address.jde_demo_ent_server_internal_ip[0].address, "")
   }
 
   metadata = {
@@ -178,7 +176,6 @@ resource "google_compute_instance" "jde_demo_ent" {
   reservation_affinity {
     type = "ANY_RESERVATION"
   }
-
 }
 
 resource "google_compute_instance" "jde_demo_web" {
@@ -198,7 +195,7 @@ resource "google_compute_instance" "jde_demo_web" {
 
   network_interface {
     subnetwork = values(module.network.subnets)[0].self_link
-    network_ip = google_compute_address.jde_demo_web_server_internal_ip[0].address
+    network_ip = try(google_compute_address.jde_demo_web_server_internal_ip[0].address, "")
   }
 
   metadata = {
@@ -232,7 +229,6 @@ resource "google_compute_instance" "jde_demo_web" {
   reservation_affinity {
     type = "ANY_RESERVATION"
   }
-
 }
 
 resource "google_compute_instance" "jde_demo_dep" {
@@ -252,7 +248,7 @@ resource "google_compute_instance" "jde_demo_dep" {
 
   network_interface {
     subnetwork = values(module.network.subnets)[0].self_link
-    network_ip = google_compute_address.jde_demo_dep_server_internal_ip[0].address
+    network_ip = try(google_compute_address.jde_demo_dep_server_internal_ip[0].address, "")
   }
 
   metadata = {
@@ -286,8 +282,8 @@ resource "google_compute_instance" "jde_demo_dep" {
   reservation_affinity {
     type = "ANY_RESERVATION"
   }
-
 }
+
 
 ## JDE Customer data
 resource "google_compute_instance" "jde_prov" {
@@ -307,7 +303,7 @@ resource "google_compute_instance" "jde_prov" {
 
   network_interface {
     subnetwork = values(module.network.subnets)[0].self_link
-    network_ip = google_compute_address.jde_prov_server_internal_ip[0].address
+    network_ip = try(google_compute_address.jde_prov_server_internal_ip[0].address, "")
   }
 
   metadata = {
@@ -341,7 +337,6 @@ resource "google_compute_instance" "jde_prov" {
   reservation_affinity {
     type = "ANY_RESERVATION"
   }
-
 }
 
 resource "google_compute_instance" "jde_db" {
@@ -361,7 +356,7 @@ resource "google_compute_instance" "jde_db" {
 
   network_interface {
     subnetwork = values(module.network.subnets)[0].self_link
-    network_ip = google_compute_address.jde_db_server_internal_ip[0].address
+    network_ip = try(google_compute_address.jde_db_server_internal_ip[0].address, "")
   }
 
   metadata = {
@@ -395,7 +390,6 @@ resource "google_compute_instance" "jde_db" {
   reservation_affinity {
     type = "ANY_RESERVATION"
   }
-
 }
 
 resource "google_compute_instance" "jde_ent" {
@@ -415,7 +409,7 @@ resource "google_compute_instance" "jde_ent" {
 
   network_interface {
     subnetwork = values(module.network.subnets)[0].self_link
-    network_ip = google_compute_address.jde_ent_server_internal_ip[0].address
+    network_ip = try(google_compute_address.jde_ent_server_internal_ip[0].address, "")
   }
 
   metadata = {
@@ -449,7 +443,6 @@ resource "google_compute_instance" "jde_ent" {
   reservation_affinity {
     type = "ANY_RESERVATION"
   }
-
 }
 
 resource "google_compute_instance" "jde_web" {
@@ -469,7 +462,7 @@ resource "google_compute_instance" "jde_web" {
 
   network_interface {
     subnetwork = values(module.network.subnets)[0].self_link
-    network_ip = google_compute_address.jde_web_server_internal_ip[0].address
+    network_ip = try(google_compute_address.jde_web_server_internal_ip[0].address, "")
   }
 
   metadata = {
@@ -503,7 +496,6 @@ resource "google_compute_instance" "jde_web" {
   reservation_affinity {
     type = "ANY_RESERVATION"
   }
-
 }
 
 resource "google_compute_instance" "jde_dep" {
@@ -523,7 +515,7 @@ resource "google_compute_instance" "jde_dep" {
 
   network_interface {
     subnetwork = values(module.network.subnets)[0].self_link
-    network_ip = google_compute_address.jde_dep_server_internal_ip[0].address
+    network_ip = try(google_compute_address.jde_dep_server_internal_ip[0].address, "")
   }
 
   metadata = {
@@ -557,5 +549,4 @@ resource "google_compute_instance" "jde_dep" {
   reservation_affinity {
     type = "ANY_RESERVATION"
   }
-
 }

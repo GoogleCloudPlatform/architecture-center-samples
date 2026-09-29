@@ -123,21 +123,12 @@ resource "google_compute_address" "jde_prov_server_internal_ip" {
 }
 
 resource "google_compute_address" "jde_db_server_internal_ip" {
-  count        = var.oracle_jde_vision ? 0 : 1
+  count        = var.oracle_jde_vision ? 0 : (var.oracle_jde_exascale ? 0 : 1)
   name         = "jde-db-server-internal-ip"
   region       = var.region
   address_type = "INTERNAL"
   subnetwork   = values(module.network.subnets)[0].name
   address      = var.jde_db_server_internal_ip
-}
-
-resource "google_compute_address" "jde_ent_server_internal_ip" {
-  count        = var.oracle_jde_vision ? 0 : 1
-  name         = "jde-server-internal-ip"
-  region       = var.region
-  address_type = "INTERNAL"
-  subnetwork   = values(module.network.subnets)[0].name
-  address      = var.jde_ent_server_internal_ip
 }
 
 resource "google_compute_address" "jde_web_server_internal_ip" {
@@ -158,3 +149,11 @@ resource "google_compute_address" "jde_dep_server_internal_ip" {
   address      = var.jde_dep_server_internal_ip
 }
 
+resource "google_compute_address" "jde_ent_server_internal_ip" {
+  count        = var.oracle_jde_vision ? 0 : 1
+  name         = "jde-ent-server-internal-ip"
+  subnetwork   = values(module.network.subnets)[0].name
+  address_type = "INTERNAL"
+  region       = var.region
+  address      = var.jde_ent_server_internal_ip
+}

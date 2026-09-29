@@ -165,10 +165,8 @@ variable "oci_api_version" {
 variable "exascale_deletion_protection" {
   description = "Whether to enable deletion protection for the ExaScale VM cluster"
   type        = bool
-  default     = true
+  default     = false
 }
-
-# --- ExaScale application VM (app tier only; DB lives on Exadata) ---
 
 variable "exascale_jde_server_internal_ip" {
   description = "Reserved internal IP for the ExaScale jde application VM"
