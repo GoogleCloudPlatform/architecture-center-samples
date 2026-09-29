@@ -293,7 +293,11 @@ resource "null_resource" "exascale_db_provisioning" {
       LIST_URL="$API_URL?vmClusterId=$CLUSTER_OCID&displayName=$DISPLAY_NAME"
       
       LIST_RESULT=$(oci raw-request --http-method GET --target-uri "$LIST_URL" 2>/dev/null || true)
-      EXISTING_STATE=$(echo "$LIST_RESULT" | jq -r '.data[0]["lifecycle-state"] // empty')
+      EXISTING_STATE=$(echo "$LIST_RESULT" | jq -r '.data[0]? | .["lifecycle-state"]? // .lifecycleState? // empty' 2>/dev/null || true)
+      
+      if echo "$LIST_RESULT" | grep -q '"code"'; then
+        echo "OCI API GET Warning: $(echo "$LIST_RESULT" | jq -r '.data.message // empty' 2>/dev/null)" >&2
+      fi
 
       if [ -n "$EXISTING_STATE" ] && [ "$EXISTING_STATE" != "TERMINATED" ] && [ "$EXISTING_STATE" != "FAILED" ]; then
         exit 0
