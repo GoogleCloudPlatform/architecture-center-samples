@@ -10,7 +10,9 @@
 
 This repository provides an enterprise reference architecture connecting Google Cloud Gemini Enterprise agents to **Oracle E-Business Suite (EBS R12.2.x)**. 
 
-Contrary to common assumptions that the repository only performs raw SQL queries, the current codebase provides an end-to-end integration stack:
+The code in this repository provides an end-to-end integration stack and also performs raw SQL queries.
+
+The codebase contains the following components:
 1. **Containerized MCP Toolbox Server (`mcp-toolbox-ebs`):** A Go-based Model Context Protocol (`genai-toolbox`) service running on Google Cloud Run with VPC peering to the EBS database tier.
 2. **8 Out-of-the-Box MCP Tools:** Exposing session initialization (`FND_GLOBAL`), analytical discovery, and transactional public PL/SQL APIs (`INV_TXN_MANAGER_PUB`, AP invoice creation).
 3. **Database Tier Integration (`EBSScripts/`):** A custom PL/SQL package (`ge_ebs_mcp_tools.pls`) that encapsulates core Oracle EBS public APIs, paired with dedicated least-privilege security provisioning scripts (`APPS_AI`).
@@ -61,7 +63,7 @@ The MCP runtime is configured via `MCPServers/mcp-toolbox-ebs/tools.yaml`. It ex
 | **`execute_sql`** | `oracle-execute-sql` | Read-only SQL execution engine | **Data Discovery:** Executes arbitrary read-only SQL queries against base tables and views. |
 | **`create_onhand`** | `oracle-sql` | `ge_ebs_mcp_tools.create_onhand` &rarr; `INV_TXN_MANAGER_PUB.process_Transactions` | **Inventory Receipt:** Executes an Oracle Inventory Miscellaneous Receipt via public APIs to add stock to a warehouse location. |
 | **`reserve_item`** | `oracle-sql` | `ge_ebs_mcp_tools.reserve_item` | **Inventory Reservation:** Creates reservations against on-hand stock for specific inventory items. |
-| **`delete_reserve_item`** | `oracle-sql` | `ge_ebs_mcp_tools.delete_reserve_item` | **Reservation Cancellation:** Cancels and releases an existing inventory reservation. |
+| **`delete_reserve_item`** | `oracle-sql` | `ge_ebs_mcp_tools.delete_reservation` | **Reservation Cancellation:** Cancels and releases an existing inventory reservation. |
 | **`create_ap_invoice`** | `oracle-sql` | `ge_ebs_mcp_tools.create_ap_invoice` | **Payables Invoicing:** Programmatically inserts, validates, and commits an AP invoice record using EBS Payables business rules. |
 
 ---
