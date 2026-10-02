@@ -172,18 +172,7 @@ variable "nat_config" {
   ]
 }
 
-variable "ebs_apps_server_internal_ip" {
-  description = "The internal IP address for the oracle JDE VM instance"
-  type        = string
-  default     = "10.115.0.10"
-}
-
-variable "ebs_db_server_internal_ip" {
-  description = "The internal IP address for the oracle JDE VM instance"
-  type        = string
-  default     = "10.115.0.20"
-}
-
+# JDE DEMO env variables
 variable "jde_demo_prov_server_internal_ip" {
   description = "The internal IP address for the JDE Provisioning DEMO VM instance"
   type        = string
@@ -214,32 +203,6 @@ variable "jde_demo_dep_server_internal_ip" {
   default     = "10.115.0.44"
 }
 
-variable "trusted_ip_ranges" {
-  description = "List of trusted IP ranges allowed to access the firewall rules"
-  type        = list(string)
-  default     = []
-}
-
-variable "apps_image_family" {
-  description = "Image family for the apps instance"
-  default     = "oracle-linux-9"
-}
-
-variable "apps_image_project" {
-  description = "Project where the apps image family resides"
-  default     = "oracle-linux-cloud"
-}
-
-variable "dbs_image_family" {
-  description = "Image family for the dbs instance"
-  default     = "oracle-linux-9"
-}
-
-variable "dbs_image_project" {
-  description = "Project where the dbs image family resides"
-  default     = "oracle-linux-cloud"
-}
-
 variable "jde_demo_prov_family" {
   description = "Image family for the demo instance"
   default     = "oracle-linux-9"
@@ -260,57 +223,6 @@ variable "jde_demo_prov_project_win" {
   default     = "windows-cloud"
 }
 
-# Vars for EBS Apps VM
-variable "apps_machine_type" {
-  description = "The machine type for the EBS Apps VM instance"
-  type        = string
-  default     = "e2-standard-8"
-}
-
-variable "apps_boot_disk_type" {
-  description = "The type of the boot disk (e.g., pd-ssd, pd-standard)"
-  type        = string
-  default     = "pd-ssd"
-}
-
-variable "apps_boot_disk_size" {
-  description = "The size of the boot disk in GB"
-  type        = number
-  default     = 1024
-}
-
-variable "apps_boot_disk_auto_delete" {
-  description = "Whether the boot disk should be auto-deleted when the instance is deleted"
-  type        = bool
-  default     = false
-}
-
-# Vars for EBS DB VM
-variable "dbs_machine_type" {
-  description = "The machine type for the EBS DB VM instance"
-  type        = string
-  default     = "e2-standard-8"
-}
-
-variable "dbs_boot_disk_type" {
-  description = "The type of the boot disk (e.g., pd-ssd, pd-standard)"
-  type        = string
-  default     = "pd-ssd"
-}
-
-variable "dbs_boot_disk_size" {
-  description = "The size of the boot disk in GB"
-  type        = number
-  default     = 1024
-
-}
-variable "dbs_boot_disk_auto_delete" {
-  description = "Whether the boot disk should be auto-deleted when the instance is deleted"
-  type        = bool
-  default     = false
-}
-
-## JDE DEMO jde_demo_prov 
 variable "jde_demo_prov_vm_name" {
   description = "The machine name for the JDE Provisioning DEMO instance"
   type        = string
@@ -456,6 +368,214 @@ variable "jde_demo_dep_boot_disk_type" {
 }
 
 variable "jde_demo_dep_boot_disk_auto_delete" {
+  description = "Whether the boot disk should be auto-deleted when the instance is deleted"
+  type        = bool
+  default     = false
+}
+
+
+# JDE Customer Data env variables
+variable "jde_prov_server_internal_ip" {
+  description = "The internal IP address for the JDE Provisioning Customer Data VM instance"
+  type        = string
+  default     = "10.115.1.40"
+}
+
+variable "jde_db_server_internal_ip" {
+  description = "The internal IP address for the JDE DB Customer Data VM instance"
+  type        = string
+  default     = "10.115.1.41"
+}
+
+variable "jde_ent_server_internal_ip" {
+  description = "The internal IP address for the JDE Enterprise Customer Data VM instance"
+  type        = string
+  default     = "10.115.1.42"
+}
+
+variable "jde_web_server_internal_ip" {
+  description = "The internal IP address for the JDE Web Customer Data VM instance"
+  type        = string
+  default     = "10.115.1.43"
+}
+
+variable "jde_dep_server_internal_ip" {
+  description = "The internal IP address for the JDE deployment Customer Data VM instance"
+  type        = string
+  default     = "10.115.1.44"
+}
+
+variable "trusted_ip_ranges" {
+  description = "List of trusted IP ranges allowed to access the firewall rules"
+  type        = list(string)
+  default     = []
+}
+
+variable "jde_prov_family" {
+  description = "Image family for the Customer Data instance"
+  default     = "oracle-linux-9"
+}
+
+variable "jde_prov_project" {
+  description = "Project where the Customer Data image family resides"
+  default     = "oracle-linux-cloud"
+}
+
+variable "jde_prov_family_win" {
+  description = "Image family for the Customer Data instance Win "
+  default     = "windows-2016"
+}
+
+variable "jde_prov_project_win" {
+  description = "Project where the Customer Data image family resides"
+  default     = "windows-cloud"
+}
+
+variable "jde_prov_vm_name" {
+  description = "The machine name for the JDE Provisioning Customer Data instance"
+  type        = string
+  default     = "jde_prov"
+}
+
+variable "jde_prov_machine_type" {
+  description = "The machine type for the JDE Provisioning Customer Data instance"
+  type        = string
+  default     = "e2-highmem-2"
+}
+
+variable "jde_prov_boot_disk_size" {
+  description = "The size of the boot disk in GB"
+  type        = number
+  default     = 200
+}
+
+variable "jde_prov_boot_disk_type" {
+  description = "The type of the boot disk (e.g., pd-ssd, pd-standard)"
+  type        = string
+  default     = "pd-ssd"
+}
+
+variable "jde_prov_boot_disk_auto_delete" {
+  description = "Whether the boot disk should be auto-deleted when the instance is deleted"
+  type        = bool
+  default     = false
+}
+
+variable "jde_db_vm_name" {
+  description = "The machine name for the JDE DB Customer Data instance"
+  type        = string
+  default     = "jde_db"
+}
+
+variable "jde_db_machine_type" {
+  description = "The machine type for the JDE Database Customer Data instance"
+  type        = string
+  default     = "e2-highmem-4"
+}
+
+variable "jde_db_boot_disk_size" {
+  description = "The size of the boot disk in GB"
+  type        = number
+  default     = 200
+}
+
+variable "jde_db_boot_disk_type" {
+  description = "The type of the boot disk (e.g., pd-ssd, pd-standard)"
+  type        = string
+  default     = "pd-ssd"
+}
+
+variable "jde_db_boot_disk_auto_delete" {
+  description = "Whether the boot disk should be auto-deleted when the instance is deleted"
+  type        = bool
+  default     = false
+}
+
+variable "jde_ent_vm_name" {
+  description = "The machine name for the JDE ENT Customer Data instance"
+  type        = string
+  default     = "jde_ent"
+}
+
+variable "jde_ent_machine_type" {
+  description = "The machine type for the JDE Enterprise Customer Data instance"
+  type        = string
+  default     = "e2-highmem-2"
+}
+
+variable "jde_ent_boot_disk_size" {
+  description = "The size of the boot disk in GB"
+  type        = number
+  default     = 200
+}
+
+variable "jde_ent_boot_disk_type" {
+  description = "The type of the boot disk (e.g., pd-ssd, pd-standard)"
+  type        = string
+  default     = "pd-ssd"
+}
+
+variable "jde_ent_boot_disk_auto_delete" {
+  description = "Whether the boot disk should be auto-deleted when the instance is deleted"
+  type        = bool
+  default     = false
+}
+
+variable "jde_web_vm_name" {
+  description = "The machine name for the JDE Web Customer Data instance"
+  type        = string
+  default     = "jde_web"
+}
+
+variable "jde_web_machine_type" {
+  description = "The machine type for the JDE WEB Customer Data instance"
+  type        = string
+  default     = "e2-highmem-2"
+}
+
+variable "jde_web_boot_disk_size" {
+  description = "The size of the boot disk in GB"
+  type        = number
+  default     = 200
+}
+
+variable "jde_web_boot_disk_type" {
+  description = "The type of the boot disk (e.g., pd-ssd, pd-standard)"
+  type        = string
+  default     = "pd-ssd"
+}
+
+variable "jde_web_boot_disk_auto_delete" {
+  description = "Whether the boot disk should be auto-deleted when the instance is deleted"
+  type        = bool
+  default     = false
+}
+
+variable "jde_dep_vm_name" {
+  description = "The machine name for the JDE Deployment Customer Data instance"
+  type        = string
+  default     = "jde_dep"
+}
+
+variable "jde_dep_machine_type" {
+  description = "The machine type for the JDE deployment Customer Data instance"
+  type        = string
+  default     = "e2-highmem-2"
+}
+
+variable "jde_dep_boot_disk_size" {
+  description = "The size of the boot disk in GB"
+  type        = number
+  default     = 300
+}
+
+variable "jde_dep_boot_disk_type" {
+  description = "The type of the boot disk (e.g., pd-ssd, pd-standard)"
+  type        = string
+  default     = "pd-ssd"
+}
+
+variable "jde_dep_boot_disk_auto_delete" {
   description = "Whether the boot disk should be auto-deleted when the instance is deleted"
   type        = bool
   default     = false

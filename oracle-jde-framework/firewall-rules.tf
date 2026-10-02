@@ -1,6 +1,6 @@
 module "firewall_rules" {
   source       = "terraform-google-modules/network/google//modules/firewall-rules"
-  version      = "9.2.0"
+  version      = "~> 18.1"
   project_id   = var.project_id
   network_name = module.network.network_name
 
@@ -46,6 +46,25 @@ module "firewall_rules" {
         metadata = "INCLUDE_ALL_METADATA"
       }
       target_tags = ["internal-access"]
+    },
+    {
+      name        = "jde-allow-nfs-internal"
+      description = "Allow NFS (2049) only from internal VPC and ODB network CIDRs"
+      source_ranges = [
+        values(module.network.subnets)[0].ip_cidr_range,
+        var.exascale_client_subnet_cidr,
+        var.exascale_backup_subnet_cidr,
+      ]
+      allow = [
+        {
+          protocol = "tcp"
+          ports    = ["2049"]
+        }
+      ]
+      log_config = {
+        metadata = "INCLUDE_ALL_METADATA"
+      }
+      target_tags = ["external-app-access"]
     }
   ]
 
