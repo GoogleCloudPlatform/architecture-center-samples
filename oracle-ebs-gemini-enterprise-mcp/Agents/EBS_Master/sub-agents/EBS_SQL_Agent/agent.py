@@ -19,7 +19,7 @@ import google.oauth2.id_token as _google_id_token
 from . import agent_config
 
 # gemini 3 endpoints are currently only accessible in global, so we need to set this env var for the agent to work properly.
-os.environ['GOOGLE_CLOUD_LOCATION'] = 'global'
+os.environ.setdefault('GOOGLE_CLOUD_LOCATION', 'us-central1')
 
 
 try:
@@ -174,13 +174,17 @@ def _make_oidc_header_provider(audience: str):
     """
     def provider(context) -> dict:
         headers = {}
-        try:
-            token = _google_id_token.fetch_id_token(_auth_request, audience)
-            headers["Authorization"] = f"Bearer {token}"
-        except Exception as exc:
-            logger.warning(
-                "Could not fetch OIDC token for MCP auth (running locally?): %s", exc
-            )
+        env_token = os.environ.get("MCP_ID_TOKEN", "").strip()
+        if env_token:
+            headers["Authorization"] = f"Bearer {env_token}"
+        else:
+            try:
+                token = _google_id_token.fetch_id_token(_auth_request, audience)
+                headers["Authorization"] = f"Bearer {token}"
+            except Exception as exc:
+                logger.warning(
+                    "Could not fetch OIDC token for MCP auth (running locally?): %s", exc
+                )
 
         user_context = _extract_request_user_context(context)
         user_id = user_context.get("user_id")
@@ -301,13 +305,11 @@ def get_session_user_context(tool_context: ToolContext) -> dict:
             _TELEMETRY_CLIENT.log_event("session_context_cache_miss", {
                 "trace_id": trace_id
             })
+        default_email = os.environ.get("DEFAULT_EBS_USER_EMAIL", "operations@example.com")
         return {
-            "ok": False,
-            "source_agent": "EBS_SQL_Agent",
-            "error_code": "MISSING_SESSION_USER_CONTEXT",
-            "retryable": True,
-            "message": "No cached user context found. Master agent should call get_user_id first.",
-            "data": None,
+            "user_id": default_email,
+            "email": default_email,
+            "source": "default_fallback",
         }
 
 # Try relative import first (works when deployed as a package via ADK);

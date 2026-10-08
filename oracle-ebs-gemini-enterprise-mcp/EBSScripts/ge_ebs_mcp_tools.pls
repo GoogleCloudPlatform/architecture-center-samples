@@ -48,6 +48,17 @@ FUNCTION delete_reservation (
         p_description    IN VARCHAR2 DEFAULT NULL
     )RETURN VARCHAR2;
 
+    -- Procedure to create an Oracle Internet Expenses (OIE) Expense Report
+    -- strictly via official Oracle OIE, AOL Attachment, Workflow, and Audit PL/SQL APIs
+    FUNCTION create_expense_report (
+        p_report_number       IN VARCHAR2,
+        p_purpose_description IN VARCHAR2,
+        p_week_end_date       IN VARCHAR2 DEFAULT NULL,
+        p_expense_lines_json  IN VARCHAR2,
+        p_receipt_ocr_text    IN VARCHAR2 DEFAULT NULL,
+        p_employee_id         IN NUMBER   DEFAULT NULL
+    ) RETURN VARCHAR2;
+
 end ge_ebs_mcp_tools;
 /
 

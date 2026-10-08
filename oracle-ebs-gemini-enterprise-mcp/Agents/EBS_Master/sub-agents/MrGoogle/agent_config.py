@@ -1,5 +1,5 @@
 name = "MrGoogle"
-model = "gemini-3.1-flash-lite-preview"
+model = "gemini-2.5-flash"
 
 # High-level description used by parent agents when deciding whether to delegate.
 description = (
