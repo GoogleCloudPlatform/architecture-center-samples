@@ -99,16 +99,16 @@ destroy_mcp_server: ## Destroy MCP Server
 
 plan_psft_agents: ## Plan Terraform for PeopleSoft agents
 	@touch infra.auto.tfvars
-	$(eval MCP_URL=$(shell gcloud run services describe mcp-toolbox-peoplesoft --project $(PROJECT_ID) --region $(REGION) --format 'value(status.url)' 2>/dev/null))
-	@if [ -z "$(MCP_URL)" ]; then \
+	@MCP_URL=$$(gcloud run services describe mcp-toolbox-peoplesoft --project $(PROJECT_ID) --region $(REGION) --format 'value(status.url)' 2>/dev/null); \
+	if [ -z "$$MCP_URL" ]; then \
 		echo "Error: Could not find MCP Server URL in region $(REGION). Is it deployed?"; \
 		exit 1; \
-	fi
-	@echo "Found MCP URL: $(MCP_URL)/mcp"
-	@if grep -q "mcp_server_psft_url" infra.auto.tfvars; then \
-		sed -i.bak "s|^mcp_server_psft_url[[:space:]]*=.*|mcp_server_psft_url = \"$(MCP_URL)/mcp\"|" infra.auto.tfvars && rm infra.auto.tfvars.bak; \
+	fi; \
+	echo "Found MCP URL: $$MCP_URL/mcp"; \
+	if grep -q "mcp_server_psft_url" infra.auto.tfvars; then \
+		sed -i.bak "s|^mcp_server_psft_url[[:space:]]*=.*|mcp_server_psft_url = \"$$MCP_URL/mcp\"|" infra.auto.tfvars && rm infra.auto.tfvars.bak; \
 	else \
-		echo "mcp_server_psft_url = \"$(MCP_URL)/mcp\"" >> infra.auto.tfvars; \
+		echo "mcp_server_psft_url = \"$$MCP_URL/mcp\"" >> infra.auto.tfvars; \
 	fi
 	terraform -chdir=$(TF_DIR) plan -target="null_resource.oracle_peoplesoft_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
 

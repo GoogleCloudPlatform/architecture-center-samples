@@ -140,11 +140,15 @@ def _parse_data(data: str) -> list[dict]:
             if isinstance(parsed, dict):
                 for k in ("rows", "data", "items", "results"):
                     if isinstance(parsed.get(k), list) and parsed[k]:
+                        if not all(isinstance(r, dict) for r in parsed[k]):
+                            raise ValueError("JSON input must be a list of dictionaries/objects.")
                         return parsed[k]
                 if parsed:
                     return [parsed]
                 raise ValueError("JSON object is empty.")
             if isinstance(parsed, list) and parsed:
+                if not all(isinstance(r, dict) for r in parsed):
+                    raise ValueError("JSON input must be a list of dictionaries/objects.")
                 return parsed
             raise ValueError("JSON array is empty or invalid.")
         except json.JSONDecodeError as exc:

@@ -432,10 +432,11 @@ def get_user_id(tool_context: ToolContext):
                 _TELEMETRY_CLIENT.log_event("user_context_resolution_failed", {
                     "trace_id": trace_id
                 })
-            email = os.environ.get("DEFAULT_PSFT_USER_EMAIL", "").strip()
+            if os.environ.get("DEBUG", "false").lower() == "true":
+                email = os.environ.get("DEFAULT_PSFT_USER_EMAIL", "").strip()
             if not email:
                 raise RuntimeError(
-                    "Unable to resolve authenticated user email from session or OAuth token."
+                    "Authentication failed: Unable to resolve authenticated user email from session or OAuth token."
                 )
         else:
             if _TELEMETRY_CLIENT:

@@ -168,12 +168,13 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
 
     UPDATE SYSADM.PS_BU_ITEMS_INV
       SET QTY_RESERVED = QTY_RESERVED + NVL(p_quantity, 1),
-          QTY_AVAILABLE = GREATEST(0, QTY_AVAILABLE - NVL(p_quantity, 1))
+          QTY_AVAILABLE = QTY_AVAILABLE - NVL(p_quantity, 1)
      WHERE BUSINESS_UNIT = v_bu
-       AND INV_ITEM_ID = TRIM(p_item);
+       AND INV_ITEM_ID = TRIM(p_item)
+       AND QTY_AVAILABLE >= NVL(p_quantity, 1);
 
     IF SQL%ROWCOUNT = 0 THEN
-      RAISE_APPLICATION_ERROR(-20001, 'Item ' || TRIM(p_item) || ' not found in PS_BU_ITEMS_INV for Business Unit ' || v_bu);
+      RAISE_APPLICATION_ERROR(-20001, 'Insufficient stock or item ' || TRIM(p_item) || ' not found in PS_BU_ITEMS_INV for Business Unit ' || v_bu);
     END IF;
 
     COMMIT;
