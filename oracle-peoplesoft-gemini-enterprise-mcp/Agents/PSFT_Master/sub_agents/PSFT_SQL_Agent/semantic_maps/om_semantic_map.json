@@ -1,0 +1,53 @@
+{
+  "module": "PeopleSoft Travel & Expenses and Grants (EX / GM)",
+  "description": "PeopleSoft FSCM 9.2 Travel & Expenses sheets (`PS_EX_SHEET_HDR`, `PS_EX_SHEET_LINE`, `PS_EX_SHEET_DIST`) and Grants Management awards (`PS_GM_AWARD`).",
+  "tables": [
+    {
+      "table_name": "SYSADM.PS_EX_SHEET_HDR",
+      "business_name": "Expense Sheet Header",
+      "description": "Stores employee travel and expense report headers.",
+      "columns": [
+        {
+          "name": "SHEET_ID",
+          "description": "10-character Expense Sheet ID (0000990601..0000990613)."
+        },
+        {
+          "name": "SHEET_NAME",
+          "description": "Expense report name/reference (EXP-ATL-9921-V2, EXP-DEN-5521-V2, EXP-CHI-8812-V2)."
+        },
+        {
+          "name": "EMPLID",
+          "description": "Employee ID (KU0042 = Kenneth Schumacher / VP1)."
+        },
+        {
+          "name": "SHEET_STATUS",
+          "description": "Sheet status (SUB = Submitted for Approval, PD = Paid)."
+        },
+        {
+          "name": "TOTAL_AMT",
+          "description": "Total claimed expense amount in USD."
+        }
+      ]
+    },
+    {
+      "table_name": "SYSADM.PS_GM_AWARD",
+      "business_name": "Grants Management Award",
+      "description": "Stores federal and state grant awards in Education & Government BU EGV05.",
+      "columns": [
+        {
+          "name": "BUSINESS_UNIT",
+          "description": "Grants Business Unit (EGV05)."
+        },
+        {
+          "name": "CONTRACT_NUM",
+          "description": "Grant Award / Contract Number (NSF-ENG-2025-44, DOJ-JUST-2026, HHS-TANF-26-04)."
+        },
+        {
+          "name": "DESCR",
+          "description": "Grant award title."
+        }
+      ]
+    }
+  ],
+  "common_joins": []
+}

@@ -1,0 +1,9 @@
+#This file is just to make your life simpler to run locally any sub folder
+fastapi
+google-adk
+google-cloud-aiplatform
+httpx
+mcp
+opentelemetry-instrumentation-google-genai
+uvicorn
+matplotlib
