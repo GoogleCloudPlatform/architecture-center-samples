@@ -182,10 +182,10 @@ tools:
                 JOIN fnd_application_vl          fa ON fr.application_id = fa.application_id
                 JOIN fnd_profile_option_values   fpov ON fpov.level_value = furg.responsibility_id AND fpov.level_id = 10003
                 JOIN fnd_profile_options         fp ON fpov.profile_option_id = fp.profile_option_id
-                JOIN hr_operating_units          hou ON hou.organization_id = TO_NUMBER(fpov.profile_option_value)
+                JOIN hr_operating_units          hou ON hou.organization_id = TO_NUMBER(fpov.profile_option_value DEFAULT NULL ON CONVERSION ERROR)
             WHERE
                     fp.profile_option_name = 'ORG_ID'
-                AND fu.email_address LIKE :user_id
+                AND (UPPER(fu.email_address) LIKE UPPER(:user_id) OR UPPER(fu.user_name) LIKE UPPER(:user_id))
                 AND fa.application_short_name NOT IN ( 'SYSADMIN', 'FND', 'XDO', 'ALR' )
             ORDER BY
                 fr.responsibility_name
