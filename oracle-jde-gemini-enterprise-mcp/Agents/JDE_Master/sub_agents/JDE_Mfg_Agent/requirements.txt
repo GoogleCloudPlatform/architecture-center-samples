@@ -1,0 +1,4 @@
+google-adk
+google-cloud-aiplatform
+google-auth>=2.0
+mcp
