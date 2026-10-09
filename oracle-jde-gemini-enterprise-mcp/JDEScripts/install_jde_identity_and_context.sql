@@ -1,0 +1,334 @@
+SET DEFINE OFF;
+-- =============================================================================
+-- ORACLE JD EDWARDS ENTERPRISEONE 9.2 (JPD920 / PRODDTA / SY920 / PRODCTL)
+-- JDE EnterpriseOne Email-to-JDE Identity & Security Context Package
+-- Maps Gemini Enterprise user email via F01151 & F0092 to JDE User ID & F00950.
+-- =============================================================================
+WHENEVER SQLERROR CONTINUE;
+ALTER SESSION SET CONTAINER = JDEORCL;
+
+-- 1. JDE Address Book Master (PRODDTA.F0101)
+CREATE TABLE PRODDTA.F0101 (
+    ABAN8   NUMBER(8)     NOT NULL,
+    ABALKY  CHAR(20)      DEFAULT ' ',
+    ABTAX   CHAR(20)      DEFAULT ' ',
+    ABALPH  CHAR(40)      NOT NULL,
+    ABDC    CHAR(40)      DEFAULT ' ',
+    ABMCU   CHAR(12)      DEFAULT '         M30',
+    ABAT1   CHAR(3)       DEFAULT 'E  ',
+    ABUSER  CHAR(10)      DEFAULT 'JDE',
+    ABPID   CHAR(10)      DEFAULT 'P01012',
+    ABUPMJ  NUMBER(6)     DEFAULT 126282,
+    CONSTRAINT PK_F0101 PRIMARY KEY (ABAN8)
+) TABLESPACE PRODDTAT;
+
+-- 2. JDE Electronic Address Table (PRODDTA.F01151 - Email Mapping EAETP='E')
+CREATE TABLE PRODDTA.F01151 (
+    EAAN8   NUMBER(8)     NOT NULL,
+    EAIDLN  NUMBER(5)     DEFAULT 0,
+    EARCK7  NUMBER(5)     DEFAULT 1,
+    EAETP   CHAR(4)       DEFAULT 'E   ',
+    EAEMAL  VARCHAR2(256) NOT NULL,
+    EAUSER  CHAR(10)      DEFAULT 'JDE',
+    EAPID   CHAR(10)      DEFAULT 'P0111',
+    EAUPMJ  NUMBER(6)     DEFAULT 126282,
+    CONSTRAINT PK_F01151 PRIMARY KEY (EAAN8, EAIDLN, EARCK7)
+) TABLESPACE PRODDTAT;
+
+CREATE INDEX PRODDTA.IDX_F01151_EMAIL ON PRODDTA.F01151 (UPPER(EAEMAL));
+
+-- 3. JDE User Security / Library Lists (SY920.F0092)
+CREATE TABLE SY920.F0092 (
+    ULUSER  CHAR(10)      NOT NULL,
+    ULAN8   NUMBER(8)     NOT NULL,
+    ULROLE  CHAR(15)      DEFAULT 'MFG_MGR',
+    ULENV   CHAR(10)      DEFAULT 'JPD920',
+    ULGRP   CHAR(10)      DEFAULT 'MFG_PLANT',
+    ULUSTS  CHAR(2)       DEFAULT '01',
+    ULUPMJ  NUMBER(6)     DEFAULT 126282,
+    CONSTRAINT PK_F0092 PRIMARY KEY (ULUSER)
+) TABLESPACE PRODCTLT;
+
+-- 4. JDE Role Relationships (SY920.F95921)
+CREATE TABLE SY920.F95921 (
+    RLFRROLE   CHAR(15)     NOT NULL,
+    RLTOROLE   CHAR(10)     NOT NULL,
+    RLROLEDESC VARCHAR2(80) NOT NULL,
+    RLEFFDATE  NUMBER(6)    DEFAULT 120001,
+    RLEXPDATE  NUMBER(6)    DEFAULT 140365,
+    CONSTRAINT PK_F95921 PRIMARY KEY (RLFRROLE, RLTOROLE)
+) TABLESPACE PRODCTLT;
+
+-- 5. JDE Security Workbench - Row & Action Security (PRODCTL.F00950)
+CREATE TABLE PRODCTL.F00950 (
+    FSTYPS  CHAR(1)       DEFAULT '4',
+    FSUSER  CHAR(15)      NOT NULL,
+    FSOBNM  CHAR(10)      NOT NULL,
+    FSMCU   CHAR(12)      NOT NULL,
+    FSFRDV  CHAR(12)      DEFAULT '         M30',
+    FSTHRV  CHAR(12)      DEFAULT '         M30',
+    FSATN   CHAR(1)       DEFAULT 'Y',
+    FSCHNG  CHAR(1)       DEFAULT 'Y',
+    FSDELT  CHAR(1)       DEFAULT 'Y',
+    FSOKAY  CHAR(1)       DEFAULT 'Y',
+    CONSTRAINT PK_F00950 PRIMARY KEY (FSUSER, FSOBNM, FSMCU)
+) TABLESPACE PRODCTLT;
+
+-- 6. Active MCP Session Context Table (PRODDTA.JDE_MCP_SESSION_CTX)
+CREATE TABLE PRODDTA.JDE_MCP_SESSION_CTX (
+    SESSION_KEY       VARCHAR2(64)  PRIMARY KEY,
+    JDE_USER          VARCHAR2(15)  NOT NULL,
+    ADDRESS_NUMBER    NUMBER(8)     NOT NULL,
+    ALPHA_NAME        VARCHAR2(80)  NOT NULL,
+    EMAIL_ADDRESS     VARCHAR2(256) NOT NULL,
+    JDE_ROLE          VARCHAR2(30)  NOT NULL,
+    JDE_ENVIRONMENT   VARCHAR2(20)  NOT NULL,
+    BRANCH_PLANT      VARCHAR2(12)  NOT NULL,
+    INITIALIZED_DTTM  TIMESTAMP     DEFAULT CURRENT_TIMESTAMP
+) TABLESPACE PRODDTAT;
+
+-- Seed JDE Address Book, Emails, User Profiles, Roles, and F00950 Row Security
+DELETE FROM PRODDTA.F01151;
+DELETE FROM PRODDTA.F0101;
+DELETE FROM SY920.F0092;
+DELETE FROM SY920.F95921;
+DELETE FROM PRODCTL.F00950;
+
+INSERT INTO PRODDTA.F0101 (ABAN8, ABALKY, ABTAX, ABALPH, ABDC, ABMCU, ABAT1) VALUES
+(80001, 'NGONZAL', '99-8000101', 'Gonzalez, Nelson (VP Mfg Operations)', 'GONZALEZNELSON', '         M30', 'E  ');
+INSERT INTO PRODDTA.F0101 (ABAN8, ABALKY, ABTAX, ABALPH, ABDC, ABMCU, ABAT1) VALUES
+(80002, 'JDEADMIN', '99-8000102', 'JD Edwards EnterpriseOne Plant Admin', 'JDEDWARDSADMIN', '         M30', 'E  ');
+INSERT INTO PRODDTA.F0101 (ABAN8, ABALKY, ABTAX, ABALPH, ABDC, ABMCU, ABAT1) VALUES
+(30001, 'APEXOPT', '84-3000101', 'Apex Optical Sensors Inc.', 'APEXOPTICAL', '         M30', 'V  ');
+INSERT INTO PRODDTA.F0101 (ABAN8, ABALKY, ABTAX, ABALPH, ABDC, ABMCU, ABAT1) VALUES
+(30002, 'QUANTUM', '84-3000102', 'Quantum FPGA Microelectronics Corp', 'QUANTUMFPGA', '         M30', 'V  ');
+INSERT INTO PRODDTA.F0101 (ABAN8, ABALKY, ABTAX, ABALPH, ABDC, ABMCU, ABAT1) VALUES
+(30003, 'CERATECH', '84-3000103', 'CeraTech Precision Bearings GmbH', 'CERATECH', '         M30', 'V  ');
+
+INSERT INTO PRODDTA.F01151 (EAAN8, EAIDLN, EARCK7, EAETP, EAEMAL) VALUES
+(80001, 0, 1, 'E   ', 'admin@negonzal.altostrat.com');
+INSERT INTO PRODDTA.F01151 (EAAN8, EAIDLN, EARCK7, EAETP, EAEMAL) VALUES
+(80001, 0, 2, 'E   ', 'negonzal@google.com');
+INSERT INTO PRODDTA.F01151 (EAAN8, EAIDLN, EARCK7, EAETP, EAEMAL) VALUES
+(80002, 0, 1, 'E   ', 'jde@negonzal.altostrat.com');
+
+INSERT INTO SY920.F0092 (ULUSER, ULAN8, ULROLE, ULENV, ULGRP, ULUSTS) VALUES
+('NGONZAL', 80001, 'MFG_MGR', 'JPD920', 'MFG_EXEC', '01');
+INSERT INTO SY920.F0092 (ULUSER, ULAN8, ULROLE, ULENV, ULGRP, ULUSTS) VALUES
+('JDE',     80002, '*ALL',    'JPD920', 'SYSADMIN', '01');
+
+INSERT INTO SY920.F95921 (RLFRROLE, RLTOROLE, RLROLEDESC, RLEFFDATE, RLEXPDATE) VALUES
+('MFG_MGR',   'NGONZAL', 'Discrete Manufacturing Plant Manager (Branch M30)', 120001, 140365);
+INSERT INTO SY920.F95921 (RLFRROLE, RLTOROLE, RLROLEDESC, RLEFFDATE, RLEXPDATE) VALUES
+('SHOP_SUPV', 'NGONZAL', 'Shop Floor Control & Work Order Supervisor (P48013/P31113/P31114)', 120001, 140365);
+INSERT INTO SY920.F95921 (RLFRROLE, RLTOROLE, RLROLEDESC, RLEFFDATE, RLEXPDATE) VALUES
+('BUYER_M30', 'NGONZAL', 'Material Shortage & Purchase Order Expediter (P4310)', 120001, 140365);
+INSERT INTO SY920.F95921 (RLFRROLE, RLTOROLE, RLROLEDESC, RLEFFDATE, RLEXPDATE) VALUES
+('COST_ACCT', 'NGONZAL', 'Manufacturing Cost Accounting & Variance Analyst (P3102)', 120001, 140365);
+
+INSERT INTO PRODCTL.F00950 (FSUSER, FSOBNM, FSMCU, FSFRDV, FSTHRV, FSATN, FSCHNG, FSDELT, FSOKAY) VALUES
+('NGONZAL', 'P48013', '         M30', '         M30', '         M30', 'Y', 'Y', 'Y', 'Y');
+INSERT INTO PRODCTL.F00950 (FSUSER, FSOBNM, FSMCU, FSFRDV, FSTHRV, FSATN, FSCHNG, FSDELT, FSOKAY) VALUES
+('NGONZAL', 'P31113', '         M30', '         M30', '         M30', 'Y', 'Y', 'Y', 'Y');
+INSERT INTO PRODCTL.F00950 (FSUSER, FSOBNM, FSMCU, FSFRDV, FSTHRV, FSATN, FSCHNG, FSDELT, FSOKAY) VALUES
+('NGONZAL', 'P311221','         M30', '         M30', '         M30', 'Y', 'Y', 'Y', 'Y');
+INSERT INTO PRODCTL.F00950 (FSUSER, FSOBNM, FSMCU, FSFRDV, FSTHRV, FSATN, FSCHNG, FSDELT, FSOKAY) VALUES
+('NGONZAL', 'P31114', '         M30', '         M30', '         M30', 'Y', 'Y', 'Y', 'Y');
+INSERT INTO PRODCTL.F00950 (FSUSER, FSOBNM, FSMCU, FSFRDV, FSTHRV, FSATN, FSCHNG, FSDELT, FSOKAY) VALUES
+('NGONZAL', 'P4310',  '         M30', '         M30', '         M30', 'Y', 'Y', 'Y', 'Y');
+INSERT INTO PRODCTL.F00950 (FSUSER, FSOBNM, FSMCU, FSFRDV, FSTHRV, FSATN, FSCHNG, FSDELT, FSOKAY) VALUES
+('NGONZAL', 'P980051','         M30', '         M30', '         M30', 'Y', 'Y', 'Y', 'Y');
+INSERT INTO PRODCTL.F00950 (FSUSER, FSOBNM, FSMCU, FSFRDV, FSTHRV, FSATN, FSCHNG, FSDELT, FSOKAY) VALUES
+('NGONZAL', 'P4095',  '         M30', '         M30', '         M30', 'Y', 'Y', 'Y', 'Y');
+INSERT INTO PRODCTL.F00950 (FSUSER, FSOBNM, FSMCU, FSFRDV, FSTHRV, FSATN, FSCHNG, FSDELT, FSOKAY) VALUES
+('*PUBLIC', 'P980051','         M30', '         M30', '         M30', 'Y', 'Y', 'Y', 'Y');
+INSERT INTO PRODCTL.F00950 (FSUSER, FSOBNM, FSMCU, FSFRDV, FSTHRV, FSATN, FSCHNG, FSDELT, FSOKAY) VALUES
+('*PUBLIC', 'P4095',  '         M30', '         M30', '         M30', 'Y', 'Y', 'Y', 'Y');
+
+COMMIT;
+
+-- Grant direct privileges to PRODDTA (required for PL/SQL definer's rights compilation)
+GRANT SELECT ON SY920.F0092 TO PRODDTA, JDE_AI, PUBLIC;
+GRANT SELECT ON SY920.F95921 TO PRODDTA, JDE_AI, PUBLIC;
+GRANT SELECT ON PRODCTL.F00950 TO PRODDTA, JDE_AI, PUBLIC;
+GRANT EXECUTE ON SYS.DBMS_SESSION TO PRODDTA, JDE_AI;
+
+-- 7. Compile PRODDTA.GE_JDE_MCP_TOOLS Package (JDE EnterpriseOne Identity & Audit Wrapper)
+CREATE OR REPLACE PACKAGE PRODDTA.GE_JDE_MCP_TOOLS AS
+
+  FUNCTION jde_initialize_context (
+    p_email_or_user   IN VARCHAR2,
+    p_branch_plant    IN VARCHAR2 DEFAULT 'M30',
+    p_role_name       IN VARCHAR2 DEFAULT 'MFG_MGR',
+    p_environment     IN VARCHAR2 DEFAULT 'JPD920'
+  ) RETURN VARCHAR2;
+
+  FUNCTION get_active_jde_user (
+    p_email_or_user   IN VARCHAR2 DEFAULT NULL
+  ) RETURN VARCHAR2;
+
+END GE_JDE_MCP_TOOLS;
+/
+
+CREATE OR REPLACE PACKAGE BODY PRODDTA.GE_JDE_MCP_TOOLS AS
+
+  PROCEDURE write_log (
+    p_status  IN VARCHAR2,
+    p_unit    IN VARCHAR2,
+    p_user    IN VARCHAR2,
+    p_message IN CLOB
+  ) IS
+    PRAGMA AUTONOMOUS_TRANSACTION;
+  BEGIN
+    INSERT INTO PRODDTA.GGLTOOLBOX$MCP_LOG (
+      TOOL_NAME, JDE_USER, PARAMETERS, EXECUTION_MODE, STATUS
+    ) VALUES (
+      p_unit, NVL(p_user, USER), p_message, 'JDE_IDENTITY_CTX', p_status
+    );
+    COMMIT;
+  EXCEPTION
+    WHEN OTHERS THEN
+      ROLLBACK;
+  END write_log;
+
+  FUNCTION jde_initialize_context (
+    p_email_or_user   IN VARCHAR2,
+    p_branch_plant    IN VARCHAR2 DEFAULT 'M30',
+    p_role_name       IN VARCHAR2 DEFAULT 'MFG_MGR',
+    p_environment     IN VARCHAR2 DEFAULT 'JPD920'
+  ) RETURN VARCHAR2 IS
+    PRAGMA AUTONOMOUS_TRANSACTION;
+    v_user        VARCHAR2(15);
+    v_an8         NUMBER(8);
+    v_alph        VARCHAR2(80);
+    v_email       VARCHAR2(256);
+    v_role        VARCHAR2(30);
+    v_env         VARCHAR2(20);
+    v_usts        VARCHAR2(2);
+    v_mcu         VARCHAR2(12) := NVL(TRIM(p_branch_plant), 'M30');
+    v_req_role    VARCHAR2(30) := NVL(TRIM(p_role_name), 'MFG_MGR');
+    v_req_env     VARCHAR2(20) := NVL(TRIM(p_environment), 'JPD920');
+    v_result      VARCHAR2(2000);
+  BEGIN
+    IF v_mcu IS NULL OR UPPER(v_mcu) = 'NULL' THEN v_mcu := 'M30'; END IF;
+    IF v_req_role IS NULL OR UPPER(v_req_role) = 'NULL' THEN v_req_role := 'MFG_MGR'; END IF;
+    IF v_req_env IS NULL OR UPPER(v_req_env) = 'NULL' THEN v_req_env := 'JPD920'; END IF;
+
+    BEGIN
+      SELECT TRIM(u.ULUSER), u.ULAN8, TRIM(a.ABALPH), e.EAEMAL, TRIM(u.ULROLE), TRIM(u.ULENV), TRIM(u.ULUSTS)
+        INTO v_user, v_an8, v_alph, v_email, v_role, v_env, v_usts
+        FROM SY920.F0092 u
+        JOIN PRODDTA.F0101 a  ON a.ABAN8 = u.ULAN8
+        JOIN PRODDTA.F01151 e ON e.EAAN8 = u.ULAN8
+       WHERE (UPPER(e.EAEMAL) = UPPER(TRIM(p_email_or_user))
+           OR u.ULUSER = RPAD(UPPER(TRIM(p_email_or_user)), 10))
+         AND u.ULUSTS = '01'
+       ORDER BY CASE WHEN TRIM(u.ULUSER) = 'NGONZAL' THEN 0 ELSE 1 END, e.EARCK7
+       FETCH FIRST 1 ROWS ONLY;
+    EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+        write_log('ERROR', 'jde_initialize_context', p_email_or_user,
+                  'JDE user not found or inactive in F0092/F01151 for: ' || p_email_or_user);
+        RETURN '{"STATUS":"ERROR","MESSAGE":"JDE User not found in F0092/F01151 for email/user: ' || p_email_or_user || '"}';
+    END;
+
+    -- Set Oracle Session Identifier for Unified Audit & Traceability
+    DBMS_SESSION.SET_IDENTIFIER(SUBSTR(v_user || ':' || v_email, 1, 64));
+
+    MERGE INTO PRODDTA.JDE_MCP_SESSION_CTX t
+    USING (SELECT UPPER(TRIM(v_email)) AS SESSION_KEY FROM DUAL) s
+       ON (t.SESSION_KEY = s.SESSION_KEY)
+     WHEN MATCHED THEN
+       UPDATE SET JDE_USER         = v_user,
+                  ADDRESS_NUMBER   = v_an8,
+                  ALPHA_NAME       = v_alph,
+                  EMAIL_ADDRESS    = v_email,
+                  JDE_ROLE         = v_role,
+                  JDE_ENVIRONMENT  = v_env,
+                  BRANCH_PLANT     = v_mcu,
+                  INITIALIZED_DTTM = CURRENT_TIMESTAMP
+     WHEN NOT MATCHED THEN
+       INSERT (SESSION_KEY, JDE_USER, ADDRESS_NUMBER, ALPHA_NAME, EMAIL_ADDRESS, JDE_ROLE, JDE_ENVIRONMENT, BRANCH_PLANT, INITIALIZED_DTTM)
+       VALUES (s.SESSION_KEY, v_user, v_an8, v_alph, v_email, v_role, v_env, v_mcu, CURRENT_TIMESTAMP);
+
+    COMMIT;
+
+    v_result := JSON_OBJECT(
+      'STATUS'          VALUE 'SUCCESS',
+      'JDE_USER'        VALUE v_user,
+      'ADDRESS_NUMBER'  VALUE v_an8,
+      'ALPHA_NAME'      VALUE v_alph,
+      'EMAIL_ADDRESS'   VALUE v_email,
+      'JDE_ROLE'        VALUE v_role,
+      'JDE_ENVIRONMENT' VALUE v_env,
+      'BRANCH_PLANT'    VALUE v_mcu
+    );
+
+    write_log('SUCCESS', 'jde_initialize_context', v_user || ' (' || v_email || ')',
+              v_result);
+    RETURN v_result;
+  END jde_initialize_context;
+
+  FUNCTION get_active_jde_user (
+    p_email_or_user   IN VARCHAR2 DEFAULT NULL
+  ) RETURN VARCHAR2 IS
+    v_user VARCHAR2(15);
+  BEGIN
+    IF p_email_or_user IS NOT NULL THEN
+      BEGIN
+        SELECT JDE_USER
+          INTO v_user
+          FROM PRODDTA.JDE_MCP_SESSION_CTX
+         WHERE SESSION_KEY = UPPER(TRIM(p_email_or_user))
+            OR UPPER(TRIM(EMAIL_ADDRESS)) = UPPER(TRIM(p_email_or_user))
+            OR UPPER(TRIM(JDE_USER)) = UPPER(TRIM(p_email_or_user))
+         ORDER BY INITIALIZED_DTTM DESC
+         FETCH FIRST 1 ROWS ONLY;
+        RETURN v_user;
+      EXCEPTION
+        WHEN NO_DATA_FOUND THEN NULL;
+      END;
+
+      BEGIN
+        SELECT TRIM(u.ULUSER)
+          INTO v_user
+          FROM SY920.F0092 u
+          JOIN PRODDTA.F01151 e ON e.EAAN8 = u.ULAN8
+         WHERE UPPER(TRIM(e.EAEMAL)) = UPPER(TRIM(p_email_or_user))
+            OR UPPER(TRIM(u.ULUSER)) = UPPER(TRIM(p_email_or_user))
+         FETCH FIRST 1 ROWS ONLY;
+        RETURN v_user;
+      EXCEPTION
+        WHEN NO_DATA_FOUND THEN NULL;
+      END;
+    END IF;
+
+    BEGIN
+      SELECT JDE_USER
+        INTO v_user
+        FROM PRODDTA.JDE_MCP_SESSION_CTX
+       ORDER BY INITIALIZED_DTTM DESC
+       FETCH FIRST 1 ROWS ONLY;
+      RETURN v_user;
+    EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+        RETURN 'NGONZAL';
+    END;
+  END get_active_jde_user;
+
+END GE_JDE_MCP_TOOLS;
+/
+
+-- Initialize default active session for admin@negonzal.altostrat.com -> NGONZAL
+SELECT PRODDTA.GE_JDE_MCP_TOOLS.jde_initialize_context('admin@negonzal.altostrat.com', 'M30', 'MFG_MGR', 'JPD920') AS INIT_RESULT FROM DUAL;
+
+-- Grant privileges to JDE_AI and PUBLIC
+GRANT SELECT ON PRODDTA.F0101 TO JDE_AI, PUBLIC;
+GRANT SELECT ON PRODDTA.F01151 TO JDE_AI, PUBLIC;
+GRANT SELECT ON SY920.F0092 TO JDE_AI, PUBLIC;
+GRANT SELECT ON SY920.F95921 TO JDE_AI, PUBLIC;
+GRANT SELECT ON PRODCTL.F00950 TO JDE_AI, PUBLIC;
+GRANT SELECT, INSERT, UPDATE, DELETE ON PRODDTA.JDE_MCP_SESSION_CTX TO JDE_AI, PUBLIC;
+GRANT EXECUTE ON PRODDTA.GE_JDE_MCP_TOOLS TO JDE_AI, PUBLIC;
+
+EXIT;
