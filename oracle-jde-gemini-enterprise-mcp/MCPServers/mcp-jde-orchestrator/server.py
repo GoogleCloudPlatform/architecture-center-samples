@@ -422,8 +422,8 @@ def list_jde_roles(
         JOIN PRODDTA.F0101 a   ON a.aban8 = u.ulan8
         JOIN PRODDTA.F01151 e  ON e.eaan8 = u.ulan8
         LEFT JOIN SY920.F95921 r ON TRIM(r.rltorole) = TRIM(u.uluser)
-       WHERE UPPER(TRIM(e.eaemal)) = UPPER(TRIM(:p_id))
-          OR UPPER(TRIM(u.uluser)) = UPPER(TRIM(:p_id))
+       WHERE UPPER(e.eaemal) = UPPER(TRIM(:p_id))
+          OR u.uluser = RPAD(UPPER(TRIM(:p_id)), 10)
        ORDER BY e.earck7, TRIM(r.rlfrrole)
       """,
       {"p_id": email_or_user.strip()},

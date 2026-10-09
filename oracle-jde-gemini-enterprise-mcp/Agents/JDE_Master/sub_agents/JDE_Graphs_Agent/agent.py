@@ -835,7 +835,7 @@ root_agent = Agent(
     instruction=agent_config.instruction,
     tools=[render_table, render_bar_chart, render_line_chart, render_pie_chart],
     generate_content_config=GenerateContentConfig(
-        automatic_function_calling=AutomaticFunctionCallingConfig(disable=True),
+        # automatic_function_calling=AutomaticFunctionCallingConfig(disable=True),
         temperature=0,
         safety_settings=[
             SafetySetting(

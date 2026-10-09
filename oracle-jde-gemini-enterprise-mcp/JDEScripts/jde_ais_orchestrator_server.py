@@ -69,7 +69,7 @@ def iso_to_julian(iso_str: Optional[str] = None) -> int:
         dt = datetime.date.today()
     else:
         try:
-            dt = datetime.date.fromisoformat(iso_str[:10])
+            dt = datetime.date.fromisoformat(str(iso_str)[:10])
         except Exception:
             dt = datetime.date.today()
     century = (dt.year - 1900) // 100
@@ -1234,10 +1234,10 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
                         MLPID  = 'P4095     ',
                         MLUPMJ = :upmj
                     WHERE MLANID = :anid
-                      AND TRIM(MLCO) = :co
-                      AND TRIM(MLDCTO) = :dcto
-                      AND TRIM(MLGLPT) = :glpt
-                      AND TRIM(MLCOST) = :cost
+                      AND MLCO = :co
+                      AND MLDCTO = :dcto
+                      AND MLGLPT = :glpt
+                      AND MLCOST = :cost
                     """,
                     {
                         "ani": formatted_ani,
