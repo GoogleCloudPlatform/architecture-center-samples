@@ -67,7 +67,7 @@ def _telemetry_span(name: str, attributes: dict = None):
             yield span
     except Exception as e:
         logger.debug(f"Error in telemetry span {name}: {e}")
-        yield None
+        raise
     finally:
         duration_ms = (time.perf_counter() - start_time) * 1000
         logger.debug(f"Span '{name}' completed in {duration_ms:.2f}ms")

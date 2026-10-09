@@ -155,14 +155,15 @@ fi
 case "$COMMAND" in
   list)
     echo "▶️  Executing LIST"
+    tmp_file=$(mktemp)
     $CURL -X GET \
       -H "Authorization: Bearer $(gcloud auth print-access-token)" \
       -H "Content-Type: application/json" \
       -H "X-Goog-User-Project: ${GOOGLE_CLOUD_PROJECT}" \
-      "${BASE_API_URL}" > /tmp/auth_list.json
-    jq . /tmp/auth_list.json
-    echo -e "\nTotal Authorizations: $(jq '.authorizations | length' /tmp/auth_list.json)"
-    echo "Full response saved to /tmp/auth_list.json"  
+      "${BASE_API_URL}" > "$tmp_file"
+    jq . "$tmp_file"
+    echo -e "\nTotal Authorizations: $(jq '.authorizations | length' "$tmp_file")"
+    echo "Full response saved to $tmp_file"
     ;;
 
   create)

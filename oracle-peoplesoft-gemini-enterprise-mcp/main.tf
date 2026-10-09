@@ -39,6 +39,7 @@ GOOGLE_CLOUD_PROJECT_NUMBER=$ACTUAL_PROJECT_NUMBER
 GOOGLE_CLOUD_LOCATION="${var.region}"
 MCP_SERVER_PSFT_URL="${var.mcp_server_psft_url}"
 MCP_SERVER_SQL_URL="${var.mcp_server_psft_url}"
+GOOGLE_CLOUD_BUCKET_NAME="${var.project_id}-agent-staging"
 EOF
 
       cd Agents/
