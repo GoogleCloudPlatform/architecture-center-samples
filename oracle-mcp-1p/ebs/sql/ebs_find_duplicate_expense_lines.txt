@@ -1,0 +1,5 @@
+Finds expense lines that look duplicated, to support duplicate-billing and cloned-claim review.
+Returns two kinds of matches, labelled in match_type. SAME_LINE_ACROSS_REPORTS: one employee, same expense type, amount and justification text on two or more different reports (a recurring or copied line). SAME_DAY_SAME_AMOUNT: one employee, same expense type, amount and expense date on two or more lines (a possible double entry). Largest total first, at most 100 groups.
+All parameters are optional: pass an empty string to leave a filter off. Use min_amount to ignore small lines. A match is a lead to review, not proof of a duplicate; compare receipts and dates before concluding.
+Underlying Tables: AP_EXPENSE_REPORT_HEADERS_ALL, AP_EXPENSE_REPORT_LINES_ALL, AP_EXPENSE_REPORT_PARAMS_ALL, PER_ALL_PEOPLE_F.
+Security Context: Financial auditor responsibility context (fnd_global.apps_initialize).

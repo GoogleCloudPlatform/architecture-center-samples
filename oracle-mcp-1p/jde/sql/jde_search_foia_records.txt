@@ -1,0 +1,5 @@
+Searches discoverable employee records, purchase orders and contracts, and supplier vouchers across JD Edwards HR, Procurement and Accounts Payable by keyword, date range or company.
+Underlying Tables: F060116 (Employee Master), F4301 (Purchase Order Header), F0411 (Supplier Ledger), F0101 (Address Book).
+JDE Applications: Employee Master (P0801), Purchase Orders (P4310), Supplier Ledger Inquiry (P042002).
+Data Notes: reference_id is the JDE address number or document number; pass it to jde_get_employee_personnel_file or, with the matching media object name, to jde_get_media_object_attachment.
+Security Context: Cross-module discovery scoped by JDE company; row security (F00950) enforced only with the PL/SQL security wrapper.

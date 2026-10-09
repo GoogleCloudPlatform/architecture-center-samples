@@ -1,0 +1,4 @@
+Searches discoverable case records, HR employee files, vendor agreements, and correspondence across EBS modules by date, party, or keyword.
+Underlying Tables: PER_ALL_PEOPLE_F, PO_HEADERS_ALL, PO_LINES_ALL, AP_INVOICES_ALL, FND_ATTACHED_DOCUMENTS.
+APIs: APPS_AI.EBS_FOIA_SEARCH_PKG.SEARCH_DOCUMENTS.
+Security Context: Cross-module discovery context; filtered by agency tenant Org ID.

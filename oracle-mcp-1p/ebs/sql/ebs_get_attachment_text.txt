@@ -1,0 +1,5 @@
+Returns the text of one EBS attachment, for the notice, policy, intake and RFP skills: short and long text attachments, and plain-text, HTML (tags removed), XML or JSON files decoded with their own character set. Text comes back in order as numbered chunks (about 1,000 characters each, up to 24 per call); when more_chunks_follow is Y, call again with start_chunk = the last chunk_number + 1. Join the chunks in order, without separators, to get the full text; an HTML entity cut by a chunk boundary (e.g. &nbsp;) stays encoded.
+PDF, Word, Excel and image files return one row with content_kind BINARY_FILE and an explanation instead of text: their text cannot be extracted with SQL in this database. Web-page attachments return their URL.
+Find document IDs with ebs_search_policy_attachments, ebs_get_intake_attachments, ebs_get_vendor_bids or ebs_get_document_attachment.
+Underlying Tables: FND_DOCUMENTS, FND_DOCUMENTS_TL, FND_DOCUMENT_DATATYPES, FND_DOCUMENTS_SHORT_TEXT, FND_DOCUMENTS_LONG_TEXT, FND_LOBS.
+Security Context: Per-user security only with the PL/SQL security wrapper.

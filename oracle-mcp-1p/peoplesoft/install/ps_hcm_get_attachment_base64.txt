@@ -1,0 +1,5 @@
+Returns a stored PeopleSoft attachment as Base64 text, one piece per call, so a client can rebuild a file whose text cannot be read in the database (images, scanned documents, anything the agent must pass on or read with its own tools). Give the stored file name (attachsysfilename). The response gives the file size, bytes per piece, the number of pieces and whether more follow; call again with the next chunk number, keeping chunk_bytes the same, until has_more is N, then join the base64_chunk values in order and decode them.
+Attachments stored in several parts are joined first, and the newest version is used. For readable text use ps_hcm_get_attachment_text instead; it is much smaller. Files over 50 MB are refused (file_status TOO_LARGE).
+Attachments can hold personal data; the content is returned as stored.
+Underlying Tables: PS_HR_ATT_FILES, PSFILE_ATTDET (through the database package SYSADM.XX_AI_ATTACHMENT_PKG, installed by a DBA from peoplesoft/install).
+Security Context: Attachment data; use the PL/SQL wrapper and an authorised user in production.

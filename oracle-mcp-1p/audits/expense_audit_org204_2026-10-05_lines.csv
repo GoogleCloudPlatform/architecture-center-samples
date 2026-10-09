@@ -1,0 +1,306 @@
+report,employee_id,employee_name,submitted,line,expense_date,expense_type,justification,amount,classification,ref,citation,attachment_on_file,ebs_policy_status,expense_end_date,location,ticket_class,number_attendees,line_receipt_required,line_receipt_verified
+W39246,267,"Erickson, Mr. Barry",2010-09-29,1,2010-09-28,Miscellaneous,Laundry,14,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-28,,,,Y,Y
+W39246,267,"Erickson, Mr. Barry",2010-09-29,2,2010-09-28,Telephone Calls,Weekly Team Call,25,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-28,,,,Y,Y
+W39246,267,"Erickson, Mr. Barry",2010-09-29,3,2010-09-27,Meals,Dinner with Client´s Project Management,220,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-27,,,7,Y,Y
+W39246,267,"Erickson, Mr. Barry",2010-09-29,4,2010-09-29,Car Rental,Ferrari (sight-seeing tour),651.54,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-09-29,All Other Locations,,,Y,Y
+W39246,267,"Erickson, Mr. Barry",2010-09-29,5,2010-09-28,Hotel,Only Executive Suite available,986.52,QUESTIONED,Q3x,2 CFR 200.475; 200.404,no,OK,2010-09-29,All Other Locations,,,Y,Y
+W39246,267,"Erickson, Mr. Barry",2010-09-29,6,2010-09-27,Airfare,Air ticket,2285,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-09-27,,BUSINESS,,Y,Y
+W39243,10966,"Bogini, Samuel",2010-09-23,1,2010-09-22,Telephone Calls,Monthly team call,24,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-22,,,,Y,Y
+W39243,10966,"Bogini, Samuel",2010-09-23,2,2010-09-21,Miscellaneous,Internet Access,33,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-23,,,,Y,Y
+W39243,10966,"Bogini, Samuel",2010-09-23,3,2010-09-21,Mileage,To/From Airport,36,INCOMPLETE,I3,2 CFR 200.475; 200.403(g),no,OK,2010-09-21,,,,Y,Y
+W39243,10966,"Bogini, Samuel",2010-09-23,4,2010-09-21,Meals,Meals (3 days),180,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-23,,,2,Y,Y
+W39243,10966,"Bogini, Samuel",2010-09-23,5,2010-09-21,Car Rental,2 days in Atlanta,98.44,QUESTIONED,Q6,2 CFR 200.475; 200.403(g),no,OK,2010-09-22,All Other Locations,,,Y,Y
+W39243,10966,"Bogini, Samuel",2010-09-23,6,2010-09-22,Entertainment,Dinner with Client´s Project Management,250,QUESTIONED,Q1,2 CFR 200.438; 200.403(g); 200.423,no,OK,2010-09-22,,,,Y,Y
+W39243,10966,"Bogini, Samuel",2010-09-23,7,2010-09-21,Hotel,3 nights,475.98,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-09-23,All Other Locations,,,Y,Y
+W39243,10966,"Bogini, Samuel",2010-09-23,8,2010-09-20,Airfare,Air ticket,2307,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-09-20,,BUSINESS,,Y,Y
+W39240,6513,"Marsh, Mr. Chris",2010-09-23,1,2010-09-21,Telephone Calls,Monthly team call,20,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-21,,,,Y,Y
+W39240,6513,"Marsh, Mr. Chris",2010-09-23,2,2010-09-21,Miscellaneous,Internet Access,25,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-21,,,,Y,Y
+W39240,6513,"Marsh, Mr. Chris",2010-09-23,3,2010-09-21,Meals,Team Dinner,200,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-21,,,5,Y,Y
+W39240,6513,"Marsh, Mr. Chris",2010-09-23,4,2010-09-21,Car Rental,BMW-cabriolet (sight-seeing tour),312,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-09-21,All Other Locations,,,Y,Y
+W39240,6513,"Marsh, Mr. Chris",2010-09-23,5,2010-09-22,Entertainment,Dinner with Client´s Project Management,480,QUESTIONED,Q1,2 CFR 200.438; 200.403(g); 200.423,no,OK,2010-09-22,,,,Y,Y
+W39240,6513,"Marsh, Mr. Chris",2010-09-23,6,2010-09-22,Hotel,2 nights,378.86,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-09-23,All Other Locations,,,Y,Y
+W39240,6513,"Marsh, Mr. Chris",2010-09-23,7,2010-09-20,Airfare,Air ticket,2187,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-09-20,,BUSINESS,,Y,Y
+W39251,5066,"Ulrich, Mr. Jeffery",2010-09-19,1,2010-09-17,Telephone Calls,Monthly team call,24,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-17,,,,Y,Y
+W39251,5066,"Ulrich, Mr. Jeffery",2010-09-19,2,2010-09-18,Miscellaneous,Internet Access,18,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-18,,,,Y,Y
+W39251,5066,"Ulrich, Mr. Jeffery",2010-09-19,3,2010-09-17,Meals,Meals (3 days),207,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-19,,,2,Y,Y
+W39251,5066,"Ulrich, Mr. Jeffery",2010-09-19,4,2010-09-17,Car Rental,Local car rental,228,QUESTIONED,Q6,2 CFR 200.475; 200.403(g),no,OK,2010-09-19,All Other Locations,,,Y,Y
+W39251,5066,"Ulrich, Mr. Jeffery",2010-09-19,5,2010-09-18,Hotel,2 nights,505,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-09-19,All Other Locations,,,Y,Y
+W39251,5066,"Ulrich, Mr. Jeffery",2010-09-19,6,2010-09-17,Airfare,Air ticket,2317,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-09-17,,BUSINESS,,Y,Y
+W39241,6423,"Katzberg, Ms. Susan",2010-09-16,1,2010-09-15,Telephone Calls,Internet Access,20,INCOMPLETE,I2,"2 CFR 200.403(a),(g)",no,OK,2010-09-15,,,,Y,Y
+W39241,6423,"Katzberg, Ms. Susan",2010-09-16,2,2010-09-15,Miscellaneous,Laundry,35,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-15,,,,Y,Y
+W39241,6423,"Katzberg, Ms. Susan",2010-09-16,3,2010-09-14,Meals,Meals (3 days),99.99,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-16,,,1,Y,Y
+W39241,6423,"Katzberg, Ms. Susan",2010-09-16,4,2010-09-16,Car Rental,BMW-cabriolet (sight-seeing tour),350.23,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-09-16,All Other Locations,,,Y,Y
+W39241,6423,"Katzberg, Ms. Susan",2010-09-16,5,2010-09-15,Entertainment,Dinner with Client´s Project Management,450,QUESTIONED,Q1,2 CFR 200.438; 200.403(g); 200.423,no,OK,2010-09-15,,,,Y,Y
+W39241,6423,"Katzberg, Ms. Susan",2010-09-16,6,2010-09-15,Hotel,2 nights,453.32,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-09-16,All Other Locations,,,Y,Y
+W39241,6423,"Katzberg, Ms. Susan",2010-09-16,7,2010-09-13,Airfare,Air ticket,2296,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-09-13,,BUSINESS,,Y,Y
+W39239,3165,"Apt, Peter M.",2010-09-16,1,2010-09-15,Telephone Calls,Sales Conf Call,20,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-15,,,,Y,Y
+W39239,3165,"Apt, Peter M.",2010-09-16,2,2010-09-15,Meals,Team Dinner,120,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-15,,,3,Y,Y
+W39239,3165,"Apt, Peter M.",2010-09-16,3,2010-09-16,Car Rental,BMW-cabriolet (sight-seeing tour),240.12,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-09-16,All Other Locations,,,Y,Y
+W39239,3165,"Apt, Peter M.",2010-09-16,4,2010-09-16,Hotel,Only president suite available,409.44,QUESTIONED,Q3x,2 CFR 200.475; 200.404,no,OK,2010-09-16,All Other Locations,,,Y,Y
+W39239,3165,"Apt, Peter M.",2010-09-16,5,2010-09-13,Airfare,Air ticket,2447,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-09-13,,BUSINESS,,Y,Y
+W39253,5063,"Becker, Lisa",2010-09-13,1,2010-09-13,Entertainment,Tickets for Rock´n Roll concert (team meeting),2720,UNALLOWABLE,U2,2 CFR 200.438,no,OK,2010-09-13,,,,Y,Y
+W39253,5063,"Becker, Lisa",2010-09-13,2,2010-09-13,Car Rental,Oldtimer car rental (drive to to concert),1850,UNALLOWABLE,U3,2 CFR 200.438,no,OK,2010-09-13,All Other Locations,,,Y,Y
+W39252,3173,"Weinberg, Jerry",2010-09-13,1,2010-09-11,Telephone Calls,Monthly team call,19,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-11,,,,Y,Y
+W39252,3173,"Weinberg, Jerry",2010-09-13,2,2010-09-12,Miscellaneous,Internet Access,33,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-12,,,,Y,Y
+W39252,3173,"Weinberg, Jerry",2010-09-13,3,2010-09-11,Meals,Meals (3 days),159,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-13,,,2,Y,Y
+W39252,3173,"Weinberg, Jerry",2010-09-13,4,2010-09-11,Car Rental,Local car rental,201,QUESTIONED,Q6,2 CFR 200.475; 200.403(g),no,OK,2010-09-13,All Other Locations,,,Y,Y
+W39252,3173,"Weinberg, Jerry",2010-09-13,5,2010-09-11,Hotel,2 nights,399,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-09-13,All Other Locations,,,Y,Y
+W39252,3173,"Weinberg, Jerry",2010-09-13,6,2010-09-11,Airfare,Air ticket,2197,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-09-11,,BUSINESS,,Y,Y
+W39248,6420,"Goldman, Mrs. Pamela",2010-09-13,1,2010-09-11,Telephone Calls,Weekly Team Call,18,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-11,,,,Y,Y
+W39248,6420,"Goldman, Mrs. Pamela",2010-09-13,2,2010-09-12,Miscellaneous,Internet Access,31,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-12,,,,Y,Y
+W39248,6420,"Goldman, Mrs. Pamela",2010-09-13,3,2010-09-11,Meals,Meals (3 days),150,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-13,,,2,Y,Y
+W39248,6420,"Goldman, Mrs. Pamela",2010-09-13,4,2010-09-11,Car Rental,Local car rental,180,QUESTIONED,Q6,2 CFR 200.475; 200.403(g),no,OK,2010-09-13,All Other Locations,,,Y,Y
+W39248,6420,"Goldman, Mrs. Pamela",2010-09-13,5,2010-09-11,Hotel,3 nights,699,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-09-13,All Other Locations,,,Y,Y
+W39248,6420,"Goldman, Mrs. Pamela",2010-09-13,6,2010-09-08,Airfare,Air ticket,2257,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-09-08,,BUSINESS,,Y,Y
+W39255,5066,"Ulrich, Mr. Jeffery",2010-09-12,1,2010-09-11,Telephone Calls,Monthly team call,60,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-11,,,,Y,Y
+W39255,5066,"Ulrich, Mr. Jeffery",2010-09-12,2,2010-09-10,Miscellaneous,Modem,241,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-10,,,,Y,Y
+W39255,5066,"Ulrich, Mr. Jeffery",2010-09-12,3,2010-09-10,Meals,Dinner with Client´s Project Management,795,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-10,,,12,Y,Y
+W39255,5066,"Ulrich, Mr. Jeffery",2010-09-12,4,2010-09-10,Hotel,Only Executive Suite available,1068,QUESTIONED,Q3x,2 CFR 200.475; 200.404,no,OK,2010-09-12,All Other Locations,,,Y,Y
+W39255,5066,"Ulrich, Mr. Jeffery",2010-09-12,5,2010-09-11,Car Rental,BMW-cabriolet (sight-seeing tour),1440,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-09-12,All Other Locations,,,Y,Y
+W39255,5066,"Ulrich, Mr. Jeffery",2010-09-12,6,2010-09-08,Airfare,Air ticket,2598,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-09-08,,BUSINESS,,Y,Y
+W39250,972,"Lewis, Mr. David (Dave)",2010-09-12,1,2010-09-11,Telephone Calls,Weekly Team Call,18,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-11,,,,Y,Y
+W39250,972,"Lewis, Mr. David (Dave)",2010-09-12,2,2010-09-11,Miscellaneous,Internet Access,22,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-11,,,,Y,Y
+W39250,972,"Lewis, Mr. David (Dave)",2010-09-12,3,2010-09-11,Meals,Lunch with customer,90,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-12,,,2,Y,Y
+W39250,972,"Lewis, Mr. David (Dave)",2010-09-12,4,2010-09-12,Car Rental,BMW-cabriolet (sight-seeing tour),820,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-09-12,All Other Locations,,,Y,Y
+W39250,972,"Lewis, Mr. David (Dave)",2010-09-12,5,2010-09-12,Hotel,1 night,188,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-09-12,All Other Locations,,,Y,Y
+W39250,972,"Lewis, Mr. David (Dave)",2010-09-12,6,2010-09-10,Airfare,Air ticket,2237,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-09-10,,BUSINESS,,Y,Y
+W39247,10744,"Williams, Harrold",2010-09-12,1,2010-09-10,Telephone Calls,Monthly team call,10,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-10,,,,Y,Y
+W39247,10744,"Williams, Harrold",2010-09-12,2,2010-09-11,Miscellaneous,Internet Access,30,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-11,,,,Y,Y
+W39247,10744,"Williams, Harrold",2010-09-12,3,2010-09-10,Meals,Meals (3 days),180,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-12,,,2,Y,Y
+W39247,10744,"Williams, Harrold",2010-09-12,4,2010-09-11,Car Rental,BMW-cabriolet (sight-seeing tour),450,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-09-11,All Other Locations,,,Y,Y
+W39247,10744,"Williams, Harrold",2010-09-12,5,2010-09-11,Hotel,Only Executive Suite available,750,QUESTIONED,Q3x,2 CFR 200.475; 200.404,no,OK,2010-09-12,All Other Locations,,,Y,Y
+W39247,10744,"Williams, Harrold",2010-09-12,6,2010-09-10,Airfare,Air ticket,2237,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-09-10,,BUSINESS,,Y,Y
+W39249,5068,"Beckman, Ms. Lisa",2010-09-09,1,2010-09-07,Telephone Calls,Monthly team call,30,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-07,,,,Y,Y
+W39249,5068,"Beckman, Ms. Lisa",2010-09-09,2,2010-09-08,Miscellaneous,Internet Access,20,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-08,,,,Y,Y
+W39249,5068,"Beckman, Ms. Lisa",2010-09-09,3,2010-09-07,Meals,Meals (3 days),201,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-09,,,2,Y,Y
+W39249,5068,"Beckman, Ms. Lisa",2010-09-09,4,2010-09-08,Car Rental,Rolls Royce (sight-seeing tour),240,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-09-08,All Other Locations,,,Y,Y
+W39249,5068,"Beckman, Ms. Lisa",2010-09-09,5,2010-09-08,Hotel,2 nights,280,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-09-09,All Other Locations,,,Y,Y
+W39249,5068,"Beckman, Ms. Lisa",2010-09-09,6,2010-09-07,Airfare,Air ticket,2247,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-09-07,,BUSINESS,,Y,Y
+W39244,1273,"Bailey, Mrs. Sara",2010-09-09,1,2010-09-07,Telephone Calls,Monthly team call,18,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-07,,,,Y,Y
+W39244,1273,"Bailey, Mrs. Sara",2010-09-09,2,2010-09-06,Mileage,To/From Airport,27,INCOMPLETE,I3,2 CFR 200.475; 200.403(g),no,OK,2010-09-06,,,,Y,Y
+W39244,1273,"Bailey, Mrs. Sara",2010-09-09,3,2010-09-07,Miscellaneous,Internet Access,32,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-07,,,,Y,Y
+W39244,1273,"Bailey, Mrs. Sara",2010-09-09,4,2010-09-09,Meals,Lunch with customer,120,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-09,,,4,Y,Y
+W39244,1273,"Bailey, Mrs. Sara",2010-09-09,5,2010-09-07,Entertainment,Team Dinner,467.73,QUESTIONED,Q1,2 CFR 200.438; 200.403(g); 200.423,no,OK,2010-09-07,,,,Y,Y
+W39244,1273,"Bailey, Mrs. Sara",2010-09-09,6,2010-09-06,Airfare,Air ticket,2069,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-09-06,,BUSINESS,,Y,Y
+W39244,1273,"Bailey, Mrs. Sara",2010-09-09,7,2010-09-06,Car Rental,Local car rental 4 days,689.24,QUESTIONED,Q6,2 CFR 200.475; 200.403(g),no,OK,2010-09-09,All Other Locations,,,Y,Y
+W39244,1273,"Bailey, Mrs. Sara",2010-09-09,8,2010-09-07,Hotel,3 nights,408,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-09-09,All Other Locations,,,Y,Y
+W39242,31,"Brown, Ms. Casey",2010-09-09,1,2010-09-07,Telephone Calls,Weekly Team Call,20,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-07,,,,Y,Y
+W39242,31,"Brown, Ms. Casey",2010-09-09,2,2010-09-08,Miscellaneous,Internet Access,25,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-08,,,,Y,Y
+W39242,31,"Brown, Ms. Casey",2010-09-09,3,2010-09-07,Meals,Meals (3 days),120,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-09,,,1,Y,Y
+W39242,31,"Brown, Ms. Casey",2010-09-09,4,2010-09-06,Hotel,2 nights,350,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-09-09,All Other Locations,,,Y,Y
+W39242,31,"Brown, Ms. Casey",2010-09-09,5,2010-09-08,Entertainment,Clients,398.6,QUESTIONED,Q1,2 CFR 200.438; 200.403(g); 200.423,no,OK,2010-09-09,,,,Y,Y
+W39242,31,"Brown, Ms. Casey",2010-09-09,6,2010-09-08,Car Rental,BMW-cabriolet (sight-seeing tour),332.09,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-09-08,All Other Locations,,,Y,Y
+W39242,31,"Brown, Ms. Casey",2010-09-09,7,2010-09-06,Airfare,Air ticket,2272,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-09-06,,BUSINESS,,Y,Y
+W39238,11047,"McGwire, Mr. Patrick",2010-09-07,1,2010-09-05,Meals,Dinner,23,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-05,,,1,Y,Y
+W39238,11047,"McGwire, Mr. Patrick",2010-09-07,2,2010-09-06,Telephone Calls,Sales Conf Call,68,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-06,,,,Y,Y
+W39238,11047,"McGwire, Mr. Patrick",2010-09-07,3,2010-09-06,Meals,Lunch with customer,87,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-06,,,3,Y,Y
+W39238,11047,"McGwire, Mr. Patrick",2010-09-07,4,2010-09-06,Meals,Team Dinner,88,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-06,,,4,Y,Y
+W39238,11047,"McGwire, Mr. Patrick",2010-09-07,5,2010-09-05,Miscellaneous,Modem,102.96,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-05,,,,Y,Y
+W39238,11047,"McGwire, Mr. Patrick",2010-09-07,6,2010-09-06,Car Rental,Ferrari (sight-seeing tour),458.33,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-09-06,All Other Locations,,,Y,Y
+W39238,11047,"McGwire, Mr. Patrick",2010-09-07,7,2010-09-05,Entertainment,Team visit of baseball match,290.16,UNALLOWABLE,U2,2 CFR 200.438,no,OK,2010-09-05,,,,Y,Y
+W39238,11047,"McGwire, Mr. Patrick",2010-09-07,8,2010-09-04,Airfare,Air ticket,2667.44,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-09-04,,BUSINESS,,Y,Y
+W39238,11047,"McGwire, Mr. Patrick",2010-09-07,9,2010-09-05,Hotel,3 nights,607.02,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-09-07,All Other Locations,,,Y,Y
+W39254,972,"Lewis, Mr. David (Dave)",2010-09-02,1,2010-08-31,Telephone Calls,Weekly Team Call,41,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-31,,,,Y,Y
+W39254,972,"Lewis, Mr. David (Dave)",2010-09-02,2,2010-08-31,Miscellaneous,Internet Access,48,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-31,,,,Y,Y
+W39254,972,"Lewis, Mr. David (Dave)",2010-09-02,3,2010-08-31,Meals,Dinner with Client´s Project Management,981,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-31,,,9,Y,Y
+W39254,972,"Lewis, Mr. David (Dave)",2010-09-02,4,2010-08-31,Hotel,Only Executive Suite available,1120,QUESTIONED,Q3x,2 CFR 200.475; 200.404,no,OK,2010-09-02,All Other Locations,,,Y,Y
+W39254,972,"Lewis, Mr. David (Dave)",2010-09-02,5,2010-08-31,Car Rental,Ferrari (sight-seeing tour),1975,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-09-02,All Other Locations,,,Y,Y
+W39254,972,"Lewis, Mr. David (Dave)",2010-09-02,6,2010-08-30,Airfare,Air ticket,2699,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-30,,BUSINESS,,Y,Y
+W39245,164,"Lang, Ms. Inga R",2010-09-02,1,2010-09-02,Telephone Calls,Monthly team call,25,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-02,,,,Y,Y
+W39245,164,"Lang, Ms. Inga R",2010-09-02,2,2010-08-30,Miscellaneous,Internet,36,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-09-02,,,,Y,Y
+W39245,164,"Lang, Ms. Inga R",2010-09-02,3,2010-08-30,Meals,Meals (3 days),219,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-09-02,,,2,Y,Y
+W39245,164,"Lang, Ms. Inga R",2010-09-02,4,2010-08-30,Car Rental,BMW-cabriolet (sight-seeing tour),456,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-08-30,All Other Locations,,,Y,Y
+W39245,164,"Lang, Ms. Inga R",2010-09-02,5,2010-08-30,Hotel,Meals (3 days),795.99,QUESTIONED,Q4,"2 CFR 200.403(a),(g); 200.475",no,OK,2010-09-02,All Other Locations,,,Y,Y
+W39245,164,"Lang, Ms. Inga R",2010-09-02,6,2010-08-28,Airfare,Air ticket,2367,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-28,,BUSINESS,,Y,Y
+W39089,267,"Erickson, Mr. Barry",2010-08-29,1,2010-08-28,Miscellaneous,Laundry,14,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-28,,,,Y,Y
+W39089,267,"Erickson, Mr. Barry",2010-08-29,2,2010-08-28,Telephone Calls,Weekly Team Call,25,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-28,,,,Y,Y
+W39089,267,"Erickson, Mr. Barry",2010-08-29,3,2010-08-27,Meals,Dinner with Client´s Project Management,220,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-27,,,7,Y,Y
+W39089,267,"Erickson, Mr. Barry",2010-08-29,4,2010-08-29,Car Rental,Ferrari (sight-seeing tour),651.54,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-08-29,All Other Locations,,,Y,Y
+W39089,267,"Erickson, Mr. Barry",2010-08-29,5,2010-08-28,Hotel,Only Executive Suite available,986.52,QUESTIONED,Q3x,2 CFR 200.475; 200.404,no,OK,2010-08-29,All Other Locations,,,Y,Y
+W39089,267,"Erickson, Mr. Barry",2010-08-29,6,2010-08-27,Airfare,Air ticket,2293,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-27,,BUSINESS,,Y,Y
+W39111,14334,"Sole, Mr. Samuel",2010-08-28,1,2010-08-26,Airfare,United,472.34,QUESTIONED,Q5,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-26,,COACH,,N,
+W39111,14334,"Sole, Mr. Samuel",2010-08-28,2,2010-08-26,Hotel,Hyatt,346.46,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-08-28,"New York, NY",,,Y,Y
+W39111,14334,"Sole, Mr. Samuel",2010-08-28,3,2010-08-26,Meals,Lunch,21.49,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-26,,,1,N,
+W39111,14334,"Sole, Mr. Samuel",2010-08-28,4,2010-08-26,Car Rental,Car,58.54,QUESTIONED,Q6,2 CFR 200.475; 200.403(g),no,OK,2010-08-26,"New York, NY",,,Y,Y
+W39086,10966,"Bogini, Samuel",2010-08-23,1,2010-08-22,Telephone Calls,Monthly team call,24,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-22,,,,Y,Y
+W39086,10966,"Bogini, Samuel",2010-08-23,2,2010-08-21,Miscellaneous,Internet Access,33,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-23,,,,Y,Y
+W39086,10966,"Bogini, Samuel",2010-08-23,3,2010-08-21,Mileage,To/From Airport,36,INCOMPLETE,I3,2 CFR 200.475; 200.403(g),no,OK,2010-08-21,,,,Y,Y
+W39086,10966,"Bogini, Samuel",2010-08-23,4,2010-08-21,Meals,Meals (3 days),180,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-23,,,2,Y,Y
+W39086,10966,"Bogini, Samuel",2010-08-23,5,2010-08-21,Car Rental,2 days in Atlanta,98.44,QUESTIONED,Q6,2 CFR 200.475; 200.403(g),no,OK,2010-08-22,All Other Locations,,,Y,Y
+W39086,10966,"Bogini, Samuel",2010-08-23,6,2010-08-22,Entertainment,Dinner with Client´s Project Management,250,QUESTIONED,Q1,2 CFR 200.438; 200.403(g); 200.423,no,OK,2010-08-22,,,,Y,Y
+W39086,10966,"Bogini, Samuel",2010-08-23,7,2010-08-21,Hotel,3 nights,475.98,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-08-23,All Other Locations,,,Y,Y
+W39086,10966,"Bogini, Samuel",2010-08-23,8,2010-08-20,Airfare,Air ticket,2315,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-20,,BUSINESS,,Y,Y
+W39083,6513,"Marsh, Mr. Chris",2010-08-23,1,2010-08-21,Telephone Calls,Monthly team call,20,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-21,,,,Y,Y
+W39083,6513,"Marsh, Mr. Chris",2010-08-23,2,2010-08-21,Miscellaneous,Internet Access,25,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-21,,,,Y,Y
+W39083,6513,"Marsh, Mr. Chris",2010-08-23,3,2010-08-21,Meals,Team Dinner,200,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-21,,,5,Y,Y
+W39083,6513,"Marsh, Mr. Chris",2010-08-23,4,2010-08-21,Car Rental,BMW-cabriolet (sight-seeing tour),312,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-08-21,All Other Locations,,,Y,Y
+W39083,6513,"Marsh, Mr. Chris",2010-08-23,5,2010-08-22,Entertainment,Dinner with Client´s Project Management,480,QUESTIONED,Q1,2 CFR 200.438; 200.403(g); 200.423,no,OK,2010-08-22,,,,Y,Y
+W39083,6513,"Marsh, Mr. Chris",2010-08-23,6,2010-08-22,Hotel,2 nights,378.86,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-08-23,All Other Locations,,,Y,Y
+W39083,6513,"Marsh, Mr. Chris",2010-08-23,7,2010-08-20,Airfare,Air ticket,2195,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-20,,BUSINESS,,Y,Y
+W39094,5066,"Ulrich, Mr. Jeffery",2010-08-19,1,2010-08-17,Telephone Calls,Monthly team call,24,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-17,,,,Y,Y
+W39094,5066,"Ulrich, Mr. Jeffery",2010-08-19,2,2010-08-18,Miscellaneous,Internet Access,18,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-18,,,,Y,Y
+W39094,5066,"Ulrich, Mr. Jeffery",2010-08-19,3,2010-08-17,Meals,Meals (3 days),207,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-19,,,2,Y,Y
+W39094,5066,"Ulrich, Mr. Jeffery",2010-08-19,4,2010-08-17,Car Rental,Local car rental,228,QUESTIONED,Q6,2 CFR 200.475; 200.403(g),no,OK,2010-08-19,All Other Locations,,,Y,Y
+W39094,5066,"Ulrich, Mr. Jeffery",2010-08-19,5,2010-08-18,Hotel,2 nights,505,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-08-19,All Other Locations,,,Y,Y
+W39094,5066,"Ulrich, Mr. Jeffery",2010-08-19,6,2010-08-17,Airfare,Air ticket,2325,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-17,,BUSINESS,,Y,Y
+W39084,6423,"Katzberg, Ms. Susan",2010-08-16,1,2010-08-15,Telephone Calls,Internet Access,20,INCOMPLETE,I2,"2 CFR 200.403(a),(g)",no,OK,2010-08-15,,,,Y,Y
+W39084,6423,"Katzberg, Ms. Susan",2010-08-16,2,2010-08-15,Miscellaneous,Laundry,35,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-15,,,,Y,Y
+W39084,6423,"Katzberg, Ms. Susan",2010-08-16,3,2010-08-14,Meals,Meals (3 days),99.99,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-16,,,1,Y,Y
+W39084,6423,"Katzberg, Ms. Susan",2010-08-16,4,2010-08-16,Car Rental,BMW-cabriolet (sight-seeing tour),350.23,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-08-16,All Other Locations,,,Y,Y
+W39084,6423,"Katzberg, Ms. Susan",2010-08-16,5,2010-08-15,Entertainment,Dinner with Client´s Project Management,450,QUESTIONED,Q1,2 CFR 200.438; 200.403(g); 200.423,no,OK,2010-08-15,,,,Y,Y
+W39084,6423,"Katzberg, Ms. Susan",2010-08-16,6,2010-08-15,Hotel,2 nights,453.32,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-08-16,All Other Locations,,,Y,Y
+W39084,6423,"Katzberg, Ms. Susan",2010-08-16,7,2010-08-13,Airfare,Air ticket,2304,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-13,,BUSINESS,,Y,Y
+W39082,3165,"Apt, Peter M.",2010-08-16,1,2010-08-15,Telephone Calls,Sales Conf Call,20,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-15,,,,Y,Y
+W39082,3165,"Apt, Peter M.",2010-08-16,2,2010-08-15,Meals,Team Dinner,120,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-15,,,3,Y,Y
+W39082,3165,"Apt, Peter M.",2010-08-16,3,2010-08-16,Car Rental,BMW-cabriolet (sight-seeing tour),240.12,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-08-16,All Other Locations,,,Y,Y
+W39082,3165,"Apt, Peter M.",2010-08-16,4,2010-08-16,Hotel,Only president suite available,409.44,QUESTIONED,Q3x,2 CFR 200.475; 200.404,no,OK,2010-08-16,All Other Locations,,,Y,Y
+W39082,3165,"Apt, Peter M.",2010-08-16,5,2010-08-13,Airfare,Air ticket,2455,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-13,,BUSINESS,,Y,Y
+W39096,5063,"Becker, Lisa",2010-08-13,1,2010-08-13,Entertainment,Tickets for Rock´n Roll concert (team meeting),2728,UNALLOWABLE,U2,2 CFR 200.438,no,OK,2010-08-13,,,,Y,Y
+W39096,5063,"Becker, Lisa",2010-08-13,2,2010-08-13,Car Rental,Oldtimer car rental (drive to to concert),1850,UNALLOWABLE,U3,2 CFR 200.438,no,OK,2010-08-13,All Other Locations,,,Y,Y
+W39095,3173,"Weinberg, Jerry",2010-08-13,1,2010-08-11,Telephone Calls,Monthly team call,19,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-11,,,,Y,Y
+W39095,3173,"Weinberg, Jerry",2010-08-13,2,2010-08-12,Miscellaneous,Internet Access,33,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-12,,,,Y,Y
+W39095,3173,"Weinberg, Jerry",2010-08-13,3,2010-08-11,Meals,Meals (3 days),159,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-13,,,2,Y,Y
+W39095,3173,"Weinberg, Jerry",2010-08-13,4,2010-08-11,Car Rental,Local car rental,201,QUESTIONED,Q6,2 CFR 200.475; 200.403(g),no,OK,2010-08-13,All Other Locations,,,Y,Y
+W39095,3173,"Weinberg, Jerry",2010-08-13,5,2010-08-11,Hotel,2 nights,399,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-08-13,All Other Locations,,,Y,Y
+W39095,3173,"Weinberg, Jerry",2010-08-13,6,2010-08-11,Airfare,Air ticket,2205,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-11,,BUSINESS,,Y,Y
+W39091,6420,"Goldman, Mrs. Pamela",2010-08-13,1,2010-08-11,Telephone Calls,Weekly Team Call,18,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-11,,,,Y,Y
+W39091,6420,"Goldman, Mrs. Pamela",2010-08-13,2,2010-08-12,Miscellaneous,Internet Access,31,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-12,,,,Y,Y
+W39091,6420,"Goldman, Mrs. Pamela",2010-08-13,3,2010-08-11,Meals,Meals (3 days),150,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-13,,,2,Y,Y
+W39091,6420,"Goldman, Mrs. Pamela",2010-08-13,4,2010-08-11,Car Rental,Local car rental,180,QUESTIONED,Q6,2 CFR 200.475; 200.403(g),no,OK,2010-08-13,All Other Locations,,,Y,Y
+W39091,6420,"Goldman, Mrs. Pamela",2010-08-13,5,2010-08-11,Hotel,3 nights,699,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-08-13,All Other Locations,,,Y,Y
+W39091,6420,"Goldman, Mrs. Pamela",2010-08-13,6,2010-08-08,Airfare,Air ticket,2265,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-08,,BUSINESS,,Y,Y
+W39098,5066,"Ulrich, Mr. Jeffery",2010-08-12,1,2010-08-11,Telephone Calls,Monthly team call,60,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-11,,,,Y,Y
+W39098,5066,"Ulrich, Mr. Jeffery",2010-08-12,2,2010-08-10,Miscellaneous,Modem,241,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-10,,,,Y,Y
+W39098,5066,"Ulrich, Mr. Jeffery",2010-08-12,3,2010-08-10,Meals,Dinner with Client´s Project Management,795,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-10,,,12,Y,Y
+W39098,5066,"Ulrich, Mr. Jeffery",2010-08-12,4,2010-08-10,Hotel,Only Executive Suite available,1068,QUESTIONED,Q3x,2 CFR 200.475; 200.404,no,OK,2010-08-12,All Other Locations,,,Y,Y
+W39098,5066,"Ulrich, Mr. Jeffery",2010-08-12,5,2010-08-11,Car Rental,BMW-cabriolet (sight-seeing tour),1440,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-08-12,All Other Locations,,,Y,Y
+W39098,5066,"Ulrich, Mr. Jeffery",2010-08-12,6,2010-08-08,Airfare,Air ticket,2606,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-08,,BUSINESS,,Y,Y
+W39093,972,"Lewis, Mr. David (Dave)",2010-08-12,1,2010-08-11,Telephone Calls,Weekly Team Call,18,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-11,,,,Y,Y
+W39093,972,"Lewis, Mr. David (Dave)",2010-08-12,2,2010-08-11,Miscellaneous,Internet Access,22,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-11,,,,Y,Y
+W39093,972,"Lewis, Mr. David (Dave)",2010-08-12,3,2010-08-11,Meals,Lunch with customer,90,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-12,,,2,Y,Y
+W39093,972,"Lewis, Mr. David (Dave)",2010-08-12,4,2010-08-12,Car Rental,BMW-cabriolet (sight-seeing tour),820,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-08-12,All Other Locations,,,Y,Y
+W39093,972,"Lewis, Mr. David (Dave)",2010-08-12,5,2010-08-12,Hotel,1 night,188,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-08-12,All Other Locations,,,Y,Y
+W39093,972,"Lewis, Mr. David (Dave)",2010-08-12,6,2010-08-10,Airfare,Air ticket,2245,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-10,,BUSINESS,,Y,Y
+W39090,10744,"Williams, Harrold",2010-08-12,1,2010-08-10,Telephone Calls,Monthly team call,10,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-10,,,,Y,Y
+W39090,10744,"Williams, Harrold",2010-08-12,2,2010-08-11,Miscellaneous,Internet Access,30,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-11,,,,Y,Y
+W39090,10744,"Williams, Harrold",2010-08-12,3,2010-08-10,Meals,Meals (3 days),180,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-12,,,2,Y,Y
+W39090,10744,"Williams, Harrold",2010-08-12,4,2010-08-11,Car Rental,BMW-cabriolet (sight-seeing tour),450,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-08-11,All Other Locations,,,Y,Y
+W39090,10744,"Williams, Harrold",2010-08-12,5,2010-08-11,Hotel,Only Executive Suite available,750,QUESTIONED,Q3x,2 CFR 200.475; 200.404,no,OK,2010-08-12,All Other Locations,,,Y,Y
+W39090,10744,"Williams, Harrold",2010-08-12,6,2010-08-10,Airfare,Air ticket,2245,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-10,,BUSINESS,,Y,Y
+W39092,5068,"Beckman, Ms. Lisa",2010-08-09,1,2010-08-07,Telephone Calls,Monthly team call,30,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-07,,,,Y,Y
+W39092,5068,"Beckman, Ms. Lisa",2010-08-09,2,2010-08-08,Miscellaneous,Internet Access,20,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-08,,,,Y,Y
+W39092,5068,"Beckman, Ms. Lisa",2010-08-09,3,2010-08-07,Meals,Meals (3 days),201,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-09,,,2,Y,Y
+W39092,5068,"Beckman, Ms. Lisa",2010-08-09,4,2010-08-08,Car Rental,Rolls Royce (sight-seeing tour),240,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-08-08,All Other Locations,,,Y,Y
+W39092,5068,"Beckman, Ms. Lisa",2010-08-09,5,2010-08-08,Hotel,2 nights,280,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-08-09,All Other Locations,,,Y,Y
+W39092,5068,"Beckman, Ms. Lisa",2010-08-09,6,2010-08-07,Airfare,Air ticket,2255,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-07,,BUSINESS,,Y,Y
+W39087,1273,"Bailey, Mrs. Sara",2010-08-09,1,2010-08-07,Telephone Calls,Monthly team call,18,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-07,,,,Y,Y
+W39087,1273,"Bailey, Mrs. Sara",2010-08-09,2,2010-08-06,Mileage,To/From Airport,27,INCOMPLETE,I3,2 CFR 200.475; 200.403(g),no,OK,2010-08-06,,,,Y,Y
+W39087,1273,"Bailey, Mrs. Sara",2010-08-09,3,2010-08-07,Miscellaneous,Internet Access,32,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-07,,,,Y,Y
+W39087,1273,"Bailey, Mrs. Sara",2010-08-09,4,2010-08-09,Meals,Lunch with customer,120,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-09,,,4,Y,Y
+W39087,1273,"Bailey, Mrs. Sara",2010-08-09,5,2010-08-07,Entertainment,Team Dinner,467.73,QUESTIONED,Q1,2 CFR 200.438; 200.403(g); 200.423,no,OK,2010-08-07,,,,Y,Y
+W39087,1273,"Bailey, Mrs. Sara",2010-08-09,6,2010-08-06,Airfare,Air ticket,2077,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-06,,BUSINESS,,Y,Y
+W39087,1273,"Bailey, Mrs. Sara",2010-08-09,7,2010-08-06,Car Rental,Local car rental 4 days,689.24,QUESTIONED,Q6,2 CFR 200.475; 200.403(g),no,OK,2010-08-09,All Other Locations,,,Y,Y
+W39087,1273,"Bailey, Mrs. Sara",2010-08-09,8,2010-08-07,Hotel,3 nights,408,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-08-09,All Other Locations,,,Y,Y
+W39085,31,"Brown, Ms. Casey",2010-08-09,1,2010-08-07,Telephone Calls,Weekly Team Call,20,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-07,,,,Y,Y
+W39085,31,"Brown, Ms. Casey",2010-08-09,2,2010-08-08,Miscellaneous,Internet Access,25,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-08,,,,Y,Y
+W39085,31,"Brown, Ms. Casey",2010-08-09,3,2010-08-07,Meals,Meals (3 days),120,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-09,,,1,Y,Y
+W39085,31,"Brown, Ms. Casey",2010-08-09,4,2010-08-06,Hotel,2 nights,350,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-08-09,All Other Locations,,,Y,Y
+W39085,31,"Brown, Ms. Casey",2010-08-09,5,2010-08-08,Entertainment,Clients,398.6,QUESTIONED,Q1,2 CFR 200.438; 200.403(g); 200.423,no,OK,2010-08-09,,,,Y,Y
+W39085,31,"Brown, Ms. Casey",2010-08-09,6,2010-08-08,Car Rental,BMW-cabriolet (sight-seeing tour),332.09,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-08-08,All Other Locations,,,Y,Y
+W39085,31,"Brown, Ms. Casey",2010-08-09,7,2010-08-06,Airfare,Air ticket,2280,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-06,,BUSINESS,,Y,Y
+W39081,11047,"McGwire, Mr. Patrick",2010-08-07,1,2010-08-05,Meals,Dinner,23,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-05,,,1,Y,Y
+W39081,11047,"McGwire, Mr. Patrick",2010-08-07,2,2010-08-06,Telephone Calls,Sales Conf Call,68,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-06,,,,Y,Y
+W39081,11047,"McGwire, Mr. Patrick",2010-08-07,3,2010-08-06,Meals,Lunch with customer,87,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-06,,,3,Y,Y
+W39081,11047,"McGwire, Mr. Patrick",2010-08-07,4,2010-08-06,Meals,Team Dinner,88,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-06,,,4,Y,Y
+W39081,11047,"McGwire, Mr. Patrick",2010-08-07,5,2010-08-05,Miscellaneous,Modem,102.96,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-05,,,,Y,Y
+W39081,11047,"McGwire, Mr. Patrick",2010-08-07,6,2010-08-06,Car Rental,Ferrari (sight-seeing tour),458.33,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-08-06,All Other Locations,,,Y,Y
+W39081,11047,"McGwire, Mr. Patrick",2010-08-07,7,2010-08-05,Entertainment,Team visit of baseball match,290.16,UNALLOWABLE,U2,2 CFR 200.438,no,OK,2010-08-05,,,,Y,Y
+W39081,11047,"McGwire, Mr. Patrick",2010-08-07,8,2010-08-04,Airfare,Air ticket,2675.44,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-08-04,,BUSINESS,,Y,Y
+W39081,11047,"McGwire, Mr. Patrick",2010-08-07,9,2010-08-05,Hotel,3 nights,607.02,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-08-07,All Other Locations,,,Y,Y
+W39097,972,"Lewis, Mr. David (Dave)",2010-08-02,1,2010-07-31,Telephone Calls,Weekly Team Call,41,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-31,,,,Y,Y
+W39097,972,"Lewis, Mr. David (Dave)",2010-08-02,2,2010-07-31,Miscellaneous,Internet Access,48,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-31,,,,Y,Y
+W39097,972,"Lewis, Mr. David (Dave)",2010-08-02,3,2010-07-31,Meals,Dinner with Client´s Project Management,981,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-07-31,,,9,Y,Y
+W39097,972,"Lewis, Mr. David (Dave)",2010-08-02,4,2010-07-31,Hotel,Only Executive Suite available,1120,QUESTIONED,Q3x,2 CFR 200.475; 200.404,no,OK,2010-08-02,All Other Locations,,,Y,Y
+W39097,972,"Lewis, Mr. David (Dave)",2010-08-02,5,2010-07-31,Car Rental,Ferrari (sight-seeing tour),1975,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-08-02,All Other Locations,,,Y,Y
+W39097,972,"Lewis, Mr. David (Dave)",2010-08-02,6,2010-07-30,Airfare,Air ticket,2707,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-07-30,,BUSINESS,,Y,Y
+W39088,164,"Lang, Ms. Inga R",2010-08-02,1,2010-08-02,Telephone Calls,Monthly team call,25,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-02,,,,Y,Y
+W39088,164,"Lang, Ms. Inga R",2010-08-02,2,2010-07-30,Miscellaneous,Internet,36,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-08-02,,,,Y,Y
+W39088,164,"Lang, Ms. Inga R",2010-08-02,3,2010-07-30,Meals,Meals (3 days),219,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-08-02,,,2,Y,Y
+W39088,164,"Lang, Ms. Inga R",2010-08-02,4,2010-07-30,Car Rental,BMW-cabriolet (sight-seeing tour),456,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-07-30,All Other Locations,,,Y,Y
+W39088,164,"Lang, Ms. Inga R",2010-08-02,5,2010-07-30,Hotel,Meals (3 days),795.99,QUESTIONED,Q4,"2 CFR 200.403(a),(g); 200.475",no,OK,2010-08-02,All Other Locations,,,Y,Y
+W39088,164,"Lang, Ms. Inga R",2010-08-02,6,2010-07-28,Airfare,Air ticket,2375,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-07-28,,BUSINESS,,Y,Y
+W38936,267,"Erickson, Mr. Barry",2010-07-30,1,2010-07-29,Miscellaneous,Laundry,14,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-29,,,,Y,Y
+W38936,267,"Erickson, Mr. Barry",2010-07-30,2,2010-07-29,Telephone Calls,Weekly Team Call,25,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-29,,,,Y,Y
+W38936,267,"Erickson, Mr. Barry",2010-07-30,3,2010-07-28,Meals,Dinner with Client´s Project Management,220,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-07-28,,,7,Y,Y
+W38936,267,"Erickson, Mr. Barry",2010-07-30,4,2010-07-30,Car Rental,Ferrari (sight-seeing tour),651.54,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-07-30,All Other Locations,,,Y,Y
+W38936,267,"Erickson, Mr. Barry",2010-07-30,5,2010-07-29,Hotel,Only Executive Suite available,986.52,QUESTIONED,Q3x,2 CFR 200.475; 200.404,no,OK,2010-07-30,All Other Locations,,,Y,Y
+W38936,267,"Erickson, Mr. Barry",2010-07-30,6,2010-07-28,Airfare,Air ticket,2183,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-07-28,,BUSINESS,,Y,Y
+W39110,14334,"Sole, Mr. Samuel",2010-07-25,1,2010-07-23,Airfare,United,433.31,QUESTIONED,Q5,2 CFR 200.475(e); 200.403(g),no,OK,2010-07-23,,COACH,,N,
+W39110,14334,"Sole, Mr. Samuel",2010-07-25,2,2010-07-23,Hotel,Hyatt,356.47,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-07-25,"New York, NY",,,Y,Y
+W39110,14334,"Sole, Mr. Samuel",2010-07-25,3,2010-07-23,Meals,Lunch,22.49,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-07-23,,,1,N,
+W39110,14334,"Sole, Mr. Samuel",2010-07-25,4,2010-07-23,Car Rental,Car,58.56,QUESTIONED,Q6,2 CFR 200.475; 200.403(g),no,OK,2010-07-23,"New York, NY",,,Y,Y
+W38933,10966,"Bogini, Samuel",2010-07-24,1,2010-07-23,Telephone Calls,Monthly team call,24,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-23,,,,Y,Y
+W38933,10966,"Bogini, Samuel",2010-07-24,2,2010-07-22,Miscellaneous,Internet Access,33,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-24,,,,Y,Y
+W38933,10966,"Bogini, Samuel",2010-07-24,3,2010-07-22,Mileage,To/From Airport,36,INCOMPLETE,I3,2 CFR 200.475; 200.403(g),no,OK,2010-07-22,,,,Y,Y
+W38933,10966,"Bogini, Samuel",2010-07-24,4,2010-07-22,Meals,Meals (3 days),180,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-07-24,,,2,Y,Y
+W38933,10966,"Bogini, Samuel",2010-07-24,5,2010-07-22,Car Rental,2 days in Atlanta,98.44,QUESTIONED,Q6,2 CFR 200.475; 200.403(g),no,OK,2010-07-23,All Other Locations,,,Y,Y
+W38933,10966,"Bogini, Samuel",2010-07-24,6,2010-07-23,Entertainment,Dinner with Client´s Project Management,250,QUESTIONED,Q1,2 CFR 200.438; 200.403(g); 200.423,no,OK,2010-07-23,,,,Y,Y
+W38933,10966,"Bogini, Samuel",2010-07-24,7,2010-07-22,Hotel,3 nights,475.98,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-07-24,All Other Locations,,,Y,Y
+W38933,10966,"Bogini, Samuel",2010-07-24,8,2010-07-21,Airfare,Air ticket,2205,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-07-21,,BUSINESS,,Y,Y
+W38930,6513,"Marsh, Mr. Chris",2010-07-24,1,2010-07-22,Telephone Calls,Monthly team call,20,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-22,,,,Y,Y
+W38930,6513,"Marsh, Mr. Chris",2010-07-24,2,2010-07-22,Miscellaneous,Internet Access,25,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-22,,,,Y,Y
+W38930,6513,"Marsh, Mr. Chris",2010-07-24,3,2010-07-22,Meals,Team Dinner,200,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-07-22,,,5,Y,Y
+W38930,6513,"Marsh, Mr. Chris",2010-07-24,4,2010-07-22,Car Rental,BMW-cabriolet (sight-seeing tour),312,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-07-22,All Other Locations,,,Y,Y
+W38930,6513,"Marsh, Mr. Chris",2010-07-24,5,2010-07-23,Entertainment,Dinner with Client´s Project Management,480,QUESTIONED,Q1,2 CFR 200.438; 200.403(g); 200.423,no,OK,2010-07-23,,,,Y,Y
+W38930,6513,"Marsh, Mr. Chris",2010-07-24,6,2010-07-23,Hotel,2 nights,378.86,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-07-24,All Other Locations,,,Y,Y
+W38930,6513,"Marsh, Mr. Chris",2010-07-24,7,2010-07-21,Airfare,Air ticket,2085,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-07-21,,BUSINESS,,Y,Y
+W38941,5066,"Ulrich, Mr. Jeffery",2010-07-20,1,2010-07-18,Telephone Calls,Monthly team call,24,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-18,,,,Y,Y
+W38941,5066,"Ulrich, Mr. Jeffery",2010-07-20,2,2010-07-19,Miscellaneous,Internet Access,18,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-19,,,,Y,Y
+W38941,5066,"Ulrich, Mr. Jeffery",2010-07-20,3,2010-07-18,Meals,Meals (3 days),207,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-07-20,,,2,Y,Y
+W38941,5066,"Ulrich, Mr. Jeffery",2010-07-20,4,2010-07-18,Car Rental,Local car rental,228,QUESTIONED,Q6,2 CFR 200.475; 200.403(g),no,OK,2010-07-20,All Other Locations,,,Y,Y
+W38941,5066,"Ulrich, Mr. Jeffery",2010-07-20,5,2010-07-19,Hotel,2 nights,505,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-07-20,All Other Locations,,,Y,Y
+W38941,5066,"Ulrich, Mr. Jeffery",2010-07-20,6,2010-07-18,Airfare,Air ticket,2215,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-07-18,,BUSINESS,,Y,Y
+W38931,6423,"Katzberg, Ms. Susan",2010-07-17,1,2010-07-16,Telephone Calls,Internet Access,20,INCOMPLETE,I2,"2 CFR 200.403(a),(g)",no,OK,2010-07-16,,,,Y,Y
+W38931,6423,"Katzberg, Ms. Susan",2010-07-17,2,2010-07-16,Miscellaneous,Laundry,35,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-16,,,,Y,Y
+W38931,6423,"Katzberg, Ms. Susan",2010-07-17,3,2010-07-15,Meals,Meals (3 days),99.99,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-07-17,,,1,Y,Y
+W38931,6423,"Katzberg, Ms. Susan",2010-07-17,4,2010-07-17,Car Rental,BMW-cabriolet (sight-seeing tour),350.23,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-07-17,All Other Locations,,,Y,Y
+W38931,6423,"Katzberg, Ms. Susan",2010-07-17,5,2010-07-16,Entertainment,Dinner with Client´s Project Management,450,QUESTIONED,Q1,2 CFR 200.438; 200.403(g); 200.423,no,OK,2010-07-16,,,,Y,Y
+W38931,6423,"Katzberg, Ms. Susan",2010-07-17,6,2010-07-16,Hotel,2 nights,453.32,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-07-17,All Other Locations,,,Y,Y
+W38931,6423,"Katzberg, Ms. Susan",2010-07-17,7,2010-07-14,Airfare,Air ticket,2194,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-07-14,,BUSINESS,,Y,Y
+W38929,3165,"Apt, Peter M.",2010-07-17,1,2010-07-16,Telephone Calls,Sales Conf Call,20,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-16,,,,Y,Y
+W38929,3165,"Apt, Peter M.",2010-07-17,2,2010-07-16,Meals,Team Dinner,120,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-07-16,,,3,Y,Y
+W38929,3165,"Apt, Peter M.",2010-07-17,3,2010-07-17,Car Rental,BMW-cabriolet (sight-seeing tour),240.12,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-07-17,All Other Locations,,,Y,Y
+W38929,3165,"Apt, Peter M.",2010-07-17,4,2010-07-17,Hotel,Only president suite available,409.44,QUESTIONED,Q3x,2 CFR 200.475; 200.404,no,OK,2010-07-17,All Other Locations,,,Y,Y
+W38929,3165,"Apt, Peter M.",2010-07-17,5,2010-07-14,Airfare,Air ticket,2345,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-07-14,,BUSINESS,,Y,Y
+W38943,5063,"Becker, Lisa",2010-07-14,1,2010-07-14,Entertainment,Tickets for Rock´n Roll concert (team meeting),2618,UNALLOWABLE,U2,2 CFR 200.438,no,OK,2010-07-14,,,,Y,Y
+W38943,5063,"Becker, Lisa",2010-07-14,2,2010-07-14,Car Rental,Oldtimer car rental (drive to to concert),1850,UNALLOWABLE,U3,2 CFR 200.438,no,OK,2010-07-14,All Other Locations,,,Y,Y
+W38942,3173,"Weinberg, Jerry",2010-07-14,1,2010-07-12,Telephone Calls,Monthly team call,19,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-12,,,,Y,Y
+W38942,3173,"Weinberg, Jerry",2010-07-14,2,2010-07-13,Miscellaneous,Internet Access,33,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-13,,,,Y,Y
+W38942,3173,"Weinberg, Jerry",2010-07-14,3,2010-07-12,Meals,Meals (3 days),159,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-07-14,,,2,Y,Y
+W38942,3173,"Weinberg, Jerry",2010-07-14,4,2010-07-12,Car Rental,Local car rental,201,QUESTIONED,Q6,2 CFR 200.475; 200.403(g),no,OK,2010-07-14,All Other Locations,,,Y,Y
+W38942,3173,"Weinberg, Jerry",2010-07-14,5,2010-07-12,Hotel,2 nights,399,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-07-14,All Other Locations,,,Y,Y
+W38942,3173,"Weinberg, Jerry",2010-07-14,6,2010-07-12,Airfare,Air ticket,2095,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-07-12,,BUSINESS,,Y,Y
+W38938,6420,"Goldman, Mrs. Pamela",2010-07-14,1,2010-07-12,Telephone Calls,Weekly Team Call,18,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-12,,,,Y,Y
+W38938,6420,"Goldman, Mrs. Pamela",2010-07-14,2,2010-07-13,Miscellaneous,Internet Access,31,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-13,,,,Y,Y
+W38938,6420,"Goldman, Mrs. Pamela",2010-07-14,3,2010-07-12,Meals,Meals (3 days),150,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-07-14,,,2,Y,Y
+W38938,6420,"Goldman, Mrs. Pamela",2010-07-14,4,2010-07-12,Car Rental,Local car rental,180,QUESTIONED,Q6,2 CFR 200.475; 200.403(g),no,OK,2010-07-14,All Other Locations,,,Y,Y
+W38938,6420,"Goldman, Mrs. Pamela",2010-07-14,5,2010-07-12,Hotel,3 nights,699,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-07-14,All Other Locations,,,Y,Y
+W38938,6420,"Goldman, Mrs. Pamela",2010-07-14,6,2010-07-09,Airfare,Air ticket,2155,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-07-09,,BUSINESS,,Y,Y
+W38945,5066,"Ulrich, Mr. Jeffery",2010-07-13,1,2010-07-12,Telephone Calls,Monthly team call,60,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-12,,,,Y,Y
+W38945,5066,"Ulrich, Mr. Jeffery",2010-07-13,2,2010-07-11,Miscellaneous,Modem,241,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-11,,,,Y,Y
+W38945,5066,"Ulrich, Mr. Jeffery",2010-07-13,3,2010-07-11,Meals,Dinner with Client´s Project Management,795,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-07-11,,,12,Y,Y
+W38945,5066,"Ulrich, Mr. Jeffery",2010-07-13,4,2010-07-11,Hotel,Only Executive Suite available,1068,QUESTIONED,Q3x,2 CFR 200.475; 200.404,no,OK,2010-07-13,All Other Locations,,,Y,Y
+W38945,5066,"Ulrich, Mr. Jeffery",2010-07-13,5,2010-07-12,Car Rental,BMW-cabriolet (sight-seeing tour),1440,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-07-13,All Other Locations,,,Y,Y
+W38945,5066,"Ulrich, Mr. Jeffery",2010-07-13,6,2010-07-09,Airfare,Air ticket,2496,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-07-09,,BUSINESS,,Y,Y
+W38940,972,"Lewis, Mr. David (Dave)",2010-07-13,1,2010-07-12,Telephone Calls,Weekly Team Call,18,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-12,,,,Y,Y
+W38940,972,"Lewis, Mr. David (Dave)",2010-07-13,2,2010-07-12,Miscellaneous,Internet Access,22,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-12,,,,Y,Y
+W38940,972,"Lewis, Mr. David (Dave)",2010-07-13,3,2010-07-12,Meals,Lunch with customer,90,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-07-13,,,2,Y,Y
+W38940,972,"Lewis, Mr. David (Dave)",2010-07-13,4,2010-07-13,Car Rental,BMW-cabriolet (sight-seeing tour),820,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-07-13,All Other Locations,,,Y,Y
+W38940,972,"Lewis, Mr. David (Dave)",2010-07-13,5,2010-07-13,Hotel,1 night,188,QUESTIONED,Q3,2 CFR 200.475; 200.404; 200.403(g),no,OK,2010-07-13,All Other Locations,,,Y,Y
+W38940,972,"Lewis, Mr. David (Dave)",2010-07-13,6,2010-07-11,Airfare,Air ticket,2135,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-07-11,,BUSINESS,,Y,Y
+W38937,10744,"Williams, Harrold",2010-07-13,1,2010-07-11,Telephone Calls,Monthly team call,10,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-11,,,,Y,Y
+W38937,10744,"Williams, Harrold",2010-07-13,2,2010-07-12,Miscellaneous,Internet Access,30,INCOMPLETE,I1,2 CFR 200.403(g),no,OK,2010-07-12,,,,Y,Y
+W38937,10744,"Williams, Harrold",2010-07-13,3,2010-07-11,Meals,Meals (3 days),180,QUESTIONED,Q2,2 CFR 200.475; 200.403(g); 200.423,no,OK,2010-07-13,,,2,Y,Y
+W38937,10744,"Williams, Harrold",2010-07-13,4,2010-07-12,Car Rental,BMW-cabriolet (sight-seeing tour),450,UNALLOWABLE,U1,2 CFR 200.438; 200.404,no,OK,2010-07-12,All Other Locations,,,Y,Y
+W38937,10744,"Williams, Harrold",2010-07-13,5,2010-07-12,Hotel,Only Executive Suite available,750,QUESTIONED,Q3x,2 CFR 200.475; 200.404,no,OK,2010-07-13,All Other Locations,,,Y,Y
+W38937,10744,"Williams, Harrold",2010-07-13,6,2010-07-11,Airfare,Air ticket,2135,QUESTIONED,Q5b,2 CFR 200.475(e); 200.403(g),no,OK,2010-07-11,,BUSINESS,,Y,Y

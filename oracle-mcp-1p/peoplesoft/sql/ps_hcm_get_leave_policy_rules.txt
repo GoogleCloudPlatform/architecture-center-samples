@@ -1,0 +1,5 @@
+Returns the leave plan rules in force on a date: accrual frequency, maximum balance and carryover, payout at termination, whether the balance may go negative. One row per leave plan, using the latest effective-dated row on or before as_of_date (default today); rows that started after the date, and earlier versions, are not returned. At most 100 plans.
+Use it as the agency's own written rule source for the policy skill when a question concerns leave limits, with as_of_date driving the retrieval so a past period is answered with the rules that applied then. The statute and regulation tiers (federal and state law) are not in PeopleSoft.
+Plan descriptions are not stored in this table; use ps_list_translate_values for code meanings where they exist.
+Underlying Tables: PS_LEAVE_PLAN_TBL.
+Security Context: HCM setup data; no row security applies unless the PL/SQL wrapper is on.

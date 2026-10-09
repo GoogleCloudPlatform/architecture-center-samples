@@ -1,0 +1,3 @@
+Lists the columns (name, data type, length) of a table or view that the database user can see.
+Use this tool to check which columns exist before writing or changing a query against that table.
+Underlying View: ALL_TAB_COLUMNS.

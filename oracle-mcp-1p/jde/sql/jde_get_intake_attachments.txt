@@ -1,0 +1,4 @@
+Retrieves citizen-submitted proof documents (paystubs, W-2s, utility bills) attached as JD Edwards Media Objects to an applicant's address book or intake record, with document category and verification status.
+Underlying Tables: F00165 (Media Objects Storage), F00166 (Media Object Category Codes), F0101 (Address Book).
+Data Notes: Text attachments are returned inline in content_blob; file and image attachments return the file name and media object queue (their bytes live on the media object file server).
+Security Context: Applicant records under JDE address book search type security; enforced only with the PL/SQL security wrapper.

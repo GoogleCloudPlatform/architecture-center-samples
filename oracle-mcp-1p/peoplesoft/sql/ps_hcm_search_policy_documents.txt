@@ -1,0 +1,4 @@
+Searches the agency-written procedure text that exists in this HCM database: checklist item instructions (what an HR checklist step requires) and HR attachment configurations (attachment types and their stock documents, with file names). Each entry is the version in force on as_of_date (default today). At most 50 entries, newest effective date first.
+This is not a policy manual library: this database has no portal policy documents, so most agency policy documents cannot be searched here. Use attachsysfilename with ps_hcm_get_attachment_text to read a stock document, if it has one. Federal and state law (the statute and regulation tiers of the policy skill) are not in PeopleSoft.
+Underlying Tables: PS_CHKLST_ITEM_TBL, PS_HR_ATT_CNFG_TBL.
+Security Context: HCM setup data; no row security applies unless the PL/SQL wrapper is on.

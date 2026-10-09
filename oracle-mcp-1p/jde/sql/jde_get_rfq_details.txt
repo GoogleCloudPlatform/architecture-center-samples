@@ -1,0 +1,5 @@
+Queries a JD Edwards request for quote (quote order, type OQ): solicitation header, delivery instructions, requested items and quantities, estimated costs, the number of suppliers invited per line and the response due date.
+Underlying Tables: F4301 (Purchase Order Header), F4311 (Purchase Order Detail), F4330 (Supplier Selection), F0006 (Business Unit Master), F0101 (Address Book).
+JDE Applications: Quote Orders (P4310, order type OQ), Quote Supplier Entry (P4330).
+Data Notes: JDE has no native scoring rubric; mandatory criteria and technical specifications are usually attached to the quote as media objects (use jde_get_media_object_attachment). Unit costs use 4 implied decimals, amounts 2.
+Security Context: Procurement business unit security (F00950); enforced only with the PL/SQL security wrapper.

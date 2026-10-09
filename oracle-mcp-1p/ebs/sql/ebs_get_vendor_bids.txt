@@ -1,0 +1,4 @@
+Retrieves current vendor bids on an Oracle Sourcing negotiation, one row per bid line: vendor and supplier ID, submission date and whether it came after the close date, the amendment of the solicitation it answered, how many earlier revisions the vendor superseded, the vendor's notes and promised dates, and the titles and document IDs of attached proposal files (per line and per bid; fetch a file with ebs_get_document_attachment).
+Prices and totals are returned only with include_prices = 'Y', so technical evaluators can review without seeing price. Superseded revisions, drafts and disqualified bids are excluded; award, shortlist and score data is not returned. Pass at least one of auction_header_id, bid_number or vendor_name; at most 500 rows.
+Underlying Tables: PON_BID_HEADERS, PON_BID_ITEM_PRICES, PON_AUCTION_HEADERS_ALL, FND_ATTACHED_DOCUMENTS, FND_DOCUMENTS, FND_DOCUMENTS_TL.
+Security Context: Per-user security only with the PL/SQL security wrapper.

@@ -1,0 +1,5 @@
+Returns what is on file for one person: attachments (absence, biographical and benefits attachments, with title, type, file name, the stored file name, upload time and size in bytes where the file is stored) and HR checklists assigned to the person (checklist code, description, type, assigned date). EMPLID is required; at most 200 rows, newest first.
+Use it as the document list for the document intake skill: which proof documents exist for a person and when they were added, and which checklists are open. It does not return file content: pass attachsysfilename to ps_hcm_get_attachment_text. It carries no per-item verification status because this database stores none for checklists.
+For the identity cross-check (name, national ID suffix, address) use ps_verify_constituent_data.
+Underlying Tables: PS_GP_ABS_ATTACH, PS_HR_PER_BIOG_ATT, PS_BEN_ATTACH_DTL, PS_HR_ATT_FILES, PS_PER_CHECKLIST, PS_CHECKLIST_TBL.
+Security Context: Personal data; use the PL/SQL wrapper and an authorised user in production.

@@ -1,0 +1,5 @@
+Retrieves employee travel and operational expense reports from JD Edwards Expense Management: report totals and status, itemized lines (category, date, amount, business purpose, hotel, grant subledger), allowable/unallowable amounts, policy exceptions, and the policy rule in force for each line.
+Underlying Tables: F20111 (Expense Report Header), F20112 (Expense Report Detail), F09E108 (Expense Policy Rules), F0101 (Address Book).
+JDE Applications: Expense Management (system 09E).
+Data Notes: Filter by submission date for nightly audits. Receipts are media objects on the report (use jde_get_media_object_attachment). Amounts converted from implied decimals (2 places). At most 500 lines per call.
+Security Context: Expense auditor role and home business unit security (F00950); enforced only with the PL/SQL security wrapper.

@@ -1,0 +1,3 @@
+Queries QuickCodes / lookup values from FND_LOOKUP_VALUES for a specific lookup type or category.
+Use this tool to discover valid codes for categorical bind variables like :policy_category, document types, or status codes.
+Underlying View: FND_LOOKUP_VALUES.

@@ -1,0 +1,5 @@
+Returns an EBS file attachment as Base64 text, one piece per call, so a client can rebuild a file whose text cannot be read in the database (images, scanned documents, anything the agent must pass on or read with its own tools). Give the document ID (document_id). The response gives the file size, bytes per piece, the number of pieces and whether more follow; call again with the next chunk number, keeping chunk_bytes the same, until has_more is N, then join the base64_chunk values in order and decode them.
+For readable text use ebs_get_attachment_text instead; it is much smaller. Only file attachments (datatype File) have content; other attachment types return file_status NOT_A_FILE. Files over 50 MB are refused (file_status TOO_LARGE).
+Attachments can hold personal data; the content is returned as stored.
+Underlying Tables: FND_DOCUMENTS, FND_LOBS (through the database package APPS.XX_AI_ATTACHMENT_PKG, installed by a DBA from ebs/install).
+Security Context: Attachment data; use the PL/SQL wrapper and an authorised user in production.

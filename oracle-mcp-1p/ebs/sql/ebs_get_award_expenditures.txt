@@ -1,0 +1,5 @@
+Summarizes the costs charged to a grant award, by expenditure type and source, from Oracle Grants Accounting and Projects.
+Each row is one expenditure type and source (system_linkage_function, for example ER for expense reports, VI for supplier invoices) with the item count, the actual raw cost (credits and adjustments show as negative amounts), and cost_outside_award_period: the part of the actual cost dated before the award start or after the award end (the period-of-performance test).
+Pass an exact award number in award_number (see ebs_get_award_terms; empty string = all awards) and optionally an expenditure item date window. Returns at most 200 rows. Budget totals are not returned here; see ebs_get_award_terms for the award's funded and budgeted amounts.
+Underlying Tables: GMS_AWARDS_ALL, GMS_AWARD_DISTRIBUTIONS, PA_EXPENDITURE_ITEMS_ALL.
+Security Context: Standard APPS schema access; Org ID security context.

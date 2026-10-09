@@ -1,0 +1,5 @@
+Validates extracted citizen identity data (legal name, tax ID/SSN hash, postal code) against the JD Edwards Address Book and returns match confidence plus the verified address, date of birth, email and phone.
+Underlying Tables: F0101 (Address Book Master), F0111 (Who's Who), F0116 (Address by Date), F01151 (Electronic Address), F0115 (Phone Numbers).
+JDE Applications: Address Book Revisions (P01012).
+Data Notes: The tax ID is never returned; only a hash comparison result. The hash must be computed over the value exactly as stored (with or without dashes).
+Security Context: Address book search type security (F00950); enforced only with the PL/SQL security wrapper.

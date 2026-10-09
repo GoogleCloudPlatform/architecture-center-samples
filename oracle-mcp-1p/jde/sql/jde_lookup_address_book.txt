@@ -1,0 +1,3 @@
+Searches the JD Edwards Address Book for suppliers, customers, constituents and other parties by name and search type.
+Use this tool to discover address numbers (:an8, :supplier_an8, :applicant_an8, customer numbers) before invoking verification, quote, voucher or notice tools.
+Underlying Tables: F0101 (Address Book Master), F0116 (Address by Date).

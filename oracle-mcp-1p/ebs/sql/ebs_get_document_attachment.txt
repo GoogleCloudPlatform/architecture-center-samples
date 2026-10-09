@@ -1,0 +1,4 @@
+Retrieves one attached document (for example a determination letter or decision PDF) from the EBS attachment store: category, data type, title, description, file name or URL, MIME type, size and the file data.
+The file data is binary (PDF, Word, image), not text. Only file attachments have file data; text and web-page attachments return their type and URL only. attachment_count shows how many records the same document is attached to.
+Underlying Tables: FND_DOCUMENTS, FND_ATTACHED_DOCUMENTS, FND_DOCUMENTS_TL, FND_DOCUMENT_CATEGORIES_TL, FND_DOCUMENT_DATATYPES, FND_LOBS.
+Security Context: Per-user security only with the PL/SQL security wrapper.

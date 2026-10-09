@@ -1,0 +1,5 @@
+Returns the vendor master record for a supplier: legal name, status, class, whether it is the primary or a corporate-parent record, hub-zone and EEO certification date, last activity, primary address (as of today), default payment terms and currency, and how many vendor policies are on file. At most 50 vendors, found by SetID, vendor ID or part of the name.
+Use it for vendor identity and consistency checks in the RFP vendor evaluation skill (does the legal name and address on a proposal match the vendor master? is the vendor active?), and to ground a vendor ID before another call. It contains no tax identifiers and no bank details.
+Sourcing events, bids and evaluation criteria are NOT in this database (Strategic Sourcing is not installed), so there is no tool for the solicitation or the vendor responses; that part of the skill cannot be served from HCM.
+Underlying Tables: PS_VENDOR, PS_VENDOR_ADDR, PS_VENDOR_LOC, PS_VENDOR_POLICY.
+Security Context: Supplier SetID security; no row security applies unless the PL/SQL wrapper is on.

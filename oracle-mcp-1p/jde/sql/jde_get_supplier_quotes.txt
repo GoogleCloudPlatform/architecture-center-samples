@@ -1,0 +1,5 @@
+Retrieves supplier responses to a JD Edwards request for quote: invited suppliers per line, response timeliness, quoted unit prices by quantity break, promised dates and quote validity, with supplier DUNS and tax ID.
+Underlying Tables: F4330 (Supplier Selection), F4331 (Supplier Price Quotes), F4311 (Purchase Order Detail), F0101 (Address Book).
+JDE Applications: Quote Supplier Entry (P4330), Quote Response Entry (P4334).
+Data Notes: Rows are sorted by line and lowest quoted price. Suppliers without a price row have not responded. Proposal documents are media objects on the quote (use jde_get_media_object_attachment).
+Security Context: Commercial-in-confidence supplier data under procurement business unit security; enforced only with the PL/SQL security wrapper.

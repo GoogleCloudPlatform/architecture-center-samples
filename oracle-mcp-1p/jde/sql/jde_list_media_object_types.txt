@@ -1,0 +1,3 @@
+Lists the JD Edwards media object names that have attachments (e.g. GT03B11 for A/R invoices), with attachment counts and a sample text key showing the key format.
+Use this tool to discover valid values for :object_name and the :text_key format before calling the media object attachment, policy document and intake tools.
+Underlying Table: F00165 (Media Objects Storage).

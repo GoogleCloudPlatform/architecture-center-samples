@@ -1,0 +1,5 @@
+Returns payable time (Time and Labor) that is charged to a project, with the chartfields it carries: project, activity, fund, account, program and department. This is the HCM-side labor cost evidence for grant and project audits (2 CFR 200.430 effort and compensation). One row per payable time entry, newest first, at most 200 rows. Only entries with a project are returned. The project's business unit is blank on many entries, so the project description is often empty even when the project exists; look it up with ps_hcm_get_project_setup.
+Use it to test allocability (is the time charged to the right project and fund?), to look at one employee or project over a date window, and to see payable status (approved, sent to payroll, deleted). Combine with ps_hcm_find_duplicate_time_entries for duplicate billing and ps_hcm_get_project_setup for project terms.
+Contains employee IDs but no names. Reported (punch) time is not included; this is payable time.
+Underlying Tables: PS_TL_PAYABLE_TIME, PS_PROJECT.
+Security Context: HCM Time and Labor; no row security applies unless the PL/SQL wrapper is on.

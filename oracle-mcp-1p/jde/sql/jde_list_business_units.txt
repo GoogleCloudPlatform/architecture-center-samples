@@ -1,0 +1,3 @@
+Lists JD Edwards companies and business units (agencies, departments, programs, grants and jobs) with their type and posting status.
+Use this tool to discover valid values for the :company and business unit parameters used across A/R, A/P, Procurement and Expense tools.
+Underlying Tables: F0006 (Business Unit Master), F0010 (Company Constants).

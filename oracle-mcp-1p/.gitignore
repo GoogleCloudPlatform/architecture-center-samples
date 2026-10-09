@@ -1,0 +1,33 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.DS_Store
+*.log
+.pytest_cache/
+
+# Local credentials (templates: *.env.example)
+*.env
+# Per-system deploy settings and database credentials (<system>/.env, <system>/.env.database)
+.env.*
+!.env.example
+!.env.example.database
+
+# Per-user MCP client config written by scripts/install_mcp_server.sh (absolute local paths)
+mcp_config.json
+.agents/
+
+# OAuth client secrets (scripts/secrets/*.json); only its README is tracked
+scripts/secrets/*
+!scripts/secrets/README.md
+*client_secret*.json
+
+# Python virtual environments
+.venv/
+venv/
+
+# Tester variants written with sync_sql_to_yaml.py --out, e.g. tools.live.yaml, tools_secure.yaml
+# (tools.yaml itself stays tracked)
+tools[._-]*.yaml
+tools[._-]*.yml
+# Third-party code from Google (not ours to redistribute)
+google_oracle_skills/

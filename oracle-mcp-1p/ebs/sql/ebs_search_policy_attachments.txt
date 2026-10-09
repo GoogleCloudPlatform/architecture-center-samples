@@ -1,0 +1,4 @@
+Searches the EBS attachment store for agency policy bulletins, administrative guidelines and SOP documents by keyword, document category and entity. Returns one row per document, metadata only: category, data type, title, summary, file name or URL, MIME type, size, how many records it is attached to (attachment_count), the date the document was added (created_date), last update, and its active dates (effective_from, effective_to; often empty). At most 20, newest first.
+created_date is not an effective date. The attachment store holds every kind of attachment, so narrow with policy_category (e.g. 'Standard Operating Procedures') or entity_name when possible. Fetch a document's file with ebs_get_document_attachment.
+Underlying Tables: FND_ATTACHED_DOCUMENTS, FND_DOCUMENTS, FND_DOCUMENTS_TL, FND_DOCUMENT_CATEGORIES_TL, FND_DOCUMENT_DATATYPES, FND_LOBS.
+Security Context: Per-user security only with the PL/SQL security wrapper.

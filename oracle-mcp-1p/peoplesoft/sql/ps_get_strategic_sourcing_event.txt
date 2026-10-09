@@ -1,0 +1,5 @@
+DISABLED: tables not in the HCM database HR92U054 (ORA-00942 on 2026-10-08); enable on an FSCM/Campus database.
+Retrieves sourcing event specifications, minimum criteria, and scoring rubrics from PeopleSoft Strategic Sourcing (eProcurement).
+Underlying Tables: PS_AUC_EVENT_HDR, PS_AUC_EVNT_LINE, PS_AUC_RQD_DOC, PS_AUC_CRITERIA.
+Procedures/APIs: Component Interface AUC_EVENT_HDR_CI, REST Service PS_GET_SOURCING_EVENT.v1.
+Security Context: Sourcing event business unit security.

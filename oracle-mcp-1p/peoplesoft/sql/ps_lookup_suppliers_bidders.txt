@@ -1,0 +1,4 @@
+DISABLED: tables not in the HCM database HR92U054 (ORA-00942 on 2026-10-08); enable on an FSCM/Campus database.
+Searches suppliers and bidders in PeopleSoft FSCM and Strategic Sourcing by name or number.
+Use this tool to discover valid values for vendor bind variables :bidder_id and supplier IDs before invoking sourcing bid evaluation or voucher matching tools.
+Underlying Tables: PS_VENDOR, PS_BIDDER_HDR.

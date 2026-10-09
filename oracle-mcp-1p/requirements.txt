@@ -1,0 +1,3 @@
+PyYAML>=6.0
+# For scripts/test_stub_jde.py and the default compile check of scripts/build_and_validate.py (--nocompile skips it)
+oracledb>=2.0

@@ -1,0 +1,4 @@
+Cross-checks extracted income and demographic fields against PeopleSoft Person/Constituent master tables.
+Underlying Tables: PS_PERSONAL_DATA, PS_PERS_NID, PS_NAMES, PS_ADDRESSES.
+Procedures/APIs: Component Interface CI_PERSONAL_DATA, REST verification service.
+Security Context: Row-level security and permission list context.

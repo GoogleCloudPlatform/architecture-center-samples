@@ -1,0 +1,5 @@
+DISABLED: tables not in the HCM database HR92U054 (ORA-00942 on 2026-10-08); enable on an FSCM/Campus database.
+Retrieves attached case documents and decision files from the PeopleSoft Attachment Repository (PS_ATTACHMENT_TBL).
+Underlying Tables: PS_ATTACHMENT_TBL, PSFILE_ATTDET, PS_SFA_DOC_ATTACH, PS_FILE_STORAGE.
+Procedures/APIs: PeopleCode GetAttachment(), REST Service SCC_GET_ATTACHMENT.v1.
+Security Context: OPRID authorization check on target parent record.

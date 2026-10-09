@@ -1,0 +1,3 @@
+Lists valid PeopleSoft General Ledger and HCM Business Units from PS_BUS_UNIT_TBL_FS and PS_BUS_UNIT_TBL_HR.
+Use this tool to discover valid values for the :business_unit bind variable across Strategic Sourcing, Voucher, and AP tools.
+Underlying Tables: PS_BUS_UNIT_TBL_FS, PS_BUS_UNIT_TBL_HR.

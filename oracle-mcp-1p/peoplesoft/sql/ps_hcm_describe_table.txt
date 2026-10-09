@@ -1,0 +1,4 @@
+Describes a PeopleSoft table in the connected database, or finds tables by name. With table_name it returns every column (position, name, type, length, nullable); with name_pattern and no table_name it lists matching tables with their statistics row estimate (which can be empty). At most 400 rows. Both table_name forms work: PS_JOB or JOB.
+Use it before writing or changing a query, and to confirm a column exists in this database: the PeopleSoft equivalent of ebs_describe_table. The connected database is HCM only; tables of other PeopleSoft products (Financials, Campus Solutions) will be reported as not found.
+Underlying Tables: ALL_TAB_COLUMNS, ALL_TABLES (SYSADM owner only).
+Security Context: Dictionary views; shows only what the connected user can see.

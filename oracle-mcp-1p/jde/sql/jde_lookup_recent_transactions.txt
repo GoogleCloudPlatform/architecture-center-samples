@@ -1,0 +1,3 @@
+Searches recent JD Edwards purchase orders, requests for quote, A/P vouchers, A/R invoices or expense reports by document number or type (last 365 days when no number is given).
+Use this tool to discover valid values for transactional parameters :order_number, :po_number, :voucher_number, :doc_number and :report_number.
+Underlying Tables: F4301 (Purchase Order Header), F0411 (Supplier Ledger), F03B11 (Customer Ledger), F20111 (Expense Report Header).

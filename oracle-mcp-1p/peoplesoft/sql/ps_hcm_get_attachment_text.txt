@@ -1,0 +1,5 @@
+Returns the text of a stored attachment, 2,000 bytes at a time, for files that are plain text, HTML, XML or JSON. For every file it returns the source table, size, version, last update and the detected format (PDF, Word or Excel, image, binary or text), so the agent knows what it has. Give the stored file name (attachsysfilename) from ps_hcm_get_person_documents or ps_hcm_search_policy_documents; one row comes back per stored file part and version, at most 10.
+PDF, Word, Excel and image files are NOT decoded: is_text is N and text_chunk is empty. Reading those needs text extraction that this database does not provide (same limit as the EBS equivalent, which needs a DBA-installed function); do not guess their content. When has_more is Y, call again with chunk_start set to chunk_start + chunk_length. A multi-byte character can be cut at a chunk boundary.
+Attachments can hold personal data. The text is returned as stored; masking belongs to the calling skill.
+Underlying Tables: PS_HR_ATT_FILES, PSFILE_ATTDET.
+Security Context: Attachment data; use the PL/SQL wrapper and an authorised user in production.

@@ -1,0 +1,3 @@
+Queries the PeopleSoft Translate Table (PSXLATITEM) for valid field values.
+Use this tool to discover valid codes for categorical bind variables like :document_type, :category, and status codes.
+Underlying Table: PSXLATITEM.

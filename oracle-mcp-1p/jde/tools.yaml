@@ -1,0 +1,1323 @@
+# ==============================================================================
+# Model Context Protocol (MCP) Toolbox for Databases - Tools Configuration
+# System: JD Edwards EnterpriseOne 9.2 (Oracle Database)
+# Target: Gemini for Government Plugin (Oct 2026)
+# Bind Variables: Oracle syntax (:param_name)
+# Connection Details: Unified connectionString (hostname:port/servicename)
+# Schemas: business data in PRODDTA, control tables in PRODCTL (production path code;
+# other path codes use e.g. CRPDTA/CRPCTL or TESTDTA/TESTCTL)
+# ==============================================================================
+#
+# Authenticated parameters for the PL/SQL security wrapper (README §2.6).
+# To enable: uncomment the authServices block below, set GOOGLE_CLIENT_ID
+# in jde/.env, then run: python3 scripts/sync_sql_to_yaml.py --system jde --wrap
+# authServices:
+#   google-auth:
+#     type: google
+#     clientId: ${GOOGLE_CLIENT_ID}
+
+sources:
+  jde-oracle-source:
+    kind: oracle
+    connectionString: ${DB_CONNECTION_STRING:jde.example.com:1521/JDEPROD}
+    user: ${DB_USER:JDE_AI}
+    password: ${DB_PASSWORD:JDE_AI}
+tools:
+  jde_get_agency_policy_rules:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Queries agency-configured travel and expense policy rules (per diem allowances, receipt thresholds, audit sampling) and procurement approval limits (delegation of authority) from JD Edwards setups.
+      Underlying Tables: F09E108 (Expense Policy Rules), F09E110 (Audit Selection Rules), F43008 (Approval Level Revisions), F0101 (Address Book).
+      JDE Applications: Expense Management policy setup (system 09E), Approval Routing Revisions for Procurement.
+      Data Notes: Dates converted from JDE Julian (CYYDDD); expense amounts converted from implied decimals (2 places, rates 3 places); approval limits (APALIM) are stored with no decimals.
+      Security Context: Setup data, readable by all agency users.
+    parameters:
+    - name: policy_category
+      type: string
+      description: 'Policy category: ''EXPENSE'' (per diem and receipt rules), ''AUDIT''
+        (expense audit sampling), ''PROCUREMENT'' (approval limits) or ''ALL''.'
+    - name: rule_name
+      type: string
+      description: Optional expense policy name or procurement approval route code
+        (partial match).
+    statement: |-
+      WITH params AS (
+          SELECT
+              :policy_category AS policy_category,
+              :rule_name AS rule_name
+          FROM dual
+      )
+      SELECT * FROM (
+          -- Expense Management policy rules by expense category and location
+          SELECT
+              'EXPENSE' AS policy_category,
+              TO_CHAR(TRIM(pr.prpolicy)) AS rule_group,
+              TO_CHAR(TRIM(pr.prdl01)) AS rule_description,
+              TO_CHAR(TRIM(pr.prexptype)) AS rule_type,
+              TO_CHAR('Location ' || NVL(TRIM(pr.prlocatn), 'ANY') || ' | Report type ' || TRIM(pr.prexrpttyp)) AS rule_scope,
+              pr.prdlyallow / 100 AS threshold_amount,
+              TO_CHAR(pr.prrctrqd) AS receipt_required,
+              pr.prdomrctam / 100 AS receipt_threshold_amount,
+              pr.prrate1 / 1000 AS rate_or_percent,
+              'Audit amount ' || TO_CHAR(pr.prauditamt / 100, 'FM999999990.00')
+                  || ' | Tolerance ' || TO_CHAR(pr.prtoler) || '%'
+                  || ' | Hard edit ' || TO_CHAR(pr.prhedit)
+                  || ' | Allowable/unallowable rule ' || TO_CHAR(pr.prgovtflag) AS rule_notes,
+              TO_CHAR(TRIM(pr.prpolcrcy)) AS currency_code,
+              CASE WHEN pr.preftj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(pr.preftj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS effective_start_date,
+              CASE WHEN pr.prexdj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(pr.prexdj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS effective_end_date
+          FROM ${JDE_DATA_SCHEMA:proddta}.f09e108 pr
+          CROSS JOIN params p
+          WHERE (p.policy_category IS NULL OR UPPER(p.policy_category) IN ('EXPENSE', 'TRAVEL', 'ALL'))
+            AND (p.rule_name IS NULL OR UPPER(pr.prpolicy) LIKE UPPER('%' || p.rule_name || '%'))
+
+          UNION ALL
+
+          -- Expense audit selection (sampling) rules
+          SELECT
+              'AUDIT' AS policy_category,
+              TO_CHAR(TRIM(au.aspolicy)) AS rule_group,
+              TO_CHAR('Audit selection rule ' || TO_CHAR(au.asrulenum)) AS rule_description,
+              'AUDIT_SAMPLING' AS rule_type,
+              TO_CHAR('Report amount ' || TO_CHAR(au.asfromrng / 100, 'FM999999990.00') || ' to ' || TO_CHAR(au.asthrurng / 100, 'FM999999990.00')) AS rule_scope,
+              au.asthrurng / 100 AS threshold_amount,
+              NULL AS receipt_required,
+              NULL AS receipt_threshold_amount,
+              au.aspercsel AS rate_or_percent,
+              'Percent of reports selected for audit' AS rule_notes,
+              NULL AS currency_code,
+              CASE WHEN au.aseftb > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(au.aseftb + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS effective_start_date,
+              NULL AS effective_end_date
+          FROM ${JDE_DATA_SCHEMA:proddta}.f09e110 au
+          CROSS JOIN params p
+          WHERE (p.policy_category IS NULL OR UPPER(p.policy_category) IN ('AUDIT', 'EXPENSE', 'ALL'))
+            AND (p.rule_name IS NULL OR UPPER(au.aspolicy) LIKE UPPER('%' || p.rule_name || '%'))
+
+          UNION ALL
+
+          -- Procurement approval routes and delegation-of-authority limits
+          SELECT
+              'PROCUREMENT' AS policy_category,
+              TO_CHAR(TRIM(ap.apartg)) AS rule_group,
+              TO_CHAR(TRIM(ap.apdl01)) AS rule_description,
+              'APPROVAL_LIMIT' AS rule_type,
+              TO_CHAR('Order type ' || ap.apdcto || ' | Approver ' || TRIM(ab.abalph) || ' (' || TO_CHAR(ap.aprper) || ')') AS rule_scope,
+              ap.apalim AS threshold_amount,
+              NULL AS receipt_required,
+              NULL AS receipt_threshold_amount,
+              NULL AS rate_or_percent,
+              'Approver type ' || TO_CHAR(ap.apaty) AS rule_notes,
+              NULL AS currency_code,
+              NULL AS effective_start_date,
+              NULL AS effective_end_date
+          FROM ${JDE_DATA_SCHEMA:proddta}.f43008 ap
+          LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0101 ab
+              ON ab.aban8 = ap.aprper
+          CROSS JOIN params p
+          WHERE (p.policy_category IS NULL OR UPPER(p.policy_category) IN ('PROCUREMENT', 'ALL'))
+            AND (p.rule_name IS NULL OR UPPER(ap.apartg) LIKE UPPER('%' || p.rule_name || '%'))
+      )
+      ORDER BY policy_category, rule_group, rule_type
+  jde_get_customer_notice_details:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Retrieves billing determinations, overpayment and open balances, pay status, statutory remarks and dispute (deduction) records for a constituent from JD Edwards Accounts Receivable.
+      Underlying Tables: F03B11 (Customer Ledger), F03B40 (A/R Deductions), F0101 (Address Book), F0006 (Business Unit Master), F0005 (UDC 00/DT, 00/PS).
+      JDE Applications: Customer Ledger Inquiry (P03B2002), A/R Deduction Management.
+      Data Notes: Dates converted from JDE Julian (CYYDDD); amounts converted from implied decimals assuming 2 display decimals.
+      Security Context: JDE row security (F00950) by company / business unit; enforced only with the PL/SQL security wrapper.
+    parameters:
+    - name: doc_number
+      type: integer
+      description: A/R invoice or billing document number (F03B11.RPDOC), e.g. the
+        claim or determination number.
+    - name: doc_type
+      type: string
+      description: Optional A/R document type (F03B11.RPDCT), e.g. 'RI' for invoices
+        or 'RM' for credit memos.
+    - name: company
+      type: string
+      description: Optional document company (F03B11.RPKCO), e.g. '00001' or '1'.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :doc_number AS doc_number,
+              :doc_type AS doc_type,
+              :company AS company
+          FROM dual
+      )
+      -- JDE storage conventions used below: dates are Julian CYYDDD numbers (0 = blank),
+      -- amounts are stored without the decimal point (2 display decimals), and codes are
+      -- blank-padded fixed-length strings (UDC tables are compared with TRIM).
+      SELECT
+          rp.rpdoc AS doc_number,
+          rp.rpdct AS doc_type,
+          TRIM(dt.drdl01) AS doc_type_description,
+          rp.rpkco AS company,
+          rp.rpsfx AS pay_item,
+          rp.rpan8 AS customer_an8,
+          TRIM(ab.abalph) AS constituent_name,
+          CASE WHEN rp.rpdivj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(rp.rpdivj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS notice_date,
+          CASE WHEN rp.rpddj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(rp.rpddj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS due_date,
+          rp.rpag / 100 AS billed_amount,
+          rp.rpaap / 100 AS outstanding_balance,
+          TRIM(rp.rpcrcd) AS currency_code,
+          rp.rppst AS pay_status,
+          TRIM(ps.drdl01) AS pay_status_description,
+          TRIM(rp.rprmk) AS statutory_remark,
+          TRIM(rp.rpvr01) AS reference,
+          TRIM(rp.rpmcu) AS business_unit,
+          TRIM(bu.mcdl01) AS program_or_grant_name,
+          ded.rbdcid AS dispute_id,
+          TRIM(ded.rbddex) AS dispute_reason_code,
+          TRIM(ded.rbpsdd) AS dispute_status,
+          ded.rbdda / 100 AS disputed_amount,
+          ded.rbddoa / 100 AS disputed_open_amount,
+          CASE WHEN ded.rbdddo > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(ded.rbdddo + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS dispute_opened_date
+      FROM params p
+      JOIN ${JDE_DATA_SCHEMA:proddta}.f03b11 rp
+          ON rp.rpdoc = p.doc_number
+         AND (p.doc_type IS NULL OR rp.rpdct = UPPER(p.doc_type))
+         AND (p.company IS NULL OR rp.rpkco = LPAD(p.company, 5, '0'))
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0101 ab
+          ON ab.aban8 = rp.rpan8
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0006 bu
+          ON bu.mcmcu = rp.rpmcu
+      LEFT JOIN ${JDE_CTL_SCHEMA:prodctl}.f0005 dt
+          ON TRIM(dt.drsy) = '00'
+         AND TRIM(dt.drrt) = 'DT'
+         AND TRIM(dt.drky) = TRIM(rp.rpdct)
+      LEFT JOIN ${JDE_CTL_SCHEMA:prodctl}.f0005 ps
+          ON TRIM(ps.drsy) = '00'
+         AND TRIM(ps.drrt) = 'PS'
+         AND TRIM(ps.drky) = TRIM(rp.rppst)
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f03b40 ded
+          ON ded.rbodoc = rp.rpdoc
+         AND ded.rbodct = rp.rpdct
+         AND ded.rbokco = rp.rpkco
+         AND ded.rbosfx = rp.rpsfx
+      ORDER BY rp.rpdct, rp.rpsfx
+  jde_get_employee_personnel_file:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Retrieves an employee's personnel file from JD Edwards HCM: identity (name, SSN, date of birth, home address), job, status and pay rates, the HR change history, and recent pay stubs.
+      Underlying Tables: F060116 (Employee Master), F0111 (Who's Who), F0116 (Address by Date), F08042 (HR History), F06156 (Payment Header), F0006 (Business Unit Master).
+      JDE Applications: Employee Master (P0801), HR History, Payroll Check Inquiry.
+      Data Notes: hr_history and pay_history are text lists, newest first, truncated at 4000 bytes. Contains SSN and date of birth, which are redaction targets.
+      Security Context: JDE HR business unit and home company row security (F00950); enforced only with the PL/SQL security wrapper.
+    parameters:
+    - name: employee_an8
+      type: string
+      description: Employee address number (F060116.YAAN8).
+    - name: employee_number
+      type: string
+      description: Additional employee number or badge number (F060116.YAOEMP), used
+        when the address number is unknown.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :employee_an8 AS employee_an8,
+              :employee_number AS employee_number
+          FROM dual
+      )
+      -- HR history (F08042) and pay history (F06156) are returned as one text column each
+      -- (newest first) so an employee stays one row instead of multiplying rows.
+      SELECT
+          ya.yaan8 AS employee_an8,
+          TRIM(ya.yaoemp) AS employee_number,
+          TRIM(ya.yaalph) AS full_name,
+          TRIM(ww.wwgnnm) AS first_name,
+          TRIM(ww.wwsrnm) AS last_name,
+          TRIM(ya.yassn) AS ssn_tax_id,
+          CASE WHEN ya.yadob > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(ya.yadob + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS date_of_birth,
+          TRIM(ya.yasex) AS gender,
+          TRIM(al.aladd1) AS home_address,
+          TRIM(al.alcty1) AS home_city,
+          TRIM(al.aladds) AS home_state,
+          TRIM(al.aladdz) AS home_postal_code,
+          TRIM(ya.yahmco) AS home_company,
+          TRIM(ya.yahmcu) AS home_business_unit,
+          TRIM(bu.mcdl01) AS home_business_unit_name,
+          TRIM(ya.yajbcd) AS job_type,
+          TRIM(ya.yajbst) AS job_step,
+          ya.yaest AS employment_status,
+          ya.yapast AS pay_status,
+          ya.yaanpa AS supervisor_an8,
+          ya.yasal / 100 AS annual_salary,
+          ya.yaphrt / 1000 AS hourly_rate,
+          CASE WHEN ya.yadsi > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(ya.yadsi + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS original_hire_date,
+          CASE WHEN ya.yadst > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(ya.yadst + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS start_date,
+          CASE WHEN ya.yadt > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(ya.yadt + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS termination_date,
+          TRIM(ya.yatrs) AS last_change_reason,
+          (SELECT LISTAGG(
+                      CASE WHEN h.jwefto > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(h.jwefto + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END
+                      || ' ' || TRIM(h.jwdtai) || '=' || TRIM(h.jwhstd)
+                      || CASE WHEN TRIM(h.jwtrs) IS NOT NULL THEN ' (reason ' || TRIM(h.jwtrs) || ')' END,
+                      '; ' ON OVERFLOW TRUNCATE '...' WITH COUNT)
+                  WITHIN GROUP (ORDER BY h.jwefto DESC)
+             FROM ${JDE_DATA_SCHEMA:proddta}.f08042 h
+            WHERE h.jwan8 = ya.yaan8) AS hr_history,
+          (SELECT LISTAGG(
+                      CASE WHEN pc.yuckd > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(pc.yuckd + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END
+                      || ' check ' || TO_CHAR(pc.yudocm)
+                      || ' gross ' || TO_CHAR(pc.yugpay / 100, 'FM999999990.00')
+                      || ' net ' || TO_CHAR(pc.yunpay / 100, 'FM999999990.00'),
+                      '; ' ON OVERFLOW TRUNCATE '...' WITH COUNT)
+                  WITHIN GROUP (ORDER BY pc.yuckd DESC)
+             FROM ${JDE_DATA_SCHEMA:proddta}.f06156 pc
+            WHERE pc.yuan8 = ya.yaan8) AS pay_history
+      FROM params p
+      JOIN ${JDE_DATA_SCHEMA:proddta}.f060116 ya
+          ON (p.employee_an8 IS NOT NULL AND ya.yaan8 = TO_NUMBER(p.employee_an8))
+          OR (p.employee_number IS NOT NULL AND TRIM(ya.yaoemp) = TRIM(p.employee_number))
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0111 ww
+          ON ww.wwan8 = ya.yaan8
+         AND ww.wwidln = 0
+      LEFT JOIN (
+          SELECT a.*
+          FROM ${JDE_DATA_SCHEMA:proddta}.f0116 a
+          WHERE a.aleftb = (SELECT MAX(x.aleftb) FROM ${JDE_DATA_SCHEMA:proddta}.f0116 x WHERE x.alan8 = a.alan8)
+      ) al
+          ON al.alan8 = ya.yaan8
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0006 bu
+          ON bu.mcmcu = ya.yahmcu
+  jde_get_expense_reports:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Retrieves employee travel and operational expense reports from JD Edwards Expense Management: report totals and status, itemized lines (category, date, amount, business purpose, hotel, grant subledger), allowable/unallowable amounts, policy exceptions, and the policy rule in force for each line.
+      Underlying Tables: F20111 (Expense Report Header), F20112 (Expense Report Detail), F09E108 (Expense Policy Rules), F0101 (Address Book).
+      JDE Applications: Expense Management (system 09E).
+      Data Notes: Filter by submission date for nightly audits. Receipts are media objects on the report (use jde_get_media_object_attachment). Amounts converted from implied decimals (2 places). At most 500 lines per call.
+      Security Context: Expense auditor role and home business unit security (F00950); enforced only with the PL/SQL security wrapper.
+    parameters:
+    - name: report_number
+      type: string
+      description: Expense report number (F20111.EHEXRPTNUM).
+    - name: employee_an8
+      type: string
+      description: Address number of the employee who submitted the report (F20111.EHEMPLOYID).
+    - name: start_date
+      type: string
+      description: Submission date window start in YYYY-MM-DD format.
+    - name: end_date
+      type: string
+      description: Submission date window end in YYYY-MM-DD format.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :report_number AS report_number,
+              :employee_an8 AS employee_an8,
+              :start_date AS start_date,
+              :end_date AS end_date
+          FROM dual
+      )
+      -- The policy rule shown for each line is the one effective on the expense date for
+      -- the report's policy and expense category, preferring a location-specific rule.
+      SELECT
+          TRIM(eh.ehexrptnum) AS report_number,
+          eh.ehexrpttyp AS report_type,
+          eh.ehemployid AS employee_an8,
+          TRIM(emp.abalph) AS employee_name,
+          TRIM(eh.ehexrptdes) AS report_description,
+          TRIM(eh.ehbuspurp) AS report_business_purpose,
+          TRIM(eh.ehexrptsta) AS report_status,
+          CASE WHEN eh.ehdatesub > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(eh.ehdatesub + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS submission_date,
+          CASE WHEN eh.ehdateapp > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(eh.ehdateapp + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS approval_date,
+          eh.ehtotexp / 100 AS report_total,
+          eh.ehreimbtot / 100 AS reimbursement_total,
+          eh.ehgovuntot / 100 AS unallowable_total,
+          eh.ehcashadv / 100 AS cash_advance,
+          eh.ehnumexc AS exception_count,
+          TRIM(eh.ehpolicy) AS policy_name,
+          TRIM(eh.ehco) AS company,
+          TRIM(eh.ehhmcu) AS home_business_unit,
+          ed.edlin / 100 AS line_number,
+          TRIM(ed.edexptype) AS expense_category,
+          CASE WHEN ed.edexpdate > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(ed.edexpdate + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS expense_date,
+          ed.edexpfamt / 100 AS expense_amount,
+          TRIM(ed.edcrcd) AS expense_currency,
+          ed.edexpdamt / 100 AS reimbursement_amount,
+          ed.edgovtamt / 100 AS allowable_amount,
+          ed.edgovtuamt / 100 AS unallowable_amount,
+          ed.edtapda / 100 AS per_diem_available,
+          TRIM(ed.edpmtmeth) AS payment_method,
+          TRIM(ed.edbuspurp) AS business_purpose,
+          TRIM(ed.edaddlcmt) AS additional_comments,
+          TRIM(ed.edhotelloc) AS hotel_location,
+          ed.ednumnites AS number_of_nights,
+          ed.edrcptlbl AS receipt_label,
+          TRIM(ed.edmcu0) AS charged_business_unit,
+          TO_CHAR(TRIM(ed.edsbl)) || CASE WHEN TRIM(ed.edsblt) IS NOT NULL THEN ' (' || TO_CHAR(TRIM(ed.edsblt)) || ')' END AS grant_subledger,
+          TRIM(ed.edexpstat) AS line_status,
+          CASE WHEN TRIM(ed.edpolicyex) IS NOT NULL THEN 'EXCEPTION: ' || TO_CHAR(TRIM(ed.edpolicyex)) ELSE 'OK' END AS policy_status,
+          pol.prdlyallow / 100 AS policy_daily_allowance,
+          pol.prrctrqd AS policy_receipt_required,
+          pol.prdomrctam / 100 AS policy_receipt_threshold,
+          pol.prauditamt / 100 AS policy_audit_amount
+      FROM params p
+      JOIN ${JDE_DATA_SCHEMA:proddta}.f20111 eh
+          ON (p.report_number IS NULL OR TRIM(eh.ehexrptnum) = TRIM(p.report_number))
+         AND (p.employee_an8 IS NULL OR eh.ehemployid = TO_NUMBER(p.employee_an8))
+         AND (p.start_date IS NULL OR eh.ehdatesub >= TO_NUMBER(TO_CHAR(TO_DATE(p.start_date, 'YYYY-MM-DD'), 'YYYYDDD')) - 1900000)
+         AND (p.end_date IS NULL OR eh.ehdatesub <= TO_NUMBER(TO_CHAR(TO_DATE(p.end_date, 'YYYY-MM-DD'), 'YYYYDDD')) - 1900000)
+      JOIN ${JDE_DATA_SCHEMA:proddta}.f20112 ed
+          ON ed.edexrptnum = eh.ehexrptnum
+         AND ed.edexrpttyp = eh.ehexrpttyp
+         AND ed.edemployid = eh.ehemployid
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0101 emp
+          ON emp.aban8 = eh.ehemployid
+      OUTER APPLY (
+          SELECT pr.prdlyallow, pr.prrctrqd, pr.prdomrctam, pr.prauditamt
+          FROM ${JDE_DATA_SCHEMA:proddta}.f09e108 pr
+          WHERE pr.prpolicy = eh.ehpolicy
+            AND pr.prexptype = ed.edexptype
+            AND pr.preftj <= ed.edexpdate
+            AND (pr.prexdj = 0 OR pr.prexdj >= ed.edexpdate)
+            AND (TRIM(pr.prlocatn) IS NULL OR pr.prlocatn = ed.edlocatn)
+          ORDER BY CASE WHEN TRIM(pr.prlocatn) IS NULL THEN 1 ELSE 0 END, pr.preftj DESC
+          FETCH FIRST 1 ROWS ONLY
+      ) pol
+      ORDER BY eh.ehexrptnum, ed.edlin
+      FETCH FIRST 500 ROWS ONLY
+  jde_get_intake_attachments:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Retrieves citizen-submitted proof documents (paystubs, W-2s, utility bills) attached as JD Edwards Media Objects to an applicant's address book or intake record, with document category and verification status.
+      Underlying Tables: F00165 (Media Objects Storage), F00166 (Media Object Category Codes), F0101 (Address Book).
+      Data Notes: Text attachments are returned inline in content_blob; file and image attachments return the file name and media object queue (their bytes live on the media object file server).
+      Security Context: Applicant records under JDE address book search type security; enforced only with the PL/SQL security wrapper.
+    parameters:
+    - name: applicant_an8
+      type: string
+      description: Address number of the applicant or constituent who submitted the
+        proof documents (F0101.ABAN8).
+    - name: object_name
+      type: string
+      description: Optional media object name of the intake record (F00165.GDOBNM),
+        e.g. the address book media object. Use jde_list_media_object_types to discover
+        it.
+    - name: document_type
+      type: string
+      description: Optional document category (F00166.GTMODOCTP), e.g. 'PAYSTB', 'W2'
+        or 'UTIL' as configured by the agency (up to 6 characters).
+    statement: |-
+      WITH params AS (
+          SELECT
+              :applicant_an8 AS applicant_an8,
+              :object_name AS object_name,
+              :document_type AS document_type
+          FROM dual
+      )
+      -- An attachment belongs to the applicant when its category record carries the
+      -- applicant's address number (F00166.GTAN8), or, when object_name is given, when the
+      -- applicant's address number is one of the parent record's key parts.
+      SELECT
+          TO_NUMBER(p.applicant_an8) AS applicant_an8,
+          TRIM(ab.abalph) AS applicant_name,
+          TRIM(mo.gdobnm) AS object_name,
+          mo.gdtxky AS intake_record_key,
+          mo.gdmoseqn AS sequence,
+          TRIM(cat.gtmodoctp) AS document_category,
+          TRIM(cat.gtmodl01) AS document_description,
+          TRIM(cat.gtmostatus) AS verification_status,
+          CASE WHEN mo.gdgtmotype = 0 THEN 'TEXT' ELSE 'FILE_OR_LINK' END AS content_kind,
+          TRIM(mo.gdgtitnm) AS item_name,
+          TRIM(mo.gdgtfilenm) AS file_name_or_url,
+          TRIM(mo.gdqunam) AS media_object_queue,
+          CASE WHEN mo.gdupmj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(mo.gdupmj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS uploaded_date,
+          mo.gdtxft AS content_blob
+      FROM params p
+      JOIN ${JDE_DATA_SCHEMA:proddta}.f00165 mo
+          ON (p.object_name IS NULL OR mo.gdobnm = RPAD(UPPER(p.object_name), 10))
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f00166 cat
+          ON cat.gtobnm = mo.gdobnm
+         AND cat.gttxky = mo.gdtxky
+         AND cat.gtmoseqn = mo.gdmoseqn
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0101 ab
+          ON ab.aban8 = TO_NUMBER(p.applicant_an8)
+      WHERE (cat.gtan8 = TO_NUMBER(p.applicant_an8)
+          OR (p.object_name IS NOT NULL AND '|' || mo.gdtxky || '|' LIKE '%|' || p.applicant_an8 || '|%'))
+        AND (p.document_type IS NULL OR TRIM(cat.gtmodoctp) = UPPER(p.document_type))
+      ORDER BY mo.gdupmj DESC, mo.gdmoseqn
+      FETCH FIRST 50 ROWS ONLY
+  jde_get_media_object_attachment:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Retrieves attached determination letters, decision notes and case documents from JD Edwards Media Objects for any parent record (A/R invoice, voucher, address book, order).
+      Underlying Tables: F00165 (Media Objects Storage), F00166 (Media Object Category Codes).
+      JDE Applications: Media Object attachments (paperclip) on any application.
+      Data Notes: Text attachments are returned inline in content_blob. File, image and URL attachments return the file name or URL and the media object queue; their bytes live on the media object file server, not in the database.
+      Security Context: Attachment visibility follows the parent record's JDE row security; enforced only with the PL/SQL security wrapper.
+    parameters:
+    - name: object_name
+      type: string
+      description: Media object name (F00165.GDOBNM), e.g. 'GT03B11'. Use jde_list_media_object_types
+        to discover valid names and key formats.
+    - name: text_key
+      type: string
+      description: Parent record key (F00165.GDTXKY) or one or more consecutive key
+        parts, e.g. a document number such as '12345'.
+    - name: sequence
+      type: string
+      description: Optional media object sequence number (F00165.GDMOSEQN); leave
+        empty to return every attachment on the record.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :object_name AS object_name,
+              :text_key AS text_key,
+              :sequence AS sequence
+          FROM dual
+      )
+      -- GDTXKY holds the parent record's key values separated by '|'. The key match below
+      -- accepts the full key or any run of whole key parts, so '12345' matches '00001|RI|12345|001'.
+      SELECT
+          TRIM(mo.gdobnm) AS object_name,
+          mo.gdtxky AS text_key,
+          mo.gdmoseqn AS sequence,
+          mo.gdgtmotype AS media_object_type,
+          CASE WHEN mo.gdgtmotype = 0 THEN 'TEXT' ELSE 'FILE_OR_LINK' END AS content_kind,
+          TRIM(mo.gdgtitnm) AS item_name,
+          TRIM(mo.gdgtfilenm) AS file_name_or_url,
+          TRIM(mo.gdqunam) AS media_object_queue,
+          TRIM(cat.gtmodoctp) AS document_type,
+          TRIM(cat.gtmodl01) AS document_description,
+          TRIM(cat.gtmostatus) AS document_status,
+          TRIM(mo.gduser) AS updated_by,
+          CASE WHEN mo.gdupmj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(mo.gdupmj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS updated_date,
+          mo.gdtxft AS content_blob
+      FROM params p
+      JOIN ${JDE_DATA_SCHEMA:proddta}.f00165 mo
+          ON mo.gdobnm = RPAD(UPPER(p.object_name), 10)
+         AND (mo.gdtxky = p.text_key OR '|' || mo.gdtxky || '|' LIKE '%|' || p.text_key || '|%')
+         AND (p.sequence IS NULL OR mo.gdmoseqn = TO_NUMBER(p.sequence))
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f00166 cat
+          ON cat.gtobnm = mo.gdobnm
+         AND cat.gttxky = mo.gdtxky
+         AND cat.gtmoseqn = mo.gdmoseqn
+      ORDER BY mo.gdtxky, mo.gdmoseqn
+      FETCH FIRST 20 ROWS ONLY
+  jde_get_rfq_details:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Queries a JD Edwards request for quote (quote order, type OQ): solicitation header, delivery instructions, requested items and quantities, estimated costs, the number of suppliers invited per line and the response due date.
+      Underlying Tables: F4301 (Purchase Order Header), F4311 (Purchase Order Detail), F4330 (Supplier Selection), F0006 (Business Unit Master), F0101 (Address Book).
+      JDE Applications: Quote Orders (P4310, order type OQ), Quote Supplier Entry (P4330).
+      Data Notes: JDE has no native scoring rubric; mandatory criteria and technical specifications are usually attached to the quote as media objects (use jde_get_media_object_attachment). Unit costs use 4 implied decimals, amounts 2.
+      Security Context: Procurement business unit security (F00950); enforced only with the PL/SQL security wrapper.
+    parameters:
+    - name: order_number
+      type: integer
+      description: Request for quote (quote order) number (F4301.PHDOCO).
+    - name: order_type
+      type: string
+      description: Optional quote order type (F4301.PHDCTO); defaults to 'OQ'.
+    - name: order_company
+      type: string
+      description: Optional order company (F4301.PHKCOO), e.g. '00001'.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :order_number AS order_number,
+              :order_type AS order_type,
+              :order_company AS order_company
+          FROM dual
+      )
+      SELECT
+          ph.phdoco AS rfq_number,
+          ph.phdcto AS order_type,
+          ph.phkcoo AS order_company,
+          TRIM(ph.phdesc) AS rfq_title,
+          TRIM(ph.phvr01) AS solicitation_reference,
+          TRIM(ph.phrmk) AS rfq_remark,
+          TRIM(TRIM(ph.phdel1) || ' ' || TRIM(ph.phdel2)) AS delivery_instructions,
+          CASE WHEN ph.phtrdj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(ph.phtrdj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS issue_date,
+          CASE WHEN ph.phdrqj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(ph.phdrqj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS requested_date,
+          TRIM(ph.phmcu) AS business_unit,
+          TRIM(bu.mcdl01) AS business_unit_name,
+          ph.phanby AS buyer_an8,
+          TRIM(buyer.abalph) AS buyer_name,
+          pd.pdlnid / 1000 AS line_number,
+          TRIM(pd.pdlitm) AS item_number,
+          TRIM(TRIM(pd.pddsc1) || ' ' || TRIM(pd.pddsc2)) AS item_description,
+          TRIM(pd.pdlnty) AS line_type,
+          pd.pduorg AS quantity_requested,
+          TRIM(pd.pduom) AS unit_of_measure,
+          pd.pdprrc / 10000 AS estimated_unit_cost,
+          pd.pdaexp / 100 AS estimated_extended_amount,
+          CASE WHEN pd.pddrqj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(pd.pddrqj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS line_requested_date,
+          TRIM(pd.pdomcu) AS project_business_unit,
+          NULLIF(TO_CHAR(TRIM(pd.pdobj) || '.' || TRIM(pd.pdsub)), '.') AS gl_object_subsidiary,
+          NULLIF(TO_CHAR(TRIM(pd.pdlttr) || '/' || TRIM(pd.pdnxtr)), '/') AS line_status_last_next,
+          (SELECT COUNT(*)
+             FROM ${JDE_DATA_SCHEMA:proddta}.f4330 s
+            WHERE s.p0doco = pd.pddoco AND s.p0dcto = pd.pddcto AND s.p0kcoo = pd.pdkcoo
+              AND s.p0sfxo = pd.pdsfxo AND s.p0lnid = pd.pdlnid) AS suppliers_invited,
+          (SELECT CASE WHEN MIN(s.p0rqqj) > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(MIN(s.p0rqqj) + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END
+             FROM ${JDE_DATA_SCHEMA:proddta}.f4330 s
+            WHERE s.p0doco = pd.pddoco AND s.p0dcto = pd.pddcto AND s.p0kcoo = pd.pdkcoo
+              AND s.p0sfxo = pd.pdsfxo AND s.p0lnid = pd.pdlnid) AS response_due_date
+      FROM params p
+      JOIN ${JDE_DATA_SCHEMA:proddta}.f4301 ph
+          ON ph.phdoco = p.order_number
+         AND ph.phdcto = NVL(UPPER(p.order_type), 'OQ')
+         AND (p.order_company IS NULL OR ph.phkcoo = LPAD(p.order_company, 5, '0'))
+      JOIN ${JDE_DATA_SCHEMA:proddta}.f4311 pd
+          ON pd.pddoco = ph.phdoco
+         AND pd.pddcto = ph.phdcto
+         AND pd.pdkcoo = ph.phkcoo
+         AND pd.pdsfxo = ph.phsfxo
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0006 bu
+          ON bu.mcmcu = ph.phmcu
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0101 buyer
+          ON buyer.aban8 = ph.phanby
+      ORDER BY pd.pdlnid
+  jde_get_supplier_quotes:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Retrieves supplier responses to a JD Edwards request for quote: invited suppliers per line, response timeliness, quoted unit prices by quantity break, promised dates and quote validity, with supplier DUNS and tax ID.
+      Underlying Tables: F4330 (Supplier Selection), F4331 (Supplier Price Quotes), F4311 (Purchase Order Detail), F0101 (Address Book).
+      JDE Applications: Quote Supplier Entry (P4330), Quote Response Entry (P4334).
+      Data Notes: Rows are sorted by line and lowest quoted price. Suppliers without a price row have not responded. Proposal documents are media objects on the quote (use jde_get_media_object_attachment).
+      Security Context: Commercial-in-confidence supplier data under procurement business unit security; enforced only with the PL/SQL security wrapper.
+    parameters:
+    - name: order_number
+      type: integer
+      description: Request for quote (quote order) number (F4330.P0DOCO).
+    - name: order_type
+      type: string
+      description: Optional quote order type; defaults to 'OQ'.
+    - name: supplier_an8
+      type: string
+      description: Optional supplier address number to return one supplier's responses
+        only.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :order_number AS order_number,
+              :order_type AS order_type,
+              :supplier_an8 AS supplier_an8
+          FROM dual
+      )
+      SELECT
+          sel.p0doco AS rfq_number,
+          sel.p0dcto AS order_type,
+          sel.p0kcoo AS order_company,
+          sel.p0lnid / 1000 AS line_number,
+          TRIM(pd.pdlitm) AS item_number,
+          TRIM(pd.pddsc1) AS item_description,
+          pd.pduorg AS quantity_requested,
+          sel.p0an8 AS supplier_an8,
+          TRIM(sup.abalph) AS supplier_name,
+          TRIM(sup.abduns) AS duns_number,
+          TRIM(sup.abtax) AS supplier_tax_id,
+          sel.p0qprt AS quote_printed_flag,
+          CASE WHEN sel.p0rqqj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(sel.p0rqqj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS response_due_date,
+          CASE WHEN sel.p0qrdj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(sel.p0qrdj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS response_date,
+          CASE WHEN sel.p0qrdj > sel.p0rqqj AND sel.p0rqqj > 0 THEN 'LATE' WHEN sel.p0qrdj > 0 THEN 'ON_TIME' ELSE 'NO_RESPONSE' END AS response_timeliness,
+          q.p1uorg AS quoted_quantity_break,
+          q.p1prrc / 10000 AS quoted_unit_price,
+          (q.p1prrc / 10000) * pd.pduorg AS quoted_extended_price,
+          TRIM(q.p1crcd) AS currency_code,
+          CASE WHEN q.p1pddj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(q.p1pddj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS promised_date,
+          CASE WHEN q.p1cndj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(q.p1cndj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS quote_valid_until,
+          sel.p0urel AS units_released,
+          sel.p0arel / 100 AS amount_released
+      FROM params p
+      JOIN ${JDE_DATA_SCHEMA:proddta}.f4330 sel
+          ON sel.p0doco = p.order_number
+         AND sel.p0dcto = NVL(UPPER(p.order_type), 'OQ')
+         AND (p.supplier_an8 IS NULL OR sel.p0an8 = TO_NUMBER(p.supplier_an8))
+      JOIN ${JDE_DATA_SCHEMA:proddta}.f4311 pd
+          ON pd.pddoco = sel.p0doco
+         AND pd.pddcto = sel.p0dcto
+         AND pd.pdkcoo = sel.p0kcoo
+         AND pd.pdsfxo = sel.p0sfxo
+         AND pd.pdlnid = sel.p0lnid
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f4331 q
+          ON q.p1doco = sel.p0doco
+         AND q.p1dcto = sel.p0dcto
+         AND q.p1kcoo = sel.p0kcoo
+         AND q.p1sfxo = sel.p0sfxo
+         AND q.p1lnid = sel.p0lnid
+         AND q.p1an8 = sel.p0an8
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0101 sup
+          ON sup.aban8 = sel.p0an8
+      ORDER BY sel.p0lnid, quoted_unit_price NULLS LAST, sel.p0an8
+  jde_get_voucher_match:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Retrieves A/P vouchers with their three-way match against JD Edwards purchase orders and receipts: ordered vs. received vs. vouchered quantities and amounts, match variance and status, and the grant/project business unit, GL account and subledger charged (2 CFR 200).
+      Underlying Tables: F0411 (Supplier Ledger), F43121 (Purchase Order Receiver: receipts and voucher match records), F4311 (Purchase Order Detail), F0006 (Business Unit Master), F0101 (Address Book).
+      JDE Applications: Voucher Match (P4314), PO Receipts (P4312), Supplier Ledger Inquiry (P042002).
+      Data Notes: Requires voucher_number, po_number or supplier_invoice. Vouchers not created from a PO show NOT_PO_MATCHED. Amounts converted from implied decimals (2 places, unit cost 4).
+      Security Context: Accounts Payable company and business unit security (F00950); enforced only with the PL/SQL security wrapper.
+    parameters:
+    - name: voucher_number
+      type: string
+      description: A/P voucher document number (F0411.RPDOC).
+    - name: company
+      type: string
+      description: Optional voucher document company (F0411.RPKCO), e.g. '00001'.
+    - name: po_number
+      type: string
+      description: Purchase order number the voucher was matched to (F43121.PRDOCO).
+    - name: supplier_invoice
+      type: string
+      description: Supplier invoice number on the voucher (F0411.RPVINV).
+    statement: |-
+      WITH params AS (
+          SELECT
+              :voucher_number AS voucher_number,
+              :company AS company,
+              :po_number AS po_number,
+              :supplier_invoice AS supplier_invoice
+          FROM dual
+      )
+      -- At least one of voucher_number, po_number or supplier_invoice is required.
+      -- Receipts (match type 1) are summed per PO line; the voucher match row (match type 2)
+      -- carries the quantity and amount vouchered against that line.
+      SELECT
+          rp.rpdoc AS voucher_number,
+          rp.rpdct AS voucher_type,
+          rp.rpkco AS company,
+          rp.rpsfx AS pay_item,
+          rp.rpan8 AS supplier_an8,
+          TRIM(sup.abalph) AS supplier_name,
+          TRIM(rp.rpvinv) AS supplier_invoice,
+          CASE WHEN rp.rpdivj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(rp.rpdivj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS invoice_date,
+          CASE WHEN rp.rpdgj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(rp.rpdgj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS gl_date,
+          rp.rpag / 100 AS pay_item_gross_amount,
+          rp.rpaap / 100 AS pay_item_open_amount,
+          rp.rppst AS pay_status,
+          mt.prdoco AS po_number,
+          mt.prdcto AS po_type,
+          mt.prlnid / 1000 AS po_line_number,
+          TRIM(mt.prlitm) AS item_number,
+          pd.pduorg AS quantity_ordered,
+          pd.pdprrc / 10000 AS po_unit_cost,
+          pd.pdaexp / 100 AS po_line_amount,
+          rc.qty_received AS quantity_received,
+          rc.amt_received / 100 AS amount_received,
+          mt.prurec AS quantity_vouchered,
+          mt.prarec / 100 AS amount_vouchered,
+          (NVL(mt.prarec, 0) - NVL(rc.amt_received, 0)) / 100 AS match_variance,
+          CASE
+              WHEN mt.prdoco IS NULL THEN 'NOT_PO_MATCHED'
+              WHEN rc.qty_received IS NULL THEN 'NO_RECEIPT'
+              WHEN mt.prarec > rc.amt_received THEN 'BILLED_OVER_RECEIVED'
+              WHEN rc.qty_received > pd.pduorg THEN 'RECEIVED_OVER_ORDERED'
+              ELSE 'MATCHED'
+          END AS three_way_match_status,
+          TRIM(mt.prani) AS gl_account,
+          NVL(TRIM(mt.promcu), TRIM(mt.prmcu)) AS grant_or_project_business_unit,
+          TRIM(bu.mcdl01) AS grant_or_project_name,
+          TO_CHAR(TRIM(mt.prsbl)) || CASE WHEN TRIM(mt.prsblt) IS NOT NULL THEN ' (' || TO_CHAR(TRIM(mt.prsblt)) || ')' END AS grant_subledger
+      FROM params p
+      JOIN ${JDE_DATA_SCHEMA:proddta}.f0411 rp
+          ON (p.voucher_number IS NULL OR rp.rpdoc = TO_NUMBER(p.voucher_number))
+         AND (p.company IS NULL OR rp.rpkco = LPAD(p.company, 5, '0'))
+         AND (p.supplier_invoice IS NULL OR UPPER(TRIM(rp.rpvinv)) = UPPER(TRIM(p.supplier_invoice)))
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f43121 mt
+          ON mt.prmatc = '2'
+         AND mt.prdoc = rp.rpdoc
+         AND mt.prdct = rp.rpdct
+         AND mt.prkco = rp.rpkco
+         AND mt.prsfx = rp.rpsfx
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f4311 pd
+          ON pd.pddoco = mt.prdoco
+         AND pd.pddcto = mt.prdcto
+         AND pd.pdkcoo = mt.prkcoo
+         AND pd.pdsfxo = mt.prsfxo
+         AND pd.pdlnid = mt.prlnid
+      LEFT JOIN (
+          SELECT prdoco, prdcto, prkcoo, prsfxo, prlnid,
+                 SUM(prurec) AS qty_received,
+                 SUM(prarec) AS amt_received
+          FROM ${JDE_DATA_SCHEMA:proddta}.f43121
+          WHERE prmatc = '1'
+          GROUP BY prdoco, prdcto, prkcoo, prsfxo, prlnid
+      ) rc
+          ON rc.prdoco = mt.prdoco
+         AND rc.prdcto = mt.prdcto
+         AND rc.prkcoo = mt.prkcoo
+         AND rc.prsfxo = mt.prsfxo
+         AND rc.prlnid = mt.prlnid
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0101 sup
+          ON sup.aban8 = rp.rpan8
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0006 bu
+          ON bu.mcmcu = CASE WHEN TRIM(mt.promcu) IS NOT NULL THEN mt.promcu ELSE mt.prmcu END
+      WHERE COALESCE(p.voucher_number, p.po_number, p.supplier_invoice) IS NOT NULL
+        AND (p.po_number IS NULL OR mt.prdoco = TO_NUMBER(p.po_number))
+      ORDER BY rp.rpdoc, rp.rpsfx, mt.prlnid
+  jde_list_business_units:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Lists JD Edwards companies and business units (agencies, departments, programs, grants and jobs) with their type and posting status.
+      Use this tool to discover valid values for the :company and business unit parameters used across A/R, A/P, Procurement and Expense tools.
+      Underlying Tables: F0006 (Business Unit Master), F0010 (Company Constants).
+    parameters:
+    - name: name_pattern
+      type: string
+      description: Optional search pattern for business unit code, business unit name
+        or company name (e.g. '%HEALTH%' or '%Grant%').
+    - name: company
+      type: string
+      description: Optional company code filter (e.g. '00001').
+    statement: |-
+      WITH params AS (
+          SELECT
+              :name_pattern AS name_pattern,
+              :company AS company
+          FROM dual
+      )
+      SELECT
+          TRIM(bu.mcco) AS company,
+          TRIM(co.ccname) AS company_name,
+          TRIM(bu.mcmcu) AS business_unit,
+          TRIM(bu.mcdl01) AS business_unit_name,
+          TRIM(bu.mcstyl) AS business_unit_type,
+          bu.mcpecc AS posting_edit_code
+      FROM ${JDE_DATA_SCHEMA:proddta}.f0006 bu
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0010 co
+          ON co.ccco = bu.mcco
+      CROSS JOIN params p
+      WHERE (p.company IS NULL OR bu.mcco = LPAD(p.company, 5, '0'))
+        AND (p.name_pattern IS NULL
+          OR UPPER(TRIM(bu.mcmcu)) LIKE UPPER(p.name_pattern)
+          OR UPPER(bu.mcdl01) LIKE UPPER(p.name_pattern)
+          OR UPPER(co.ccname) LIKE UPPER(p.name_pattern))
+      ORDER BY bu.mcco, TRIM(bu.mcmcu)
+      FETCH FIRST 50 ROWS ONLY
+  jde_list_media_object_types:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Lists the JD Edwards media object names that have attachments (e.g. GT03B11 for A/R invoices), with attachment counts and a sample text key showing the key format.
+      Use this tool to discover valid values for :object_name and the :text_key format before calling the media object attachment, policy document and intake tools.
+      Underlying Table: F00165 (Media Objects Storage).
+    parameters:
+    - name: keyword
+      type: string
+      description: Optional keyword to filter media object names (e.g. '03B' for A/R,
+        '0411' for vouchers, '43' for procurement).
+    statement: |-
+      WITH params AS (
+          SELECT :keyword AS keyword FROM dual
+      )
+      SELECT
+          TRIM(mo.gdobnm) AS object_name,
+          COUNT(*) AS attachment_count,
+          SUM(CASE WHEN mo.gdgtmotype = 0 THEN 1 ELSE 0 END) AS text_attachment_count,
+          MIN(mo.gdtxky) AS sample_text_key,
+          CASE WHEN MAX(mo.gdupmj) > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(MAX(mo.gdupmj) + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS last_updated
+      FROM ${JDE_DATA_SCHEMA:proddta}.f00165 mo
+      CROSS JOIN params p
+      WHERE (p.keyword IS NULL OR UPPER(mo.gdobnm) LIKE UPPER('%' || p.keyword || '%'))
+      GROUP BY mo.gdobnm
+      ORDER BY COUNT(*) DESC
+      FETCH FIRST 50 ROWS ONLY
+  jde_list_udc_values:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Queries JD Edwards user defined codes (UDCs) for a product code and type, the equivalent of lookup values.
+      Use this tool to discover valid codes for categorical parameters such as document types (00/DT), pay status (00/PS), and status or reason codes returned by other tools.
+      Underlying Tables: F0005 (User Defined Codes), F0004 (User Defined Code Types).
+    parameters:
+    - name: product_code
+      type: string
+      description: UDC product code (F0005.DRSY), e.g. '00' for foundation, '03B'
+        for A/R, '43' for procurement.
+    - name: udc_type
+      type: string
+      description: UDC type (F0005.DRRT), e.g. 'DT' (document types), 'PS' (pay status),
+        'DE' (deduction reasons).
+    - name: keyword
+      type: string
+      description: Optional keyword to filter codes or descriptions.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :product_code AS product_code,
+              :udc_type AS udc_type,
+              :keyword AS keyword
+          FROM dual
+      )
+      SELECT
+          TRIM(dr.drsy) AS product_code,
+          TRIM(dr.drrt) AS udc_type,
+          TRIM(dt.dtdl01) AS udc_type_description,
+          TRIM(dr.drky) AS code,
+          TRIM(dr.drdl01) AS description,
+          TRIM(dr.drdl02) AS description_2,
+          TRIM(dr.drsphd) AS special_handling_code
+      FROM ${JDE_CTL_SCHEMA:prodctl}.f0005 dr
+      LEFT JOIN ${JDE_CTL_SCHEMA:prodctl}.f0004 dt
+          ON dt.dtsy = dr.drsy
+         AND dt.dtrt = dr.drrt
+      CROSS JOIN params p
+      WHERE dr.drsy = RPAD(UPPER(p.product_code), 4)
+        AND dr.drrt = RPAD(UPPER(p.udc_type), 2)
+        AND (p.keyword IS NULL
+          OR UPPER(TRIM(dr.drky)) LIKE UPPER('%' || p.keyword || '%')
+          OR UPPER(dr.drdl01) LIKE UPPER('%' || p.keyword || '%'))
+      ORDER BY TRIM(dr.drky)
+      FETCH FIRST 50 ROWS ONLY
+  jde_lookup_address_book:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Searches the JD Edwards Address Book for suppliers, customers, constituents and other parties by name and search type.
+      Use this tool to discover address numbers (:an8, :supplier_an8, :applicant_an8, customer numbers) before invoking verification, quote, voucher or notice tools.
+      Underlying Tables: F0101 (Address Book Master), F0116 (Address by Date).
+    parameters:
+    - name: search_name
+      type: string
+      description: Full or partial name of a supplier, customer, constituent or other
+        party (e.g. 'Acme' or 'Smith').
+    - name: search_type
+      type: string
+      description: 'Optional address book search type (F0101.ABAT1): ''V'' supplier,
+        ''C'' customer, ''E'' employee, or another agency-defined code.'
+    statement: |-
+      WITH params AS (
+          SELECT
+              :search_name AS search_name,
+              :search_type AS search_type
+          FROM dual
+      )
+      SELECT
+          ab.aban8 AS an8,
+          TRIM(ab.abalph) AS party_name,
+          TRIM(ab.abat1) AS search_type,
+          TRIM(ab.abalky) AS long_address_number,
+          TRIM(ab.abduns) AS duns_number,
+          TRIM(al.alcty1) AS city,
+          TRIM(al.aladds) AS state,
+          TRIM(al.aladdz) AS postal_code
+      FROM ${JDE_DATA_SCHEMA:proddta}.f0101 ab
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0116 al
+          ON al.alan8 = ab.aban8
+         AND al.aleftb = (SELECT MAX(x.aleftb) FROM ${JDE_DATA_SCHEMA:proddta}.f0116 x WHERE x.alan8 = ab.aban8)
+      CROSS JOIN params p
+      WHERE UPPER(ab.abalph) LIKE UPPER('%' || p.search_name || '%')
+        AND (p.search_type IS NULL OR ab.abat1 = RPAD(UPPER(p.search_type), 3))
+      ORDER BY ab.abalph
+      FETCH FIRST 25 ROWS ONLY
+  jde_lookup_employees:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Searches the JD Edwards HR employee master by name or employee number; the SSN is masked to its last four digits.
+      Use this tool to discover valid values for :employee_an8 and :employee_number before invoking the personnel file or expense report tools.
+      Underlying Table: F060116 (Employee Master).
+    parameters:
+    - name: name_keyword
+      type: string
+      description: Full or partial employee name (e.g. 'Smith').
+    - name: employee_number
+      type: string
+      description: Optional additional employee or badge number (F060116.YAOEMP).
+    statement: |-
+      WITH params AS (
+          SELECT
+              :name_keyword AS name_keyword,
+              :employee_number AS employee_number
+          FROM dual
+      )
+      SELECT
+          ya.yaan8 AS employee_an8,
+          TRIM(ya.yaoemp) AS employee_number,
+          TRIM(ya.yaalph) AS full_name,
+          CASE WHEN TRIM(ya.yassn) IS NOT NULL THEN 'XXX-XX-' || SUBSTR(TRIM(ya.yassn), -4) END AS ssn_masked,
+          TRIM(ya.yahmco) AS home_company,
+          TRIM(ya.yahmcu) AS home_business_unit,
+          TRIM(ya.yajbcd) AS job_type,
+          ya.yapast AS pay_status,
+          CASE WHEN ya.yadst > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(ya.yadst + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS start_date,
+          CASE WHEN ya.yadt > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(ya.yadt + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS termination_date
+      FROM ${JDE_DATA_SCHEMA:proddta}.f060116 ya
+      CROSS JOIN params p
+      WHERE (p.name_keyword IS NULL OR UPPER(ya.yaalph) LIKE UPPER('%' || p.name_keyword || '%'))
+        AND (p.employee_number IS NULL OR TRIM(ya.yaoemp) = TRIM(p.employee_number))
+      ORDER BY ya.yaalph
+      FETCH FIRST 25 ROWS ONLY
+  jde_lookup_recent_transactions:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Searches recent JD Edwards purchase orders, requests for quote, A/P vouchers, A/R invoices or expense reports by document number or type (last 365 days when no number is given).
+      Use this tool to discover valid values for transactional parameters :order_number, :po_number, :voucher_number, :doc_number and :report_number.
+      Underlying Tables: F4301 (Purchase Order Header), F0411 (Supplier Ledger), F03B11 (Customer Ledger), F20111 (Expense Report Header).
+    parameters:
+    - name: doc_type
+      type: string
+      description: 'Document type filter: ''PO'', ''QUOTE'', ''VOUCHER'', ''INVOICE''
+        or ''EXPENSE''.'
+    - name: doc_number
+      type: string
+      description: Optional partial document or report number; without it only the
+        last 365 days are searched.
+    - name: company
+      type: string
+      description: Optional JDE company (e.g. '00001').
+    statement: |-
+      WITH params AS (
+          SELECT
+              :doc_type AS doc_type,
+              TO_CHAR(:doc_number) AS doc_number,
+              TO_CHAR(:company) AS company
+          FROM dual
+      )
+      SELECT * FROM (
+          SELECT
+              CASE WHEN ph.phdcto = 'OQ' THEN 'QUOTE' ELSE 'PO' END AS doc_type,
+              TO_CHAR(ph.phdoco) AS doc_number,
+              TO_CHAR(ph.phdcto) AS jde_doc_type,
+              TO_CHAR(ph.phkcoo) AS company,
+              CASE WHEN ph.phtrdj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(ph.phtrdj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS doc_date,
+              TO_CHAR(TRIM(ph.phdesc)) AS doc_description,
+              ph.photot / 100 AS total_amount,
+              ph.phan8 AS party_an8
+          FROM ${JDE_DATA_SCHEMA:proddta}.f4301 ph
+          CROSS JOIN params p
+          WHERE ((UPPER(p.doc_type) = 'PO' AND ph.phdcto <> 'OQ') OR (UPPER(p.doc_type) = 'QUOTE' AND ph.phdcto = 'OQ'))
+            AND (p.company IS NULL OR ph.phkcoo = LPAD(p.company, 5, '0'))
+            AND (p.doc_number IS NULL OR TO_CHAR(ph.phdoco) LIKE '%' || p.doc_number || '%')
+            AND (p.doc_number IS NOT NULL OR ph.phtrdj >= TO_NUMBER(TO_CHAR(SYSDATE - 365, 'YYYYDDD')) - 1900000)
+          UNION ALL
+          SELECT
+              'VOUCHER' AS doc_type,
+              TO_CHAR(ap.rpdoc) AS doc_number,
+              TO_CHAR(ap.rpdct) AS jde_doc_type,
+              TO_CHAR(ap.rpkco) AS company,
+              CASE WHEN ap.rpdivj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(ap.rpdivj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS doc_date,
+              TO_CHAR('Invoice ' || TRIM(ap.rpvinv)) AS doc_description,
+              ap.rpag / 100 AS total_amount,
+              ap.rpan8 AS party_an8
+          FROM ${JDE_DATA_SCHEMA:proddta}.f0411 ap
+          CROSS JOIN params p
+          WHERE UPPER(p.doc_type) = 'VOUCHER'
+            AND ap.rpsfx = '001'
+            AND (p.company IS NULL OR ap.rpkco = LPAD(p.company, 5, '0'))
+            AND (p.doc_number IS NULL OR TO_CHAR(ap.rpdoc) LIKE '%' || p.doc_number || '%' OR UPPER(ap.rpvinv) LIKE UPPER('%' || p.doc_number || '%'))
+            AND (p.doc_number IS NOT NULL OR ap.rpdivj >= TO_NUMBER(TO_CHAR(SYSDATE - 365, 'YYYYDDD')) - 1900000)
+          UNION ALL
+          SELECT
+              'INVOICE' AS doc_type,
+              TO_CHAR(ar.rpdoc) AS doc_number,
+              TO_CHAR(ar.rpdct) AS jde_doc_type,
+              TO_CHAR(ar.rpkco) AS company,
+              CASE WHEN ar.rpdivj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(ar.rpdivj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS doc_date,
+              TO_CHAR(TRIM(ar.rprmk)) AS doc_description,
+              ar.rpag / 100 AS total_amount,
+              ar.rpan8 AS party_an8
+          FROM ${JDE_DATA_SCHEMA:proddta}.f03b11 ar
+          CROSS JOIN params p
+          WHERE UPPER(p.doc_type) = 'INVOICE'
+            AND ar.rpsfx = '001'
+            AND (p.company IS NULL OR ar.rpkco = LPAD(p.company, 5, '0'))
+            AND (p.doc_number IS NULL OR TO_CHAR(ar.rpdoc) LIKE '%' || p.doc_number || '%')
+            AND (p.doc_number IS NOT NULL OR ar.rpdivj >= TO_NUMBER(TO_CHAR(SYSDATE - 365, 'YYYYDDD')) - 1900000)
+          UNION ALL
+          SELECT
+              'EXPENSE' AS doc_type,
+              TO_CHAR(TRIM(eh.ehexrptnum)) AS doc_number,
+              TO_CHAR(eh.ehexrpttyp) AS jde_doc_type,
+              TO_CHAR(TRIM(eh.ehco)) AS company,
+              CASE WHEN eh.ehdatesub > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(eh.ehdatesub + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS doc_date,
+              TO_CHAR(TRIM(eh.ehexrptdes) || ' [' || TRIM(eh.ehexrptsta) || ']') AS doc_description,
+              eh.ehtotexp / 100 AS total_amount,
+              eh.ehemployid AS party_an8
+          FROM ${JDE_DATA_SCHEMA:proddta}.f20111 eh
+          CROSS JOIN params p
+          WHERE UPPER(p.doc_type) = 'EXPENSE'
+            AND (p.company IS NULL OR eh.ehco = LPAD(p.company, 5, '0'))
+            AND (p.doc_number IS NULL OR UPPER(eh.ehexrptnum) LIKE UPPER('%' || p.doc_number || '%'))
+            AND (p.doc_number IS NOT NULL OR eh.ehdatesub >= TO_NUMBER(TO_CHAR(SYSDATE - 365, 'YYYYDDD')) - 1900000)
+      )
+      ORDER BY doc_date DESC NULLS LAST
+      FETCH FIRST 25 ROWS ONLY
+  jde_search_foia_records:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Searches discoverable employee records, purchase orders and contracts, and supplier vouchers across JD Edwards HR, Procurement and Accounts Payable by keyword, date range or company.
+      Underlying Tables: F060116 (Employee Master), F4301 (Purchase Order Header), F0411 (Supplier Ledger), F0101 (Address Book).
+      JDE Applications: Employee Master (P0801), Purchase Orders (P4310), Supplier Ledger Inquiry (P042002).
+      Data Notes: reference_id is the JDE address number or document number; pass it to jde_get_employee_personnel_file or, with the matching media object name, to jde_get_media_object_attachment.
+      Security Context: Cross-module discovery scoped by JDE company; row security (F00950) enforced only with the PL/SQL security wrapper.
+    parameters:
+    - name: search_keyword
+      type: string
+      description: Keyword, party name, document number or supplier invoice number
+        to search for.
+    - name: category
+      type: string
+      description: 'Record category filter: ''HR'', ''PO'', ''AP'' or ''ALL''.'
+    - name: start_date
+      type: string
+      description: Record date window start in YYYY-MM-DD format.
+    - name: end_date
+      type: string
+      description: Record date window end in YYYY-MM-DD format.
+    - name: company
+      type: string
+      description: Optional JDE company (e.g. '00001') to scope the search to one
+        agency.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :search_keyword AS search_keyword,
+              :category AS category,
+              :start_date AS start_date,
+              :end_date AS end_date,
+              TO_CHAR(:company) AS company
+          FROM dual
+      )
+      SELECT * FROM (
+          -- HR employee master records
+          SELECT
+              'HR' AS record_category,
+              TO_CHAR(ya.yaan8) AS reference_id,
+              'F060116' AS source_table,
+              'EMPLOYEE' AS document_type,
+              TO_CHAR(TRIM(ya.yahmco)) AS company,
+              TO_CHAR(TRIM(ya.yaalph)) AS party_name,
+              TO_CHAR(RTRIM('Employee ' || TRIM(ya.yaoemp) || ' | Job ' || TRIM(ya.yajbcd) || ' ' || TRIM(ya.yajbst) || ' | BU ' || TRIM(ya.yahmcu), ' |')) AS record_summary,
+              CASE WHEN ya.yadst > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(ya.yadst + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS record_date
+          FROM params p
+          JOIN ${JDE_DATA_SCHEMA:proddta}.f060116 ya
+              ON (p.category IS NULL OR UPPER(p.category) IN ('HR', 'ALL'))
+             AND (p.company IS NULL OR ya.yahmco = LPAD(p.company, 5, '0'))
+             AND (p.start_date IS NULL OR ya.yadst >= TO_NUMBER(TO_CHAR(TO_DATE(p.start_date, 'YYYY-MM-DD'), 'YYYYDDD')) - 1900000)
+             AND (p.end_date IS NULL OR ya.yadst <= TO_NUMBER(TO_CHAR(TO_DATE(p.end_date, 'YYYY-MM-DD'), 'YYYYDDD')) - 1900000)
+          WHERE (p.search_keyword IS NULL
+              OR UPPER(ya.yaalph) LIKE UPPER('%' || p.search_keyword || '%')
+              OR TO_CHAR(ya.yaan8) = p.search_keyword
+              OR TRIM(ya.yaoemp) = p.search_keyword)
+
+          UNION ALL
+
+          -- Purchase orders and contracts
+          SELECT
+              'PO' AS record_category,
+              TO_CHAR(ph.phdoco) AS reference_id,
+              'F4301' AS source_table,
+              TO_CHAR(ph.phdcto) AS document_type,
+              TO_CHAR(ph.phkcoo) AS company,
+              TO_CHAR(TRIM(ab.abalph)) AS party_name,
+              TO_CHAR(RTRIM('Order ' || TRIM(ph.phdesc) || ' | Ref ' || TRIM(ph.phvr01) || ' | ' || TRIM(ph.phrmk), ' |')) AS record_summary,
+              CASE WHEN ph.phtrdj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(ph.phtrdj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS record_date
+          FROM params p
+          JOIN ${JDE_DATA_SCHEMA:proddta}.f4301 ph
+              ON (p.category IS NULL OR UPPER(p.category) IN ('PO', 'ALL'))
+             AND (p.company IS NULL OR ph.phkcoo = LPAD(p.company, 5, '0'))
+             AND (p.start_date IS NULL OR ph.phtrdj >= TO_NUMBER(TO_CHAR(TO_DATE(p.start_date, 'YYYY-MM-DD'), 'YYYYDDD')) - 1900000)
+             AND (p.end_date IS NULL OR ph.phtrdj <= TO_NUMBER(TO_CHAR(TO_DATE(p.end_date, 'YYYY-MM-DD'), 'YYYYDDD')) - 1900000)
+          LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0101 ab
+              ON ab.aban8 = ph.phan8
+          WHERE (p.search_keyword IS NULL
+              OR TO_CHAR(ph.phdoco) = p.search_keyword
+              OR UPPER(ph.phdesc) LIKE UPPER('%' || p.search_keyword || '%')
+              OR UPPER(ph.phvr01) LIKE UPPER('%' || p.search_keyword || '%')
+              OR UPPER(ab.abalph) LIKE UPPER('%' || p.search_keyword || '%'))
+
+          UNION ALL
+
+          -- A/P vouchers (first pay item only, one row per voucher)
+          SELECT
+              'AP' AS record_category,
+              TO_CHAR(ap.rpdoc) AS reference_id,
+              'F0411' AS source_table,
+              TO_CHAR(ap.rpdct) AS document_type,
+              TO_CHAR(ap.rpkco) AS company,
+              TO_CHAR(TRIM(ab.abalph)) AS party_name,
+              TO_CHAR(RTRIM('Voucher for invoice ' || TRIM(ap.rpvinv) || ' | ' || TRIM(ap.rprmk), ' |')) AS record_summary,
+              CASE WHEN ap.rpdivj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(ap.rpdivj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS record_date
+          FROM params p
+          JOIN ${JDE_DATA_SCHEMA:proddta}.f0411 ap
+              ON ap.rpsfx = '001'
+             AND (p.category IS NULL OR UPPER(p.category) IN ('AP', 'ALL'))
+             AND (p.company IS NULL OR ap.rpkco = LPAD(p.company, 5, '0'))
+             AND (p.start_date IS NULL OR ap.rpdivj >= TO_NUMBER(TO_CHAR(TO_DATE(p.start_date, 'YYYY-MM-DD'), 'YYYYDDD')) - 1900000)
+             AND (p.end_date IS NULL OR ap.rpdivj <= TO_NUMBER(TO_CHAR(TO_DATE(p.end_date, 'YYYY-MM-DD'), 'YYYYDDD')) - 1900000)
+          LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0101 ab
+              ON ab.aban8 = ap.rpan8
+          WHERE (p.search_keyword IS NULL
+              OR TO_CHAR(ap.rpdoc) = p.search_keyword
+              OR UPPER(ap.rpvinv) LIKE UPPER('%' || p.search_keyword || '%')
+              OR UPPER(ap.rprmk) LIKE UPPER('%' || p.search_keyword || '%')
+              OR UPPER(ab.abalph) LIKE UPPER('%' || p.search_keyword || '%'))
+      )
+      ORDER BY record_date DESC
+      FETCH FIRST 100 ROWS ONLY
+  jde_search_policy_documents:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Searches agency policy bulletins, administrative guidelines and SOP documents stored as JD Edwards Media Objects, with their document type, status, effective dates and review date.
+      Underlying Tables: F00165 (Media Objects Storage), F00166 (Media Object Category Codes).
+      Data Notes: Returns metadata only; fetch a document's content with jde_get_media_object_attachment using object_name, text_key and sequence. Pass object_name or document_type when possible: a keyword-only search scans every media object.
+      Security Context: Public agency policy documents; attachment visibility follows the parent record's JDE security.
+    parameters:
+    - name: keyword
+      type: string
+      description: Search keyword or policy title (matched against attachment name,
+        file name and document description).
+    - name: object_name
+      type: string
+      description: Optional media object name the agency uses for policy documents
+        (F00165.GDOBNM). Use jde_list_media_object_types to discover it.
+    - name: document_type
+      type: string
+      description: Optional media object document type (F00166.GTMODOCTP), e.g. 'POLICY'
+        or 'SOP' as configured by the agency.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :keyword AS keyword,
+              :object_name AS object_name,
+              :document_type AS document_type
+          FROM dual
+      )
+      SELECT
+          TRIM(mo.gdobnm) AS object_name,
+          mo.gdtxky AS text_key,
+          mo.gdmoseqn AS sequence,
+          CASE WHEN mo.gdgtmotype = 0 THEN 'TEXT' ELSE 'FILE_OR_LINK' END AS content_kind,
+          TRIM(mo.gdgtitnm) AS policy_title,
+          TRIM(mo.gdgtfilenm) AS file_name_or_url,
+          TRIM(cat.gtmodoctp) AS document_type,
+          TRIM(cat.gtmodl01) AS policy_summary,
+          TRIM(cat.gtmoauthor) AS author,
+          TRIM(cat.gtmostatus) AS policy_status,
+          CASE WHEN cat.gtmoefdtfr > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(cat.gtmoefdtfr + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS effective_from,
+          CASE WHEN cat.gtmoefdtto > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(cat.gtmoefdtto + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS effective_to,
+          CASE WHEN cat.gtmorevdt > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(cat.gtmorevdt + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS next_review_date,
+          CASE WHEN mo.gdupmj > 0 THEN TO_CHAR(TO_DATE(TO_CHAR(mo.gdupmj + 1900000), 'YYYYDDD'), 'YYYY-MM-DD') END AS updated_date
+      FROM params p
+      JOIN ${JDE_DATA_SCHEMA:proddta}.f00165 mo
+          ON (p.object_name IS NULL OR mo.gdobnm = RPAD(UPPER(p.object_name), 10))
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f00166 cat
+          ON cat.gtobnm = mo.gdobnm
+         AND cat.gttxky = mo.gdtxky
+         AND cat.gtmoseqn = mo.gdmoseqn
+      WHERE (p.document_type IS NULL OR TRIM(cat.gtmodoctp) = UPPER(p.document_type))
+        AND (p.keyword IS NULL
+          OR UPPER(mo.gdgtitnm) LIKE UPPER('%' || p.keyword || '%')
+          OR UPPER(mo.gdgtfilenm) LIKE UPPER('%' || p.keyword || '%')
+          OR UPPER(cat.gtmodl01) LIKE UPPER('%' || p.keyword || '%'))
+      ORDER BY mo.gdupmj DESC
+      FETCH FIRST 20 ROWS ONLY
+  jde_verify_address_book_identity:
+    kind: oracle-sql
+    source: jde-oracle-source
+    description: |-
+      Validates extracted citizen identity data (legal name, tax ID/SSN hash, postal code) against the JD Edwards Address Book and returns match confidence plus the verified address, date of birth, email and phone.
+      Underlying Tables: F0101 (Address Book Master), F0111 (Who's Who), F0116 (Address by Date), F01151 (Electronic Address), F0115 (Phone Numbers).
+      JDE Applications: Address Book Revisions (P01012).
+      Data Notes: The tax ID is never returned; only a hash comparison result. The hash must be computed over the value exactly as stored (with or without dashes).
+      Security Context: Address book search type security (F00950); enforced only with the PL/SQL security wrapper.
+    parameters:
+    - name: legal_name
+      type: string
+      description: Legal full name of the citizen or party to cross-reference against
+        the JDE Address Book.
+    - name: tax_id_hash
+      type: string
+      description: Hex SHA-256 hash of the tax ID or SSN exactly as stored in JDE
+        (F0101.ABTAX), for deterministic verification without sending the raw value.
+    - name: postal_code
+      type: string
+      description: Residential ZIP or postal code to verify against the current address.
+    - name: an8
+      type: string
+      description: Existing JDE address number if already known.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :legal_name AS legal_name,
+              :tax_id_hash AS tax_id_hash,
+              :postal_code AS postal_code,
+              :an8 AS an8
+          FROM dual
+      )
+      SELECT
+          ab.aban8 AS an8,
+          TRIM(ab.abalph) AS party_name,
+          TRIM(ab.abat1) AS search_type,
+          TRIM(ww.wwgnnm) AS first_name,
+          TRIM(ww.wwsrnm) AS last_name,
+          CASE WHEN ww.wwdyr > 0 THEN TO_CHAR(ww.wwdyr) || '-' || LPAD(TO_CHAR(ww.wwdmon), 2, '0') || '-' || LPAD(TO_CHAR(ww.wwddate), 2, '0') END AS date_of_birth,
+          TRIM(al.aladd1) AS address1,
+          TRIM(al.alcty1) AS city,
+          TRIM(al.aladds) AS state,
+          TRIM(al.aladdz) AS postal_code,
+          (SELECT MIN(TRIM(ea.eaemal)) FROM ${JDE_DATA_SCHEMA:proddta}.f01151 ea WHERE ea.eaan8 = ab.aban8 AND ea.eaidln = 0) AS email_address,
+          (SELECT MIN(TRIM(ph.wpar1) || ' ' || TRIM(ph.wpph1)) FROM ${JDE_DATA_SCHEMA:proddta}.f0115 ph WHERE ph.wpan8 = ab.aban8 AND ph.wpidln = 0) AS phone_number,
+          CASE
+              WHEN UPPER(TRIM(ab.abalph)) = UPPER(TRIM(p.legal_name)) THEN 100
+              WHEN UPPER(TRIM(ww.wwgnnm) || ' ' || TRIM(ww.wwsrnm)) = UPPER(TRIM(p.legal_name)) THEN 100
+              WHEN UPPER(ab.abalph) LIKE UPPER('%' || p.legal_name || '%') THEN 75
+              ELSE 50
+          END AS name_match_confidence,
+          CASE
+              WHEN p.tax_id_hash IS NOT NULL AND RAWTOHEX(STANDARD_HASH(TO_CHAR(TRIM(ab.abtax)), 'SHA256')) = UPPER(p.tax_id_hash) THEN 'VERIFIED_MATCH'
+              WHEN p.tax_id_hash IS NOT NULL THEN 'NO_MATCH'
+              ELSE 'NOT_CHECKED'
+          END AS tax_id_hash_verification,
+          CASE
+              WHEN p.postal_code IS NULL THEN 'NOT_CHECKED'
+              WHEN TRIM(al.aladdz) LIKE p.postal_code || '%' THEN 'VERIFIED_MATCH'
+              ELSE 'NO_MATCH'
+          END AS postal_code_verification
+      FROM params p
+      JOIN ${JDE_DATA_SCHEMA:proddta}.f0101 ab
+          ON (p.an8 IS NOT NULL AND ab.aban8 = TO_NUMBER(p.an8))
+          OR (p.an8 IS NULL AND p.legal_name IS NOT NULL AND UPPER(ab.abalph) LIKE UPPER('%' || p.legal_name || '%'))
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0111 ww
+          ON ww.wwan8 = ab.aban8
+         AND ww.wwidln = 0
+      LEFT JOIN ${JDE_DATA_SCHEMA:proddta}.f0116 al
+          ON al.alan8 = ab.aban8
+         AND al.aleftb = (SELECT MAX(x.aleftb) FROM ${JDE_DATA_SCHEMA:proddta}.f0116 x WHERE x.alan8 = ab.aban8)
+      ORDER BY name_match_confidence DESC, ab.aban8
+      FETCH FIRST 10 ROWS ONLY
+toolsets:
+  policy_and_statute_assistant:
+  - jde_get_agency_policy_rules
+  - jde_search_policy_documents
+  plain_language_notice_generator:
+  - jde_get_customer_notice_details
+  - jde_get_media_object_attachment
+  redaction_and_foia_compliance:
+  - jde_get_employee_personnel_file
+  - jde_search_foia_records
+  expense_auditor:
+  - jde_get_expense_reports
+  - jde_get_voucher_match
+  document_intake_cleanup_and_validation:
+  - jde_get_intake_attachments
+  - jde_verify_address_book_identity
+  rfp_vendor_evaluation_scorer:
+  - jde_get_rfq_details
+  - jde_get_supplier_quotes
+  schema_discovery_and_lovs:
+  - jde_list_business_units
+  - jde_list_media_object_types
+  - jde_list_udc_values
+  - jde_lookup_address_book
+  - jde_lookup_employees
+  - jde_lookup_recent_transactions

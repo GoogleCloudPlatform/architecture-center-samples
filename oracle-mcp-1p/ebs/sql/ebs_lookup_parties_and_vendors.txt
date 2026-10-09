@@ -1,0 +1,3 @@
+Searches AP suppliers (with their TCA party) by partial name or exact supplier number, optionally limited to suppliers with a site in one operating unit; at most 25.
+Use this tool to discover valid values for :party_id, :vendor_name and supplier IDs before invoking verification, voucher or bid evaluation tools.
+Underlying Tables: AP_SUPPLIERS, HZ_PARTIES, AP_SUPPLIER_SITES_ALL.

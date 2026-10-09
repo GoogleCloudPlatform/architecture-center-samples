@@ -1,0 +1,3 @@
+Queries JD Edwards user defined codes (UDCs) for a product code and type, the equivalent of lookup values.
+Use this tool to discover valid codes for categorical parameters such as document types (00/DT), pay status (00/PS), and status or reason codes returned by other tools.
+Underlying Tables: F0005 (User Defined Codes), F0004 (User Defined Code Types).

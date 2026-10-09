@@ -1,0 +1,4 @@
+Searches the HR and vendor records that could be requested under public-records (FOIA) rules and returns where they are, not what they say: category, reference ID, party name, a title and a date. Categories: personnel records (by name or EMPLID), disciplinary actions, grievances, training records and vendor records. At most 100 rows. At least a keyword or a category is required so that a broad dump is not returned; person records carry no date, so they are left out when a date range is given.
+Use it to locate candidate records for a request; fetch the content of one person's record with ps_hcm_get_employee_record_documents. Purchase orders and vouchers are not in this database. There is no FOIA skill in google_oracle_skills yet, so this toolset is a placeholder until one is delivered.
+Underlying Tables: PS_NAMES, PS_DISCIPLIN_ACTN, PS_GRIEVANCE, PS_TRAINING, PS_VENDOR.
+Security Context: Personal data; use the PL/SQL wrapper and an authorised user in production.

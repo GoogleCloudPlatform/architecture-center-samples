@@ -1,0 +1,5 @@
+DISABLED: tables not in the HCM database HR92U054 (ORA-00942 on 2026-10-08); enable on an FSCM/Campus database.
+Retrieves constituent account recalculations, financial determinations, or dispute records from PeopleSoft Student/Constituent Accounts and FSCM.
+Underlying Tables: PS_ITEM_SF, PS_ITEM_LINE_SF, PS_ACCOUNT_SF, PS_PERSONAL_DATA, PS_NAMES.
+Procedures/APIs: Component Interface SF_ACCOUNT_SUMMARY_CI, IB Service SFA_GET_STUDENT_ACCOUNT.v1.
+Security Context: PeopleSoft OPRID session context; row-level security and SetID filtering.

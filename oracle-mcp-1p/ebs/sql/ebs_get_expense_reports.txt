@@ -1,0 +1,4 @@
+Retrieves employee travel and operational expense reports with their itemized expense lines, corporate policy setup, policy violation status (and allowable amount) per line, and receipt attachments (header and line level) from Oracle Internet Expenses (OIE) / AP.
+All filters are optional: pass an empty string to leave one off. At most 500 lines are returned. Receipt image data is returned only when include_receipts is 'Y'; otherwise only the attachment name and type come back, which keeps responses small. Use ebs_list_expense_reports to find report and employee IDs.
+Underlying Tables: AP_EXPENSE_REPORT_HEADERS_ALL, AP_EXPENSE_REPORT_LINES_ALL, AP_EXPENSE_REPORT_PARAMS_ALL, AP_POL_HEADERS, AP_POL_VIOLATIONS_ALL, FND_ATTACHED_DOCUMENTS, FND_DOCUMENTS, FND_LOBS.
+Security Context: Financial auditor responsibility context (fnd_global.apps_initialize).

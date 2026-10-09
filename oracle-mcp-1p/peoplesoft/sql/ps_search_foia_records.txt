@@ -1,0 +1,5 @@
+DISABLED: tables not in the HCM database HR92U054 (ORA-00942 on 2026-10-08); enable on an FSCM/Campus database.
+Searches public records, employee archives, and contract documents across PeopleSoft HCM and FSCM.
+Underlying Tables: PS_PERSONAL_DATA, PS_JOB, PS_PO_HDR, PS_PO_LINE, PS_VOUCHER, PS_ATTACHMENT_TBL.
+Procedures/APIs: Component Interfaces CI_PERSONAL_DATA, PO_PURCHASE_ORDER_CI; QAS Services.
+Security Context: PeopleSoft Permission List data permission security.

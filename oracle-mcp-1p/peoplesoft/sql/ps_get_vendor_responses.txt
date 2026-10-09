@@ -1,0 +1,5 @@
+DISABLED: tables not in the HCM database HR92U054 (ORA-00942 on 2026-10-08); enable on an FSCM/Campus database.
+Retrieves vendor bid packages, proposal attachments, and compliance disclosures from PeopleSoft Strategic Sourcing.
+Underlying Tables: PS_AUC_BID_HDR, PS_AUC_BID_RESP, PS_AUC_ATTACHMENT, PS_ATTACHMENT_TBL.
+Procedures/APIs: Component Interface AUC_BID_ENTRY_CI.
+Security Context: Sealed bid access control; Evaluator role authorization.

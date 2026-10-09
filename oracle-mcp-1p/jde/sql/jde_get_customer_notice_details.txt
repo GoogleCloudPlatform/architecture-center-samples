@@ -1,0 +1,5 @@
+Retrieves billing determinations, overpayment and open balances, pay status, statutory remarks and dispute (deduction) records for a constituent from JD Edwards Accounts Receivable.
+Underlying Tables: F03B11 (Customer Ledger), F03B40 (A/R Deductions), F0101 (Address Book), F0006 (Business Unit Master), F0005 (UDC 00/DT, 00/PS).
+JDE Applications: Customer Ledger Inquiry (P03B2002), A/R Deduction Management.
+Data Notes: Dates converted from JDE Julian (CYYDDD); amounts converted from implied decimals assuming 2 display decimals.
+Security Context: JDE row security (F00950) by company / business unit; enforced only with the PL/SQL security wrapper.

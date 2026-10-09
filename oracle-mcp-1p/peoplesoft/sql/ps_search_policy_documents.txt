@@ -1,0 +1,5 @@
+DISABLED: tables not in the HCM database HR92U054 (ORA-00942 on 2026-10-08); enable on an FSCM/Campus database.
+Retrieves agency policy guidelines and procedural documentation attachments from PeopleSoft.
+Underlying Tables: PS_PORTAL_CONTENT, PS_EP_PUB_DOC, PS_ATTACHMENT_TBL.
+Procedures/APIs: Query Access Services (QAS) executing portal repository query handler.
+Security Context: Portal folder permission security.
