@@ -1,16 +1,16 @@
 sources:
     ebs-oracle-source:
         kind: "oracle"
-        connectionString: "apps.example.com:1521/EBSDB"
-        user: apps_ai
-        password: apps_ai
+        connectionString: "${EBS_DB_CONNECTION_STRING}"
+        user: "${EBS_DB_USER}"
+        password: "${EBS_DB_PASSWORD}"
 
 
 tools:
     execute_sql:
         kind: oracle-execute-sql
         source: ebs-oracle-source
-        description: "Executes an arbitrary SQL statement against the connected Oracle EBS database. Use this tool when you need to run custom SELECT queries or administrative commands that are not covered by other specific tools. Note: This tool is read-only. Always verify table structures using list_tables before writing custom queries."
+        description: "Executes an arbitrary SQL statement against the connected Oracle EBS database. Use this tool when you need to run custom SELECT queries or administrative commands that are not covered by other specific tools. Note: This tool is read-only. Always verify table structures before writing custom queries."
         readOnly: true
 
     ebs_init:
@@ -180,12 +180,12 @@ tools:
                 JOIN fnd_user_resp_groups_direct furg ON fu.user_id = furg.user_id
                 JOIN fnd_responsibility_vl       fr ON furg.responsibility_id = fr.responsibility_id AND furg.responsibility_application_id = fr.application_id
                 JOIN fnd_application_vl          fa ON fr.application_id = fa.application_id
-                JOIN fnd_profile_option_values   fpov ON fpov.level_value = furg.responsibility_id AND fpov.level_id = 10003 -- Level 10003 is 'Responsibility' level
+                JOIN fnd_profile_option_values   fpov ON fpov.level_value = furg.responsibility_id AND fpov.level_id = 10003
                 JOIN fnd_profile_options         fp ON fpov.profile_option_id = fp.profile_option_id
-                JOIN hr_operating_units          hou ON hou.organization_id = TO_NUMBER(fpov.profile_option_value)
+                JOIN hr_operating_units          hou ON hou.organization_id = TO_NUMBER(fpov.profile_option_value DEFAULT NULL ON CONVERSION ERROR)
             WHERE
                     fp.profile_option_name = 'ORG_ID'
-                AND fu.email_address LIKE :user_id
+                AND (UPPER(fu.email_address) LIKE UPPER(:user_id) OR UPPER(fu.user_name) LIKE UPPER(:user_id))
                 AND fa.application_short_name NOT IN ( 'SYSADMIN', 'FND', 'XDO', 'ALR' )
             ORDER BY
                 fr.responsibility_name
@@ -221,3 +221,368 @@ tools:
                 AND fsg.security_group_id = fnd_global.security_group_id 
                 AND hou.organization_id(+) = fnd_global.org_id
         parameters: []
+
+    ebs_get_constituent_notice_details:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Skill 3.1 (Plain Language Notice Generator): Retrieves public/population-level agency notices or individual benefit determinations from Oracle EBS Receivables (RA_CUSTOMER_TRX_ALL / VW_GOV_CONSTITUENT_NOTICES), including notice scope type, statutory citation, effective dates, and full statutory notice text."
+        statement: |
+          SELECT
+            NOTICE_INTERNAL_ID,
+            NOTICE_ID,
+            NOTICE_DATE,
+            NOTICE_SCOPE_TYPE,
+            STATUTORY_CITATION,
+            NOTICE_SUMMARY,
+            DOCUMENT_ID,
+            ATTACHMENT_FILE_NAME,
+            ATTACHMENT_TITLE,
+            STATUTORY_NOTICE_TEXT
+          FROM APPS.VW_GOV_CONSTITUENT_NOTICES
+          WHERE UPPER('ALL * ' || NOTICE_ID || ' ' || NOTICE_SCOPE_TYPE || ' ' || STATUTORY_CITATION || ' ' || NOTICE_SUMMARY)
+                LIKE '%' || UPPER(NVL(:notice_id, '')) || '%'
+          ORDER BY NOTICE_INTERNAL_ID
+        parameters:
+          - name: notice_id
+            type: string
+            required: false
+            default: ""
+            description: "Notice ID, claim number, statutory citation, or keyword (e.g. 'NOTICE-CO-SNAP-2026-COLA', 'NOTICE-MUN-2026-WATER', 'CLAIM-84920', or 'ALL')."
+
+    ebs_get_document_attachment:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Skill 3.1 & General Attachment Retrieval: Fetches the full text and metadata of attached statutory directives, agency transmittals, or determinations from Oracle EBS FND Attachments (FND_ATTACHED_DOCUMENTS, FND_DOCUMENTS_TL, FND_DOCUMENTS_LONG_TEXT)."
+        statement: |
+          SELECT
+            d.DOCUMENT_ID,
+            ad.ENTITY_NAME,
+            ad.PK1_VALUE AS ENTITY_RECORD_ID,
+            dtl.FILE_NAME,
+            dtl.DESCRIPTION AS DOCUMENT_TITLE,
+            lt.LONG_TEXT AS ATTACHMENT_FULL_TEXT
+          FROM APPS.FND_DOCUMENTS d
+          JOIN APPS.FND_DOCUMENTS_TL dtl ON dtl.DOCUMENT_ID = d.DOCUMENT_ID AND dtl.LANGUAGE = 'US'
+          JOIN APPS.FND_DOCUMENTS_LONG_TEXT lt ON lt.MEDIA_ID = d.MEDIA_ID
+          LEFT JOIN APPS.FND_ATTACHED_DOCUMENTS ad ON ad.DOCUMENT_ID = d.DOCUMENT_ID
+          WHERE d.DOCUMENT_ID BETWEEN 990001 AND 990999
+            AND UPPER('ALL * ' || TO_CHAR(d.DOCUMENT_ID) || ' ' || NVL(ad.ENTITY_NAME, '') || ' ' || NVL(ad.PK1_VALUE, '') || ' ' || NVL(dtl.FILE_NAME, '') || ' ' || NVL(dtl.DESCRIPTION, ''))
+                LIKE '%' || UPPER(NVL(:document_query, '')) || '%'
+          ORDER BY d.DOCUMENT_ID
+        parameters:
+          - name: document_query
+            type: string
+            required: false
+            default: ""
+            description: "Document ID, attached entity ID, file name, or keyword (e.g. '990901', 'NOTICE-CO-SNAP-2026-COLA', 'CO_SNAP_FY2026_COLA_DIRECTIVE.txt', or 'ALL')."
+
+    ebs_search_foia_records:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Skill 3.2 (Redaction & FOIA Compliance): Searches responsive public procurement records, contract awards, and oversight hearing transcripts in Oracle EBS (PO_HEADERS_ALL, FND_DOCUMENTS_TL, VW_GOV_FOIA_RECORDS) for a given FOIA request or solicitation reference."
+        statement: |
+          SELECT
+            FOIA_REQUEST_ID,
+            SOLICITATION_OR_CASE_REF,
+            RELATED_PO_NUMBER,
+            RELATED_CONTRACT_SUMMARY,
+            PERSON_ID,
+            EMPLOYEE_NUMBER,
+            EMPLOYEE_NAME,
+            OFFICIAL_EMAIL,
+            DOCUMENT_ID,
+            FILE_NAME,
+            DOCUMENT_TITLE,
+            FULL_DOCUMENT_CONTENT
+          FROM APPS.VW_GOV_FOIA_RECORDS
+          WHERE UPPER('ALL * ' || FOIA_REQUEST_ID || ' ' || SOLICITATION_OR_CASE_REF || ' ' || NVL(RELATED_PO_NUMBER, '') || ' ' || EMPLOYEE_NAME || ' ' || NVL(DOCUMENT_TITLE, ''))
+                LIKE '%' || UPPER(NVL(:search_query, '')) || '%'
+          ORDER BY DOCUMENT_ID
+        parameters:
+          - name: search_query
+            type: string
+            required: false
+            default: ""
+            description: "FOIA request ID, solicitation number, PO number, or keyword (e.g. 'FOIA-2026-0412', 'RFP-2024-HEALTH', 'PO-2024-HEALTH-01', or 'ALL')."
+
+    ebs_get_employee_personnel_file:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Skill 3.2 (Redaction & FOIA Compliance): Retrieves HR personnel attributes (PER_ALL_PEOPLE_F) and attached ethics/medical/tax/CJIS audit exhibits (FND_DOCUMENTS_LONG_TEXT) for an agency employee referenced in a public records request so sensitive PII, PHI, FTI, and CJIS fields can be identified and redacted."
+        statement: |
+          SELECT
+            PERSON_ID,
+            EMPLOYEE_NUMBER,
+            EMPLOYEE_NAME,
+            RAW_SSN,
+            RAW_DOB,
+            OFFICIAL_EMAIL,
+            FOIA_REQUEST_ID,
+            SOLICITATION_OR_CASE_REF,
+            DOCUMENT_ID,
+            FILE_NAME,
+            DOCUMENT_TITLE,
+            FULL_DOCUMENT_CONTENT
+          FROM APPS.VW_GOV_FOIA_RECORDS
+          WHERE UPPER('ALL * ' || TO_CHAR(PERSON_ID) || ' ' || EMPLOYEE_NUMBER || ' ' || EMPLOYEE_NAME || ' ' || FOIA_REQUEST_ID || ' ' || SOLICITATION_OR_CASE_REF)
+                LIKE '%' || UPPER(NVL(:employee_query, '')) || '%'
+          ORDER BY PERSON_ID
+        parameters:
+          - name: employee_query
+            type: string
+            required: false
+            default: ""
+            description: "Employee number, employee name, person ID, or FOIA reference (e.g. 'EMP-FOIA-1042', 'Jordan Vance', '990301', or 'ALL')."
+
+    ebs_get_agency_policy_rules:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Skill 3.3 (Policy & Statute Assistant): Queries structured procurement approval thresholds, control groups, and dollar limits from Oracle Purchasing (PO_CONTROL_GROUPS_ALL, PO_CONTROL_RULES, VW_GOV_AGENCY_POLICY_RULES)."
+        statement: |
+          SELECT
+            CONTROL_GROUP_ID,
+            POLICY_RULE_SET,
+            POLICY_DOMAIN_DESCRIPTION,
+            CONTROL_RULE_ID,
+            THRESHOLD_CATEGORY,
+            DOLLAR_THRESHOLD_USD,
+            POLICY_DOCUMENT_ID,
+            TRANSMITTAL_TITLE
+          FROM APPS.VW_GOV_AGENCY_POLICY_RULES
+          WHERE UPPER('ALL * ' || POLICY_RULE_SET || ' ' || POLICY_DOMAIN_DESCRIPTION || ' ' || THRESHOLD_CATEGORY || ' ' || NVL(TRANSMITTAL_TITLE, ''))
+                LIKE '%' || UPPER(NVL(:policy_query, '')) || '%'
+          ORDER BY CONTROL_RULE_ID
+        parameters:
+          - name: policy_query
+            type: string
+            required: false
+            default: ""
+            description: "Policy rule set name, threshold category, state, or keyword (e.g. 'CO-STATE-PROCUREMENT-2026', 'DISCRETIONARY_PURCHASE_LIMIT', 'Colorado', or 'ALL')."
+
+    ebs_search_policy_attachments:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Skill 3.3 (Policy & Statute Assistant): Searches and retrieves the full text of official agency statutory and regulatory policy transmittals (SNAP, Medicaid, OBBBA Pub. L. 119-21 preemption, State Procurement Code C.R.S. 24-103, 2 CFR Part 200) stored in Oracle EBS FND_DOCUMENTS_LONG_TEXT."
+        statement: |
+          SELECT
+            POLICY_DOCUMENT_ID,
+            POLICY_RULE_SET,
+            TRANSMITTAL_TITLE,
+            STATUTORY_POLICY_TEXT
+          FROM APPS.VW_GOV_AGENCY_POLICY_RULES
+          WHERE CONTROL_RULE_ID = 990401
+            AND UPPER('ALL * ' || POLICY_RULE_SET || ' ' || NVL(TRANSMITTAL_TITLE, '') || ' ' || NVL(STATUTORY_POLICY_TEXT, ''))
+                LIKE '%' || UPPER(NVL(:search_term, '')) || '%'
+          ORDER BY POLICY_DOCUMENT_ID
+        parameters:
+          - name: search_term
+            type: string
+            required: false
+            default: ""
+            description: "Statutory citation, regulation, program name, or policy keyword (e.g. '273.1', 'OBBBA', '24-103-205', 'SNAP', 'Medicaid', or 'ALL')."
+
+    ebs_get_intake_attachments:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Skill 3.4 (Document Intake Cleanup & Validation): Retrieves staged citizen document intake packets, Gate A optical/geometric telemetry (Laplacian focus variance, skew angle, 4-corner framing), per-field OCR confidence scores, and Gate C gross-to-net / YTD paystub math from Oracle EBS (VW_GOV_INTAKE_DOCUMENTS)."
+        statement: |
+          SELECT
+            PARTY_ID,
+            PARTY_NUMBER,
+            CASE_NUMBER,
+            APPLICANT_LEGAL_NAME,
+            MASKED_SSN_HASH,
+            INTAKE_DOCUMENT_ID,
+            STAGED_FILE_NAME,
+            DOCUMENT_DESCRIPTION,
+            INTAKE_OCR_AND_TELEMETRY_PAYLOAD
+          FROM APPS.VW_GOV_INTAKE_DOCUMENTS
+          WHERE UPPER('ALL * ' || CASE_NUMBER || ' ' || PARTY_NUMBER || ' ' || APPLICANT_LEGAL_NAME || ' ' || STAGED_FILE_NAME || ' ' || NVL(INTAKE_OCR_AND_TELEMETRY_PAYLOAD, ''))
+                LIKE '%' || UPPER(NVL(:case_or_doc_query, '')) || '%'
+          ORDER BY PARTY_ID
+        parameters:
+          - name: case_or_doc_query
+            type: string
+            required: false
+            default: ""
+            description: "Case number, party number, applicant name, or filename (e.g. 'SNAP-94821', 'TANF-2026-8812', 'Maria Elena Rodriguez', 'Marcus Vance', or 'ALL')."
+
+    ebs_verify_party_identity:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Skill 3.4 (Document Intake Cleanup & Validation): Cross-checks extracted citizen applicant name, masked SSN, and residential address against Oracle EBS Trading Community Architecture (HZ_PARTIES / VW_GOV_INTAKE_DOCUMENTS) master case records."
+        statement: |
+          SELECT
+            PARTY_ID,
+            PARTY_NUMBER,
+            CASE_NUMBER,
+            APPLICANT_LEGAL_NAME,
+            MASKED_SSN_HASH,
+            VERIFIED_STREET_ADDRESS,
+            VERIFIED_CITY,
+            VERIFIED_STATE,
+            VERIFIED_ZIP,
+            TCA_PARTY_STATUS
+          FROM APPS.VW_GOV_INTAKE_DOCUMENTS
+          WHERE UPPER('ALL * ' || CASE_NUMBER || ' ' || PARTY_NUMBER || ' ' || APPLICANT_LEGAL_NAME || ' ' || NVL(MASKED_SSN_HASH, '') || ' ' || NVL(VERIFIED_CITY, ''))
+                LIKE '%' || UPPER(NVL(:party_query, '')) || '%'
+          ORDER BY PARTY_ID
+        parameters:
+          - name: party_query
+            type: string
+            required: false
+            default: ""
+            description: "Applicant name, case number, party number, or masked SSN (e.g. 'Maria Elena Rodriguez', 'SNAP-94821', 'CIT-94821', 'Marcus Vance', or 'ALL')."
+
+    ebs_get_sourcing_rfp_details:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Skill 3.5 (RFP Vendor Evaluation Scorer): Retrieves RFP solicitation header details, issued addenda (Addendum 1 & 2), Section M.1 Minimum Mandatory Qualifications (MQs), and Section M.2 Scored Evaluation Criteria from Oracle Sourcing (PON_AUCTION_HEADERS_ALL / VW_GOV_SOURCING_RFPS)."
+        statement: |
+          SELECT
+            AUCTION_HEADER_ID,
+            RFP_NUMBER,
+            SOLICITATION_TITLE,
+            AUCTION_STATUS,
+            DOCUMENT_ID,
+            SOLICITATION_PACKAGE_FILE,
+            RFP_AND_BIDS_EVIDENCE_DOSSIER
+          FROM APPS.VW_GOV_SOURCING_RFPS
+          WHERE BID_NUMBER = 990511
+            AND UPPER('ALL * ' || RFP_NUMBER || ' ' || SOLICITATION_TITLE || ' ' || TO_CHAR(AUCTION_HEADER_ID))
+                LIKE '%' || UPPER(NVL(:rfp_number, '')) || '%'
+          ORDER BY AUCTION_HEADER_ID
+        parameters:
+          - name: rfp_number
+            type: string
+            required: false
+            default: ""
+            description: "RFP document number, auction header ID, or keyword (e.g. 'RFP-2026-CLOUD-MOD', '990501', or 'ALL')."
+
+    ebs_get_vendor_bids:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Skill 3.5 (RFP Vendor Evaluation Scorer): Retrieves vendor bid headers, bid prices, MQ compliance evidence, and cross-document proposal sections from Oracle Sourcing (PON_BID_HEADERS / VW_GOV_SOURCING_RFPS) for a given RFP or vendor."
+        statement: |
+          SELECT
+            AUCTION_HEADER_ID,
+            RFP_NUMBER,
+            BID_NUMBER,
+            VENDOR_NAME,
+            TOTAL_BID_PRICE_USD,
+            BID_STATUS,
+            SOLICITATION_PACKAGE_FILE,
+            RFP_AND_BIDS_EVIDENCE_DOSSIER
+          FROM APPS.VW_GOV_SOURCING_RFPS
+          WHERE UPPER('ALL * ' || RFP_NUMBER || ' ' || VENDOR_NAME || ' ' || TO_CHAR(BID_NUMBER) || ' ' || NVL(RFP_AND_BIDS_EVIDENCE_DOSSIER, ''))
+                LIKE '%' || UPPER(NVL(:bid_or_rfp_query, '')) || '%'
+          ORDER BY BID_NUMBER
+        parameters:
+          - name: bid_or_rfp_query
+            type: string
+            required: false
+            default: ""
+            description: "RFP number, vendor name, or bid number (e.g. 'RFP-2026-CLOUD-MOD', 'CivicCloud', 'LegacyGov', 'MetroTech', '990511', or 'ALL')."
+
+    ebs_get_expense_reports:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Skill 3.6 (Expense Auditor): Retrieves employee travel expense report headers, itemized expense lines, GSA per-diem audit notes, and attached hotel/flight receipt OCR folios from Oracle Internet Expenses (AP_EXPENSE_REPORT_HEADERS_ALL, AP_EXPENSE_REPORT_LINES_ALL, VW_GOV_EXPENSE_REPORTS)."
+        statement: |
+          SELECT
+            REPORT_HEADER_ID,
+            EXPENSE_REPORT_NUMBER,
+            REPORT_DATE,
+            REPORT_SUMMARY_AND_AWARD,
+            REPORT_TOTAL_CLAIMED_USD,
+            EXPENSE_STATUS_CODE,
+            REPORT_LINE_ID,
+            LINE_NUM,
+            EXPENSE_LINE_DESCRIPTION,
+            LINE_CLAIMED_AMOUNT_USD,
+            REGULATORY_AUDIT_NOTE,
+            ATTACHED_FOLIO_OCR_TRANSCRIPT
+          FROM APPS.VW_GOV_EXPENSE_REPORTS
+          WHERE UPPER('ALL * ' || EXPENSE_REPORT_NUMBER || ' ' || REPORT_SUMMARY_AND_AWARD || ' ' || NVL(EXPENSE_LINE_DESCRIPTION, ''))
+                LIKE '%' || UPPER(NVL(:report_query, '')) || '%'
+          ORDER BY REPORT_HEADER_ID, LINE_NUM
+        parameters:
+          - name: report_query
+            type: string
+            required: false
+            default: ""
+            description: "Expense report number, claimant name, federal grant award ID, or city (e.g. 'EXP-ATL-9921', 'EXP-DEN-5521', 'EXP-CHI-8812', 'Marcus Sterling', 'DOJ-JUST-2026', 'NSF-ENG-2025-44', or 'ALL')."
+
+    ebs_get_po_invoice_match:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Skill 3.6 (Expense Auditor): Retrieves Accounts Payable vendor invoices, matched Purchase Orders, procurement method notes (sole source vs. competitive quotes), and Oracle Grants Accounting award Period of Performance / NICRA metadata (AP_INVOICES_ALL, PO_HEADERS_ALL, GMS_AWARDS_ALL, VW_GOV_PO_INVOICE_MATCH)."
+        statement: |
+          SELECT
+            INVOICE_ID,
+            INVOICE_NUM,
+            INVOICE_DATE,
+            INVOICE_TOTAL_USD,
+            INVOICE_AND_GRANT_LINE_DETAILS,
+            PO_HEADER_ID,
+            MATCHED_PO_NUMBER,
+            PO_STATUS,
+            PO_PROCUREMENT_METHOD_NOTES,
+            FEDERAL_GRANT_AWARD_ID,
+            FEDERAL_GRANT_TITLE,
+            GRANT_POP_START,
+            GRANT_POP_END
+          FROM APPS.VW_GOV_PO_INVOICE_MATCH
+          WHERE UPPER('ALL * ' || INVOICE_NUM || ' ' || NVL(MATCHED_PO_NUMBER, '') || ' ' || NVL(FEDERAL_GRANT_AWARD_ID, '') || ' ' || NVL(INVOICE_AND_GRANT_LINE_DETAILS, ''))
+                LIKE '%' || UPPER(NVL(:invoice_or_po_query, '')) || '%'
+          ORDER BY INVOICE_ID
+        parameters:
+          - name: invoice_or_po_query
+            type: string
+            required: false
+            default: ""
+            description: "AP Invoice number, PO number, vendor name, or federal grant award ID (e.g. 'HM-4409', 'V-2026-301', 'MS-1049', 'PO-7801', 'HRSA-RURAL-2026', 'CDC-CHRONIC-26', 'NOAA-OCN-25-12', or 'ALL')."
+
+    ebs_create_expense_report:
+        kind: oracle-sql
+        source: ebs-oracle-source
+        description: "Creates, submits, and enqueues an employee travel Expense Report in Oracle Internet Expenses (OIE) from user-submitted chat text or an uploaded expense form/receipt screenshot by calling APPS.GE_EBS_MCP_TOOLS.create_expense_report. Strictly uses official Oracle PL/SQL APIs (AP_WEB_DB_EXPRPT_PKG, AP_EXPENSE_REPORT_HEADERS_PKG, AP_WEB_DB_EXPLINE_PKG, AP_WEB_DB_EXPDIST_PKG, FND_WEBATTCH, AP_WEB_EXPENSE_WF, AP_WEB_AUDIT_PROCESS, and AP_WEB_AUDIT_QUEUE_UTILS) so the report immediately appears in Expenses Audit with full GL distributions, workflow state ('PENDMGR'), audit rule tag ('PAPERLESS_AUDIT'), and attached OCR receipt transcript."
+        statement: |
+          SELECT
+            APPS.GE_EBS_MCP_TOOLS.create_expense_report(
+              p_report_number       => :report_number,
+              p_purpose_description => :purpose_description,
+              p_week_end_date       => :week_end_date,
+              p_expense_lines_json  => :expense_lines_json,
+              p_receipt_ocr_text    => :receipt_ocr_text,
+              p_employee_id         => :employee_id
+            ) AS create_expense_report_result
+          FROM dual
+        parameters:
+          - name: report_number
+            type: string
+            required: true
+            description: "Unique expense report / invoice number (e.g. 'EXP-ATL-9921-V3' or 'EXP-2026-1001')."
+          - name: purpose_description
+            type: string
+            required: true
+            description: "Claimant name, federal grant or cost center, and business purpose of the trip (e.g. 'Marcus Sterling - DOJ-JUST-2026 Atlanta Criminal Justice Conference')."
+          - name: week_end_date
+            type: string
+            required: false
+            default: ""
+            description: "Report week-ending date in YYYY-MM-DD format (e.g. '2026-07-16'). Defaults to today if omitted."
+          - name: expense_lines_json
+            type: string
+            required: true
+            description: "JSON array of expense line items extracted from user text or form screenshot. Each object must include 'amount' (number) and 'description' (string), plus optional 'category' ('ACCOMMODATIONS', 'AIRFARE', 'MEALS', 'PARKING'), 'justification' (string), 'start_date' ('YYYY-MM-DD'), and 'end_date' ('YYYY-MM-DD'). Example: '[{\"amount\":370.00,\"category\":\"ACCOMMODATIONS\",\"description\":\"Hotel Lodging (2 nights @ $185/night)\",\"justification\":\"Conference hotel\",\"start_date\":\"2026-07-14\",\"end_date\":\"2026-07-16\"}]'"
+          - name: receipt_ocr_text
+            type: string
+            required: false
+            default: ""
+            description: "Full OCR transcript or structured receipt summary extracted from the user's uploaded screenshot/document or chat submission, attached directly to the OIE Expense Report header via FND_WEBATTCH.ADD_ATTACHMENT."
+          - name: employee_id
+            type: integer
+            required: false
+            default: 32
+            description: "Oracle HR Employee PERSON_ID (defaults to 32 for Jamie Frost in Vision Operations, ORG_ID=204)."

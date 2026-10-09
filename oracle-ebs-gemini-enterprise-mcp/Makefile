@@ -2,10 +2,12 @@
 PROJECT_NAME := oracle-ebs-toolkit
 PROJECT ?= $(PROJECT_NAME)
 PROJECT_ID ?= $(shell gcloud config get-value project 2>/dev/null)
+REGION ?= us-central1
 export TF_VAR_project_id := $(PROJECT_ID)
+export TF_VAR_region := $(REGION)
 # Added this to stop the prompt during MCP deployment
 export TF_VAR_mcp_server_ebs_url := "pending"
-PROJECT_SA_EMAIL := project-service-account@$(PROJECT_ID).iam.gserviceaccount.com
+PROJECT_SA_EMAIL ?= project-service-account@$(PROJECT_ID).iam.gserviceaccount.com
 
 # Directory for Terraform
 TF_DIR := .
@@ -13,7 +15,7 @@ TF_DIR := .
 # Required GCP IAM roles
 REQUIRED_ROLES = roles/storage.admin roles/iam.serviceAccountUser roles/iap.tunnelResourceAccessor roles/compute.osAdminLogin roles/compute.instanceAdmin.v1
 
-.PHONY: help setup init verify-gcp-access format lint set_config_mcp_servers plan_mcp_server deploy_mcp_server destroy_mcp_server plan_ebs_agents deploy_ebs_agents destroy_ebs_agents
+.PHONY: help setup init verify-gcp-access format lint set_config_mcp_servers reset_config plan_mcp_server deploy_mcp_server destroy_mcp_server plan_ebs_agents deploy_ebs_agents destroy_ebs_agents
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?##"}; {printf "  make %-20s %s\n", $$1, $$2}'
@@ -57,61 +59,61 @@ lint: ## Run pre-commit linting
 
 set_config_mcp_servers: ## Set configuration for MCP Server (DB connection, VPC, Subnet)
 	@echo "Configuring MCP Server..."
-	@if [ ! -f MCPServers/mcp-toolbox-ebs/tools.yaml ]; then \
-		cp MCPServers/mcp-toolbox-ebs/tools.yaml.example MCPServers/mcp-toolbox-ebs/tools.yaml; \
-	fi
-	@if grep -qE "apps.example.com|connectionString:[[:space:]]*\"\"|YOUR_PASSWORD" MCPServers/mcp-toolbox-ebs/tools.yaml; then \
-		read -p "Enter Oracle DB Connection String: " db_conn; \
-		read -p "Enter Oracle DB User: " db_user; \
-		read -p "Enter Oracle DB Password: " db_pass; \
-		sed -i.bak -E "s|^([[:space:]]*)connectionString:.*|\1connectionString: \"$$db_conn\"|" MCPServers/mcp-toolbox-ebs/tools.yaml; \
-		sed -i.bak -E "s|^([[:space:]]*)user:.*|\1user: $$db_user|" MCPServers/mcp-toolbox-ebs/tools.yaml; \
-		sed -i.bak -E "s|^([[:space:]]*)password:.*|\1password: $$db_pass|" MCPServers/mcp-toolbox-ebs/tools.yaml; \
-		rm -f MCPServers/mcp-toolbox-ebs/*.bak; \
-	fi
+	@cp MCPServers/mcp-toolbox-ebs/tools.yaml.example MCPServers/mcp-toolbox-ebs/tools.yaml
 	@touch infra.auto.tfvars
+	@if ! grep -q "ebs_db_connection_string" infra.auto.tfvars; then \
+		read -p "Enter Oracle DB Connection String (e.g., 10.0.0.10:1521/EBSDB): " db_conn; \
+		echo "ebs_db_connection_string = \"$$db_conn\"" >> infra.auto.tfvars; \
+	fi
+	@if ! grep -q "ebs_db_user" infra.auto.tfvars; then \
+		read -p "Enter Oracle DB User [apps_ai]: " db_user; \
+		db_user=$${db_user:-apps_ai}; \
+		echo "ebs_db_user = \"$$db_user\"" >> infra.auto.tfvars; \
+	fi
+	@if ! grep -q "ebs_db_password" infra.auto.tfvars; then \
+		read -s -p "Enter Oracle DB Password: " db_pass; echo ""; \
+		echo "ebs_db_password = \"$$db_pass\"" >> infra.auto.tfvars; \
+	fi
 	@if ! grep -q "vpc_name" infra.auto.tfvars; then \
 		read -p "Enter VPC Name: " vpc; echo "vpc_name = \"$$vpc\"" >> infra.auto.tfvars; \
 	fi
 	@if ! grep -q "subnet_name" infra.auto.tfvars; then \
 		read -p "Enter Subnet Name: " sub; echo "subnet_name = \"$$sub\"" >> infra.auto.tfvars; \
 	fi
+	@echo "Configuration saved to infra.auto.tfvars (tools.yaml remains parameterized with Secret Manager env vars)."
 
 reset_config: ## Clear local configs to force re-prompting
 	@echo "Resetting configurations..."
-	@# Replace current values with dummy values in tools.yaml to trigger the grep again
-	@sed -i.bak -E 's|^([[:space:]]*)connectionString:.*|\1connectionString: "apps.example.com:1521/EBSDB"|' MCPServers/mcp-toolbox-ebs/tools.yaml
-	@sed -i.bak -E 's|^([[:space:]]*)user:.*|\1user: apps_ai|' MCPServers/mcp-toolbox-ebs/tools.yaml
-	@sed -i.bak -E 's|^([[:space:]]*)password:.*|\1password: apps_ai|' MCPServers/mcp-toolbox-ebs/tools.yaml
-	@rm -f MCPServers/mcp-toolbox-ebs/*.bak *.bak
+	@cp MCPServers/mcp-toolbox-ebs/tools.yaml.example MCPServers/mcp-toolbox-ebs/tools.yaml
+	@rm -f infra.auto.tfvars MCPServers/mcp-toolbox-ebs/.env MCPServers/mcp-toolbox-ebs/*.bak *.bak
 	@echo "Done. You can now run 'make set_config_mcp_servers' to enter new values."
 
 plan_mcp_server: ## Plan Terraform for MCP Server
-	terraform -chdir=$(TF_DIR) plan -target="null_resource.oracle_ebs_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) plan -target="null_resource.oracle_ebs_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
 
 deploy_mcp_server: ## Deploy MCP Server
-	terraform -chdir=$(TF_DIR) apply -auto-approve -target="null_resource.oracle_ebs_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) apply -auto-approve -target="null_resource.oracle_ebs_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
 
 destroy_mcp_server: ## Destroy MCP Server
-	terraform -chdir=$(TF_DIR) destroy -auto-approve -target="null_resource.oracle_ebs_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) destroy -auto-approve -target="null_resource.oracle_ebs_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
 
 plan_ebs_agents: ## Plan Terraform for EBS agents
 	@touch infra.auto.tfvars
-	$(eval MCP_URL=$(shell gcloud run services describe mcp-toolbox-ebs --project $(PROJECT_ID) --region northamerica-northeast2 --format 'value(status.url)' 2>/dev/null))
+	$(eval MCP_URL=$(shell gcloud run services describe mcp-toolbox-ebs --project $(PROJECT_ID) --region $(REGION) --format 'value(status.url)' 2>/dev/null))
 	@if [ -z "$(MCP_URL)" ]; then \
-		echo "Error: Could not find MCP Server URL. Is it deployed?"; \
+		echo "Error: Could not find MCP Server URL in region $(REGION). Is it deployed?"; \
 		exit 1; \
 	fi
-	@echo "Found MCP URL: $(MCP_URL)"
+	@echo "Found MCP URL: $(MCP_URL)/mcp"
 	@if grep -q "mcp_server_ebs_url" infra.auto.tfvars; then \
-		sed -i.bak "s|^mcp_server_ebs_url[[:space:]]*=.*|mcp_server_ebs_url = \"$(MCP_URL)\"|" infra.auto.tfvars && rm infra.auto.tfvars.bak; \
+		sed -i.bak "s|^mcp_server_ebs_url[[:space:]]*=.*|mcp_server_ebs_url = \"$(MCP_URL)/mcp\"|" infra.auto.tfvars && rm infra.auto.tfvars.bak; \
 	else \
-		echo "mcp_server_ebs_url = \"$(MCP_URL)\"" >> infra.auto.tfvars; \
+		echo "mcp_server_ebs_url = \"$(MCP_URL)/mcp\"" >> infra.auto.tfvars; \
 	fi
-	terraform -chdir=$(TF_DIR) plan -target="null_resource.oracle_ebs_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) plan -target="null_resource.oracle_ebs_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
 
 deploy_ebs_agents: ## Deploy EBS Agent
-	terraform -chdir=$(TF_DIR) apply -auto-approve -target="null_resource.oracle_ebs_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) apply -auto-approve -target="null_resource.oracle_ebs_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
 
 destroy_ebs_agents: ## Destroy EBS Agent deployment
-	terraform -chdir=$(TF_DIR) destroy -auto-approve -target="null_resource.oracle_ebs_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) destroy -auto-approve -target="null_resource.oracle_ebs_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
