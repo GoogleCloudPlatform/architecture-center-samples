@@ -22,10 +22,11 @@ resource "null_resource" "oracle_peoplesoft_gemini_enterprise_framework" {
     command = <<EOT
       set -e
 
-      python3 -m venv .venv
+      if [ ! -d ".venv" ]; then
+        python3 -m venv .venv
+      fi
       . .venv/bin/activate
       
-      pip install --upgrade pip
       pip install -r requirements.txt
       pip install -r Agents/requirements.txt
 

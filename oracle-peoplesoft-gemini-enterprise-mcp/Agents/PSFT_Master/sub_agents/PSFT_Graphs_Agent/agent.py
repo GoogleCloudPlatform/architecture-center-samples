@@ -141,7 +141,9 @@ def _parse_data(data: str) -> list[dict]:
                 for k in ("rows", "data", "items", "results"):
                     if isinstance(parsed.get(k), list) and parsed[k]:
                         return parsed[k]
-                raise ValueError("JSON object does not contain a valid list under 'rows', 'data', 'items', or 'results'.")
+                if parsed:
+                    return [parsed]
+                raise ValueError("JSON object is empty.")
             if isinstance(parsed, list) and parsed:
                 return parsed
             raise ValueError("JSON array is empty or invalid.")
@@ -159,7 +161,7 @@ def _sort_data(rows: list[dict], sort_column: str, sort_order: str) -> list[dict
     if not sort_column:
         return rows
 
-    reverse = sort_order.strip().lower() == "desc"
+    reverse = str(sort_order or "asc").strip().lower() == "desc"
 
     def _key(row: dict):
         val = row.get(sort_column, "")

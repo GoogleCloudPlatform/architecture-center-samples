@@ -361,6 +361,23 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
       v_bu,
       SUBSTR(NVL(p_description, 'Staged via Gemini Enterprise PeopleSoft MCP Tool create_ap_voucher'), 1, 254)
     );
+
+    INSERT INTO SYSADM.PS_VCHR_LINE_STG (
+      BUSINESS_UNIT, VCHR_BLD_KEY_C1, VCHR_BLD_KEY_C2, VCHR_BLD_KEY_N1,
+      VOUCHER_LINE_NUM, LINE_AMT, DESCR254_MIXED
+    ) VALUES (
+      v_bu, v_vchr_id, ' ', 0,
+      1, v_amt, SUBSTR(NVL(p_description, 'Staged line'), 1, 254)
+    );
+
+    INSERT INTO SYSADM.PS_VCHR_DIST_STG (
+      BUSINESS_UNIT, VCHR_BLD_KEY_C1, VCHR_BLD_KEY_C2, VCHR_BLD_KEY_N1,
+      VOUCHER_LINE_NUM, DISTRIB_LINE_NUM, MERCHANDISE_AMT
+    ) VALUES (
+      v_bu, v_vchr_id, ' ', 0,
+      1, 1, v_amt
+    );
+
     COMMIT;
 
     v_result := 'SUCCESS: Staged PeopleSoft AP Voucher VOUCHER_ID=' || v_vchr_id ||
