@@ -1,0 +1,231 @@
+{
+  "module": "Public Sector & Government Operations (PeopleSoft FSCM 9.2 - EP92U055)",
+  "description": "Semantic mapping for the 6 Gemini for Government skills across Oracle PeopleSoft FSCM 9.2 Accounts Receivable (PS_CUSTOMER, PS_ITEM), Purchasing (PS_PO_HDR, PS_PO_LINE), Strategic Sourcing (PS_AUC_HDR), Travel & Expenses (PS_EX_SHEET_HDR, PS_EX_SHEET_LINE, PS_EX_SHEET_DIST), Accounts Payable (PS_VOUCHER), Grants Management (PS_GM_AWARD), and PeopleSoft Public Sector views (SYSADM.VW_GOV_*).",
+  "tables": [
+    {
+      "table_name": "SYSADM.VW_GOV_CONSTITUENT_NOTICES",
+      "business_name": "Constituent & Public Notices (Skill 3.1: Plain Language Notice Generator)",
+      "description": "Consolidated view over PS_GOV_CONSTITUENT_NOTICES and PS_GOV_ATTACHMENTS containing population-level public benefit notices (NOTICE-CO-SNAP-2026-COLA, NOTICE-MUN-2026-WATER, NOTICE-HUD-SEC8-26) and individual adverse-action determinations (CLAIM-84920).",
+      "columns": [
+        {
+          "name": "NOTICE_ID",
+          "description": "Notice or determination ID (NOTICE-CO-SNAP-2026-COLA, NOTICE-MUN-2026-WATER, CLAIM-84920, NOTICE-HUD-SEC8-26)."
+        },
+        {
+          "name": "NOTICE_DATE",
+          "description": "Issue date of the notice (YYYY-MM-DD)."
+        },
+        {
+          "name": "NOTICE_SCOPE_TYPE",
+          "description": "GOV_PUBLIC_NOTICE (population-level notice eligible for plain-language rewriting) or INDIVIDUAL_ADVERSE_ACTION (must be escalated due to constituent PII and individual fair hearing rights)."
+        },
+        {
+          "name": "STATUTORY_CITATION",
+          "description": "Governing federal/state statutory citation (e.g., 7-CFR-273.12(e)(1))."
+        },
+        {
+          "name": "NOTICE_SUMMARY",
+          "description": "Summary description of the notice or determination."
+        },
+        {
+          "name": "STATUTORY_NOTICE_TEXT",
+          "description": "Full text of the statutory directive or notice from PS_GOV_ATTACHMENTS."
+        }
+      ]
+    },
+    {
+      "table_name": "SYSADM.VW_GOV_FOIA_RECORDS",
+      "business_name": "FOIA & Public Records Production Package (Skill 3.2: Redaction & FOIA Compliance)",
+      "description": "Consolidated view over PS_GOV_FOIA_RECORDS, PS_PO_HDR, and PS_GOV_ATTACHMENTS for FOIA requests (FOIA-2026-0412 / RFP-2024-HEALTH / EMP-FOIA-1042, FOIA-2026-0891 / EMP-FOIA-2088).",
+      "columns": [
+        {
+          "name": "FOIA_REQUEST_ID",
+          "description": "Public records request identifier (FOIA-2026-0412, FOIA-2026-0891)."
+        },
+        {
+          "name": "SOLICITATION_OR_CASE_REF",
+          "description": "Referenced solicitation or case number (RFP-2024-HEALTH, CASE-FOIA-2026-89)."
+        },
+        {
+          "name": "EMPLOYEE_NUMBER",
+          "description": "Employee ID (EMP-FOIA-1042, EMP-FOIA-2088)."
+        },
+        {
+          "name": "EMPLOYEE_NAME",
+          "description": "Full name of public official (Vance, Jordan R.; Thorne, Marcus A.)."
+        },
+        {
+          "name": "RAW_SSN",
+          "description": "Unredacted Social Security Number requiring mandatory Exemption 6 / 7(C) redaction."
+        },
+        {
+          "name": "RAW_DOB",
+          "description": "Unredacted Date of Birth requiring mandatory Exemption 6 / 7(C) redaction."
+        },
+        {
+          "name": "FULL_DOCUMENT_CONTENT",
+          "description": "Full text of the responsive FOIA record containing public award facts plus sensitive PII, FTI (26 U.S.C. 6103), CJIS, and HIPAA PHI."
+        }
+      ]
+    },
+    {
+      "table_name": "SYSADM.VW_GOV_AGENCY_POLICY_RULES",
+      "business_name": "Agency Procurement & Statutory Policy Rules (Skill 3.3: Policy & Statute Assistant)",
+      "description": "Consolidated view over PS_GOV_POLICY_RULES and PS_GOV_ATTACHMENTS covering state procurement thresholds, SNAP separate household & BBCE rules, and post-OBBBA (Pub. L. 119-21) statutory preemption.",
+      "columns": [
+        {
+          "name": "POLICY_RULE_SET",
+          "description": "Control group name (CO-STATE-PROCUREMENT-2026, FED-SLG-STATUTE-2026)."
+        },
+        {
+          "name": "THRESHOLD_CATEGORY",
+          "description": "Procurement tier code (DISCRETIONARY_PURCHASE_LIMIT, DOCUMENTED_QUOTE_SMALL_PURCHASE_LIMIT, etc.)."
+        },
+        {
+          "name": "DOLLAR_THRESHOLD_USD",
+          "description": "Dollar limit in USD (10000, 150000, 250000)."
+        },
+        {
+          "name": "STATUTORY_POLICY_TEXT",
+          "description": "Full text of the agency statutory and regulatory policy transmittal."
+        }
+      ]
+    },
+    {
+      "table_name": "SYSADM.VW_GOV_INTAKE_DOCUMENTS",
+      "business_name": "Citizen Document Intake Queue & PS_CUSTOMER Verification (Skill 3.4: Document Intake Cleanup & Validation)",
+      "description": "Consolidated view over PS_GOV_INTAKE_DOCUMENTS, PS_CUSTOMER, and PS_GOV_ATTACHMENTS providing staged citizen intake packets, Gate A optical telemetry, per-field OCR confidence scores, and Gate C paystub math.",
+      "columns": [
+        {
+          "name": "CASE_NUMBER",
+          "description": "Program case reference (SNAP-94821, TANF-2026-8812, HUD-SEC8-4102, LIHEAP-8821)."
+        },
+        {
+          "name": "PARTY_ID",
+          "description": "PeopleSoft Customer ID in PS_CUSTOMER (0000990201..0000990204)."
+        },
+        {
+          "name": "APPLICANT_LEGAL_NAME",
+          "description": "Verified legal name in PS_CUSTOMER (Maria Elena Rodriguez, Marcus Vance, Elena Rostova, Devon Brooks)."
+        },
+        {
+          "name": "MASKED_SSN_HASH",
+          "description": "Masked SSN on file (***-**-4829, ***-**-7741, etc.)."
+        },
+        {
+          "name": "INTAKE_OCR_AND_TELEMETRY_PAYLOAD",
+          "description": "Full Gate A optical metrics, per-field OCR confidence scores, and Gate C paystub gross/net/YTD figures."
+        }
+      ]
+    },
+    {
+      "table_name": "SYSADM.VW_GOV_SOURCING_RFPS",
+      "business_name": "PeopleSoft Strategic Sourcing Events & Vendor Bids (Skill 3.5: RFP Vendor Evaluation Scorer)",
+      "description": "Consolidated view over PS_AUC_HDR, PS_GOV_SOURCING_RFPS, PS_GOV_VENDOR_BIDS, and PS_GOV_ATTACHMENTS for RFP-2026-CLOUD-MOD (AUC_ID 0000990501), RFP-N00061838C (0000990502), and 41900-DCH0000120 (0000990503).",
+      "columns": [
+        {
+          "name": "RFP_NUMBER",
+          "description": "Solicitation document number (RFP-2026-CLOUD-MOD, RFP-N00061838C, 41900-DCH0000120)."
+        },
+        {
+          "name": "BID_NUMBER",
+          "description": "Vendor bid number (990511..990516)."
+        },
+        {
+          "name": "VENDOR_NAME",
+          "description": "Vendor code (CIVICCLOUD-SOLUTIONS, LEGACYGOV-SYSTEMS, METROTECH-PARTNERS, HELIOS-DIGITAL-GOV, CONDUENT-STATE-HEALTH, ACCENTURE-STATE-HEALTH)."
+        },
+        {
+          "name": "TOTAL_BID_PRICE_USD",
+          "description": "Total Volume II Cost Proposal amount in USD."
+        },
+        {
+          "name": "RFP_AND_BIDS_EVIDENCE_DOSSIER",
+          "description": "Complete solicitation Section M.1/M.2 criteria, Addenda 1 & 2, and vendor proposal evidence with page citations."
+        }
+      ]
+    },
+    {
+      "table_name": "SYSADM.VW_GOV_EXPENSE_REPORTS",
+      "business_name": "PeopleSoft Travel & Expenses Sheets & Hotel Folios (Skill 3.6: Expense Auditor)",
+      "description": "Consolidated view over PS_EX_SHEET_HDR, PS_EX_SHEET_LINE, PS_GOV_EXPENSE_HEADERS, PS_GOV_EXPENSE_LINES, and PS_GOV_ATTACHMENTS for 2 CFR Part 200 travel expense audits (EXP-ATL-9921, EXP-DEN-5521, EXP-CHI-8812 and -V2 sheets 0000990611..0000990613).",
+      "columns": [
+        {
+          "name": "SHEET_ID",
+          "description": "PeopleSoft 10-character Expense Sheet ID in PS_EX_SHEET_HDR (0000990601..0000990613)."
+        },
+        {
+          "name": "EXPENSE_REPORT_NUMBER",
+          "description": "Expense report reference in PS_EX_SHEET_HDR.SHEET_NAME (EXP-ATL-9921, EXP-ATL-9921-V2, EXP-DEN-5521, EXP-DEN-5521-V2, EXP-CHI-8812, EXP-CHI-8812-V2)."
+        },
+        {
+          "name": "REPORT_SUMMARY_AND_AWARD",
+          "description": "Claimant, federal grant award ID, and trip purpose."
+        },
+        {
+          "name": "LINE_NUM",
+          "description": "Expense sheet line number."
+        },
+        {
+          "name": "EXPENSE_LINE_DESCRIPTION",
+          "description": "Itemized charge description."
+        },
+        {
+          "name": "LINE_CLAIMED_AMOUNT_USD",
+          "description": "Claimed dollar amount for the line."
+        },
+        {
+          "name": "ATTACHED_FOLIO_OCR_TRANSCRIPT",
+          "description": "Full itemized hotel/flight receipt OCR folio."
+        }
+      ]
+    },
+    {
+      "table_name": "SYSADM.VW_GOV_PO_INVOICE_MATCH",
+      "business_name": "PeopleSoft Grant AP Vouchers, POs & GM Awards (Skill 3.6: Expense Auditor)",
+      "description": "Consolidated view over PS_VOUCHER, PS_PO_HDR, PS_GM_AWARD, and PS_GOV_AP_VOUCHERS for auditing grant vouchers and sole-source POs (HM-4409, V-2026-301, MS-1049, HM-4409-V2, V-2026-301-V2, MS-1049-V2 matched to PO-7801).",
+      "columns": [
+        {
+          "name": "VOUCHER_ID",
+          "description": "PeopleSoft 8-character AP Voucher ID in PS_VOUCHER (00990801..00990813)."
+        },
+        {
+          "name": "INVOICE_NUM",
+          "description": "AP Invoice number in PS_VOUCHER.INVOICE_ID (HM-4409, V-2026-301, MS-1049, HM-4409-V2, V-2026-301-V2, MS-1049-V2, INV-2026-8841, NAPA-1840, EPA-SPEC-68400)."
+        },
+        {
+          "name": "INVOICE_TOTAL_USD",
+          "description": "Total voucher gross amount in USD."
+        },
+        {
+          "name": "MATCHED_PO_NUMBER",
+          "description": "Matched PO reference (PO-7801 / PS_PO_HDR.PO_ID = 0000990701)."
+        },
+        {
+          "name": "FEDERAL_GRANT_AWARD_ID",
+          "description": "PeopleSoft Grants Award contract number in PS_GM_AWARD (HRSA-RURAL-2026, CDC-CHRONIC-26, NOAA-OCN-25-12)."
+        }
+      ]
+    }
+  ],
+  "common_joins": [
+    {
+      "description": "Link PeopleSoft Travel & Expense Headers to Lines and Distributions",
+      "join_condition": "PS_EX_SHEET_HDR.SHEET_ID = PS_EX_SHEET_LINE.SHEET_ID AND PS_EX_SHEET_LINE.SHEET_ID = PS_EX_SHEET_DIST.SHEET_ID AND PS_EX_SHEET_LINE.LINE_NBR = PS_EX_SHEET_DIST.LINE_NBR"
+    },
+    {
+      "description": "Link PeopleSoft AP Vouchers to Vendors",
+      "join_condition": "PS_VOUCHER.VENDOR_SETID = PS_VENDOR.SETID AND PS_VOUCHER.VENDOR_ID = PS_VENDOR.VENDOR_ID"
+    }
+  ],
+  "example_queries": [
+    {
+      "description": "Retrieve public notice details for NOTICE-CO-SNAP-2026-COLA",
+      "sql": "SELECT NOTICE_ID, NOTICE_SCOPE_TYPE, STATUTORY_CITATION, STATUTORY_NOTICE_TEXT FROM SYSADM.VW_GOV_CONSTITUENT_NOTICES WHERE NOTICE_ID = 'NOTICE-CO-SNAP-2026-COLA'"
+    },
+    {
+      "description": "Retrieve Travel & Expense sheet lines for EXP-ATL-9921-V2",
+      "sql": "SELECT SHEET_ID, EXPENSE_REPORT_NUMBER, LINE_NUM, EXPENSE_LINE_DESCRIPTION, LINE_CLAIMED_AMOUNT_USD FROM SYSADM.VW_GOV_EXPENSE_REPORTS WHERE EXPENSE_REPORT_NUMBER = 'EXP-ATL-9921-V2' ORDER BY LINE_NUM"
+    }
+  ]
+}

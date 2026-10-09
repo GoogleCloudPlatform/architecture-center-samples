@@ -1,0 +1,30 @@
+{
+  "module": "PeopleSoft Accounts Receivable & Customer Master (AR)",
+  "description": "PeopleSoft FSCM 9.2 customer master and receivable items.",
+  "tables": [
+    {
+      "table_name": "SYSADM.PS_CUSTOMER",
+      "business_name": "Customer / Constituent Master",
+      "description": "Stores customer and constituent records by SETID and CUST_ID.",
+      "columns": [
+        {
+          "name": "SETID",
+          "description": "SetID (e.g., SHARE)."
+        },
+        {
+          "name": "CUST_ID",
+          "description": "Customer/Constituent ID (e.g., 0000990201)."
+        },
+        {
+          "name": "NAME1",
+          "description": "Legal name of customer or constituent."
+        },
+        {
+          "name": "CUST_STATUS",
+          "description": "Status (A = Active)."
+        }
+      ]
+    }
+  ],
+  "common_joins": []
+}

@@ -1,0 +1,527 @@
+sources:
+    psft-oracle-source:
+        kind: "oracle"
+        connectionString: "${PSFT_DB_CONNECTION_STRING}"
+        user: "${PSFT_DB_USER}"
+        password: "${PSFT_DB_PASSWORD}"
+
+
+tools:
+    execute_sql:
+        kind: oracle-execute-sql
+        source: psft-oracle-source
+        description: "Executes an arbitrary read-only SQL SELECT statement against the connected Oracle PeopleSoft FSCM 9.2 (EP92U055) database. Use this tool when you need to run custom SELECT queries across PeopleSoft tables (PS_*) or views (VW_GOV_*) that are not covered by other specific tools. Note: This tool is read-only. Never end SQL statements with a semicolon."
+        readOnly: true
+
+    ps_init:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "REQUIRED INITIALIZATION STEP: Initializes the Oracle PeopleSoft 9.2 session context. Execute this tool before running other PeopleSoft-specific queries or transactional tools. It resolves the PeopleSoft Operator ID (OPRID, e.g., VP1) from the user's email address or operator ID and configures the active Business Unit (e.g., US001 or EGV05), Role Name, and TableSet ID (SETID, e.g., SHARE)."
+        statement: |
+          SELECT
+            SYSADM.GE_PSFT_MCP_TOOLS.ps_initialize_context(
+                    :user_id,
+                    :business_unit,
+                    :role_name,
+                    :setid
+                    ) AS initialization_result
+          FROM dual
+        parameters:
+          - name: user_id
+            type: string
+            required: true
+            description: "The email address or PeopleSoft OPRID of the user to initialize (e.g., 'admin@negonzal.altostrat.com' or 'VP1')."
+          - name: business_unit
+            type: string
+            required: false
+            description: "The PeopleSoft Business Unit to use when initializing the session (e.g., 'US001' or 'EGV05')."
+            default: "US001"
+          - name: role_name
+            type: string
+            required: false
+            description: "The PeopleSoft Role Name to use when initializing the session."
+            default: "PeopleSoft Administrator"
+          - name: setid
+            type: string
+            required: false
+            description: "The PeopleSoft TableSet ID (SETID) to use when initializing the session."
+            default: "SHARE"
+
+    reserve_item:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Reserves an inventory item in Oracle PeopleSoft Inventory (PS_BU_ITEMS_INV / PS_GOV_INV_RESERVATIONS) by calling SYSADM.GE_PSFT_MCP_TOOLS.reserve_item."
+        statement: |
+          SELECT
+             SYSADM.GE_PSFT_MCP_TOOLS.reserve_item(
+                    :item_name,
+                    :quantity,
+                    :location
+                    ) AS reserve_item_result
+          FROM dual
+        parameters:
+          - name: item_name
+            type: string
+            required: true
+            description: "The PeopleSoft Inventory Item ID (INV_ITEM_ID, e.g. '10000' or '001-0294') to reserve."
+          - name: quantity
+            type: integer
+            required: true
+            default: 1
+            description: "The quantity of the item to reserve."
+          - name: location
+            type: string
+            required: false
+            description: "The PeopleSoft Inventory Business Unit (e.g. 'US001')."
+            default: "US001"
+
+    delete_reserve_item:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Deletes/cancels an inventory reservation in Oracle PeopleSoft Inventory by calling SYSADM.GE_PSFT_MCP_TOOLS.delete_reservation."
+        statement: |
+          SELECT
+             SYSADM.GE_PSFT_MCP_TOOLS.delete_reservation(
+                    :reservation_id
+                    ) AS delete_reservation_result
+          FROM dual
+        parameters:
+          - name: reservation_id
+            type: string
+            required: true
+            description: "The Reservation ID to delete/cancel."
+
+    create_onhand:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Creates/increments on-hand inventory quantity for an item in Oracle PeopleSoft Inventory (PS_BU_ITEMS_INV) by calling SYSADM.GE_PSFT_MCP_TOOLS.create_onhand."
+        statement: |
+          SELECT
+            SYSADM.GE_PSFT_MCP_TOOLS.create_onhand(
+                  :item_name,
+                  :quantity,
+                  :location
+                  ) AS create_onhand_result
+          FROM dual
+        parameters:
+          - name: item_name
+            type: string
+            required: true
+            description: "The PeopleSoft Inventory Item ID (INV_ITEM_ID, e.g. '10000') to add on-hand stock for."
+          - name: quantity
+            type: integer
+            required: true
+            default: 1
+            description: "The quantity to add to on-hand inventory."
+          - name: location
+            type: string
+            required: false
+            description: "The PeopleSoft Inventory Business Unit (e.g. 'US001')."
+            default: "US001"
+
+    create_ap_voucher:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Creates an Accounts Payable Voucher in Oracle PeopleSoft Payables (PS_VOUCHER / PS_VCHR_HDR_STG) by calling SYSADM.GE_PSFT_MCP_TOOLS.create_ap_voucher."
+        statement: |
+          SELECT
+            SYSADM.GE_PSFT_MCP_TOOLS.create_ap_voucher(
+                  :vendor_id,
+                  :invoice_number,
+                  :invoice_amount,
+                  :location,
+                  :description
+                  ) AS create_ap_voucher_result
+          FROM dual
+        parameters:
+          - name: vendor_id
+            type: string
+            required: true
+            description: "The PeopleSoft Supplier/Vendor ID (e.g. 'USA0000002' or '0000000044')."
+          - name: invoice_number
+            type: string
+            required: true
+            description: "The invoice number for the AP Voucher."
+          - name: invoice_amount
+            type: string
+            required: true
+            description: "The gross dollar amount of the AP Voucher."
+          - name: location
+            type: string
+            required: false
+            description: "The PeopleSoft Payables Business Unit (e.g. 'US001')."
+            default: "US001"
+          - name: description
+            type: string
+            required: false
+            description: "Voucher description / memo."
+            default: ""
+
+    list_ps_roles:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Searches and retrieves assigned Oracle PeopleSoft security roles (PSOPRDEFN, PSROLEUSER, PSROLEDEFN) for a specific user based on their email address or OPRID."
+        statement: |
+          SELECT
+                o.OPRID,
+                o.OPRDEFNDESC AS OPERATOR_NAME,
+                o.EMPLID,
+                o.EMAILID AS USER_EMAIL,
+                ru.ROLENAME,
+                rd.DESCR AS ROLE_DESCRIPTION,
+                'US001' AS DEFAULT_BUSINESS_UNIT,
+                'SHARE' AS DEFAULT_SETID
+            FROM SYSADM.PSOPRDEFN o
+            JOIN SYSADM.PSROLEUSER ru ON ru.ROLEUSER = o.OPRID
+            LEFT JOIN SYSADM.PSROLEDEFN rd ON rd.ROLENAME = ru.ROLENAME
+           WHERE (UPPER(o.EMAILID) LIKE '%' || UPPER(NVL(:user_id, '')) || '%'
+              OR UPPER(o.OPRID) LIKE '%' || UPPER(NVL(:user_id, '')) || '%'
+              OR o.OPRID = 'VP1')
+             AND ROWNUM <= 25
+           ORDER BY CASE WHEN o.OPRID = 'VP1' THEN 0 ELSE 1 END, ru.ROLENAME
+        parameters:
+          - name: user_id
+            type: string
+            required: false
+            default: "VP1"
+            description: "The email address or PeopleSoft OPRID (e.g. 'admin@negonzal.altostrat.com' or 'VP1')."
+
+    list_ps_current_context:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Retrieves the active Oracle PeopleSoft 9.2 session context initialized by 'ps_init' (OPRID, Operator Name, Employee ID, Email, Business Unit, SetID, and Role Name)."
+        statement: |
+          SELECT
+                SESSION_KEY,
+                OPRID,
+                OPRDEFNDESC AS OPERATOR_NAME,
+                EMAILID,
+                EMPLID,
+                BUSINESS_UNIT,
+                SETID,
+                ROLENAME,
+                TO_CHAR(INITIALIZED_DTTM, 'YYYY-MM-DD HH24:MI:SS') AS INITIALIZED_AT
+            FROM SYSADM.PS_GOV_MCP_SESSION_CTX
+           WHERE SESSION_KEY = 'ACTIVE_SESSION'
+        parameters: []
+
+    ps_get_case_determination:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Skill 3.1 (Plain Language Notice Generator): Retrieves public/population-level agency notices or individual benefit determinations from Oracle PeopleSoft (VW_GOV_CONSTITUENT_NOTICES), including notice scope type, statutory citation, effective dates, and full statutory notice text."
+        statement: |
+          SELECT
+            NOTICE_INTERNAL_ID,
+            NOTICE_ID,
+            NOTICE_DATE,
+            NOTICE_SCOPE_TYPE,
+            STATUTORY_CITATION,
+            NOTICE_SUMMARY,
+            DOCUMENT_ID,
+            ATTACHMENT_FILE_NAME,
+            ATTACHMENT_TITLE,
+            STATUTORY_NOTICE_TEXT
+          FROM SYSADM.VW_GOV_CONSTITUENT_NOTICES
+          WHERE UPPER('ALL * ' || NOTICE_ID || ' ' || NOTICE_SCOPE_TYPE || ' ' || STATUTORY_CITATION || ' ' || NOTICE_SUMMARY)
+                LIKE '%' || UPPER(NVL(:notice_id, '')) || '%'
+          ORDER BY NOTICE_INTERNAL_ID
+        parameters:
+          - name: notice_id
+            type: string
+            required: false
+            default: ""
+            description: "Notice ID, claim number, statutory citation, or keyword (e.g. 'NOTICE-CO-SNAP-2026-COLA', 'NOTICE-MUN-2026-WATER', 'NOTICE-HUD-SEC8-26', 'CLAIM-84920', or 'ALL')."
+
+    ps_get_attachment_content:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Skill 3.1 & General Attachment Retrieval: Fetches the full text and metadata of attached statutory directives, agency transmittals, or determinations from Oracle PeopleSoft Attachment Repository (PS_GOV_FND_DOCUMENTS, PS_GOV_FND_DOCUMENTS_TL, PS_GOV_FND_DOCS_LONG_TEXT)."
+        statement: |
+          SELECT
+            d.DOCUMENT_ID,
+            ad.ENTITY_NAME,
+            ad.PK1_VALUE AS ENTITY_RECORD_ID,
+            dtl.FILE_NAME,
+            dtl.DESCRIPTION AS DOCUMENT_TITLE,
+            lt.LONG_TEXT AS ATTACHMENT_FULL_TEXT
+          FROM SYSADM.PS_GOV_FND_DOCUMENTS d
+          JOIN SYSADM.PS_GOV_FND_DOCUMENTS_TL dtl ON dtl.DOCUMENT_ID = d.DOCUMENT_ID AND dtl.LANGUAGE = 'US'
+          JOIN SYSADM.PS_GOV_FND_DOCS_LONG_TEXT lt ON lt.MEDIA_ID = d.MEDIA_ID
+          LEFT JOIN SYSADM.PS_GOV_FND_ATTACHED_DOCS ad ON ad.DOCUMENT_ID = d.DOCUMENT_ID
+          WHERE d.DOCUMENT_ID BETWEEN 990001 AND 990999
+            AND UPPER('ALL * ' || TO_CHAR(d.DOCUMENT_ID) || ' ' || NVL(ad.ENTITY_NAME, '') || ' ' || NVL(ad.PK1_VALUE, '') || ' ' || NVL(dtl.FILE_NAME, '') || ' ' || NVL(dtl.DESCRIPTION, ''))
+                LIKE '%' || UPPER(NVL(:document_query, '')) || '%'
+          ORDER BY d.DOCUMENT_ID
+        parameters:
+          - name: document_query
+            type: string
+            required: false
+            default: ""
+            description: "Document ID, attached entity ID, file name, or keyword (e.g. '990901', 'NOTICE-CO-SNAP-2026-COLA', 'CO_SNAP_FY2026_COLA_DIRECTIVE.txt', or 'ALL')."
+
+    ps_search_foia_records:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Skill 3.2 (Redaction & FOIA Compliance): Searches responsive public procurement records, contract awards, and oversight hearing transcripts in Oracle PeopleSoft (PS_PO_HDR, PS_GOV_FND_DOCUMENTS_TL, VW_GOV_FOIA_RECORDS) for a given FOIA request or solicitation reference."
+        statement: |
+          SELECT
+            FOIA_REQUEST_ID,
+            SOLICITATION_OR_CASE_REF,
+            RELATED_PO_NUMBER,
+            RELATED_CONTRACT_SUMMARY,
+            PERSON_ID,
+            EMPLOYEE_NUMBER,
+            EMPLOYEE_NAME,
+            OFFICIAL_EMAIL,
+            DOCUMENT_ID,
+            FILE_NAME,
+            DOCUMENT_TITLE,
+            FULL_DOCUMENT_CONTENT
+          FROM SYSADM.VW_GOV_FOIA_RECORDS
+          WHERE UPPER('ALL * ' || FOIA_REQUEST_ID || ' ' || SOLICITATION_OR_CASE_REF || ' ' || NVL(RELATED_PO_NUMBER, '') || ' ' || EMPLOYEE_NAME || ' ' || NVL(DOCUMENT_TITLE, ''))
+                LIKE '%' || UPPER(NVL(:search_query, '')) || '%'
+          ORDER BY DOCUMENT_ID
+        parameters:
+          - name: search_query
+            type: string
+            required: false
+            default: ""
+            description: "FOIA request ID, solicitation number, PO number, or keyword (e.g. 'FOIA-2026-0412', 'FOIA-2026-0891', 'RFP-2024-HEALTH', 'PO-2024-HEALTH-01', or 'ALL')."
+
+    ps_get_employee_record_documents:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Skill 3.2 (Redaction & FOIA Compliance): Retrieves employee record attributes and attached ethics/medical/tax/CJIS audit exhibits (VW_GOV_FOIA_RECORDS) for an agency employee referenced in a public records request so sensitive PII, PHI, FTI, and CJIS fields can be identified and redacted."
+        statement: |
+          SELECT
+            PERSON_ID,
+            EMPLOYEE_NUMBER,
+            EMPLOYEE_NAME,
+            RAW_SSN,
+            RAW_DOB,
+            OFFICIAL_EMAIL,
+            FOIA_REQUEST_ID,
+            SOLICITATION_OR_CASE_REF,
+            DOCUMENT_ID,
+            FILE_NAME,
+            DOCUMENT_TITLE,
+            FULL_DOCUMENT_CONTENT
+          FROM SYSADM.VW_GOV_FOIA_RECORDS
+          WHERE UPPER('ALL * ' || TO_CHAR(PERSON_ID) || ' ' || EMPLOYEE_NUMBER || ' ' || EMPLOYEE_NAME || ' ' || FOIA_REQUEST_ID || ' ' || SOLICITATION_OR_CASE_REF)
+                LIKE '%' || UPPER(NVL(:employee_query, '')) || '%'
+          ORDER BY PERSON_ID
+        parameters:
+          - name: employee_query
+            type: string
+            required: false
+            default: ""
+            description: "Employee number, employee name, person ID, or FOIA reference (e.g. 'EMP-FOIA-1042', 'EMP-FOIA-2088', 'Jordan Vance', 'Elena Mercer', '990301', or 'ALL')."
+
+    ps_get_policy_catalog_rules:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Skill 3.3 (Policy & Statute Assistant): Queries structured procurement approval thresholds, policy catalog control groups, and dollar limits from Oracle PeopleSoft Purchasing & Policy Catalog (VW_GOV_AGENCY_POLICY_RULES)."
+        statement: |
+          SELECT
+            CONTROL_GROUP_ID,
+            POLICY_RULE_SET,
+            POLICY_DOMAIN_DESCRIPTION,
+            CONTROL_RULE_ID,
+            THRESHOLD_CATEGORY,
+            DOLLAR_THRESHOLD_USD,
+            POLICY_DOCUMENT_ID,
+            TRANSMITTAL_TITLE
+          FROM SYSADM.VW_GOV_AGENCY_POLICY_RULES
+          WHERE UPPER('ALL * ' || POLICY_RULE_SET || ' ' || POLICY_DOMAIN_DESCRIPTION || ' ' || THRESHOLD_CATEGORY || ' ' || NVL(TRANSMITTAL_TITLE, ''))
+                LIKE '%' || UPPER(NVL(:policy_query, '')) || '%'
+          ORDER BY CONTROL_RULE_ID
+        parameters:
+          - name: policy_query
+            type: string
+            required: false
+            default: ""
+            description: "Policy rule set name, threshold category, state, or keyword (e.g. 'CO-STATE-PROCUREMENT-2026', 'FED-SLG-STATUTE-2026', 'DISCRETIONARY_LIMIT', 'Colorado', or 'ALL')."
+
+    ps_search_policy_documents:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Skill 3.3 (Policy & Statute Assistant): Searches and retrieves the full text of official agency statutory and regulatory policy transmittals (SNAP, Medicaid, OBBBA Pub. L. 119-21 preemption, State Procurement Code C.R.S. 24-103, 2 CFR Part 200, ABAWD FRA Phase-In, VPPA) stored in Oracle PeopleSoft (VW_GOV_AGENCY_POLICY_RULES)."
+        statement: |
+          SELECT
+            POLICY_DOCUMENT_ID,
+            POLICY_RULE_SET,
+            TRANSMITTAL_TITLE,
+            STATUTORY_POLICY_TEXT
+          FROM SYSADM.VW_GOV_AGENCY_POLICY_RULES
+          WHERE CONTROL_RULE_ID IN (990401, 990403)
+            AND UPPER('ALL * ' || POLICY_RULE_SET || ' ' || NVL(TRANSMITTAL_TITLE, '') || ' ' || NVL(STATUTORY_POLICY_TEXT, ''))
+                LIKE '%' || UPPER(NVL(:search_term, '')) || '%'
+          ORDER BY POLICY_DOCUMENT_ID
+        parameters:
+          - name: search_term
+            type: string
+            required: false
+            default: ""
+            description: "Statutory citation, regulation, program name, or policy keyword (e.g. '273.1', 'OBBBA', '24-103-205', 'SNAP', 'Medicaid', 'ABAWD', 'VPPA', or 'ALL')."
+
+    ps_get_constituent_documents:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Skill 3.4 (Document Intake Cleanup & Validation): Retrieves staged citizen document intake packets, Gate A optical/geometric telemetry (Laplacian focus variance, skew angle, 4-corner framing), per-field OCR confidence scores, and Gate C gross-to-net / YTD paystub math from Oracle PeopleSoft (VW_GOV_INTAKE_DOCUMENTS)."
+        statement: |
+          SELECT
+            PARTY_ID,
+            PARTY_NUMBER,
+            CASE_NUMBER,
+            APPLICANT_LEGAL_NAME,
+            MASKED_SSN_HASH,
+            INTAKE_DOCUMENT_ID,
+            STAGED_FILE_NAME,
+            DOCUMENT_DESCRIPTION,
+            INTAKE_OCR_AND_TELEMETRY_PAYLOAD
+          FROM SYSADM.VW_GOV_INTAKE_DOCUMENTS
+          WHERE UPPER('ALL * ' || CASE_NUMBER || ' ' || PARTY_NUMBER || ' ' || APPLICANT_LEGAL_NAME || ' ' || STAGED_FILE_NAME || ' ' || NVL(INTAKE_OCR_AND_TELEMETRY_PAYLOAD, ''))
+                LIKE '%' || UPPER(NVL(:case_or_doc_query, '')) || '%'
+          ORDER BY PARTY_ID
+        parameters:
+          - name: case_or_doc_query
+            type: string
+            required: false
+            default: ""
+            description: "Case number, constituent ID, applicant name, or filename (e.g. 'SNAP-94821', 'TANF-2026-8812', 'HUD-SEC8-4102', 'LIHEAP-8821', 'Maria Elena Rodriguez', 'Marcus Vance', or 'ALL')."
+
+    ps_verify_constituent_data:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Skill 3.4 (Document Intake Cleanup & Validation): Cross-checks extracted citizen applicant name, masked SSN, and residential address against Oracle PeopleSoft Constituent/Customer Master (PS_CUSTOMER / VW_GOV_INTAKE_DOCUMENTS) records."
+        statement: |
+          SELECT
+            PARTY_ID,
+            PARTY_NUMBER,
+            CASE_NUMBER,
+            APPLICANT_LEGAL_NAME,
+            MASKED_SSN_HASH,
+            VERIFIED_STREET_ADDRESS,
+            VERIFIED_CITY,
+            VERIFIED_STATE,
+            VERIFIED_ZIP,
+            TCA_PARTY_STATUS
+          FROM SYSADM.VW_GOV_INTAKE_DOCUMENTS
+          WHERE UPPER('ALL * ' || CASE_NUMBER || ' ' || PARTY_NUMBER || ' ' || APPLICANT_LEGAL_NAME || ' ' || NVL(MASKED_SSN_HASH, '') || ' ' || NVL(VERIFIED_CITY, ''))
+                LIKE '%' || UPPER(NVL(:party_query, '')) || '%'
+          ORDER BY PARTY_ID
+        parameters:
+          - name: party_query
+            type: string
+            required: false
+            default: ""
+            description: "Applicant name, case number, constituent ID, or masked SSN (e.g. 'Maria Elena Rodriguez', 'SNAP-94821', 'CIT-94821', 'Marcus Vance', 'Clara E. Vance', or 'ALL')."
+
+    ps_get_strategic_sourcing_event:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Skill 3.5 (RFP Vendor Evaluation Scorer): Retrieves Strategic Sourcing RFP event header details, issued addenda (Addendum 1 & 2), Section M.1 Minimum Mandatory Qualifications (MQs), and Section M.2 Scored Evaluation Criteria from Oracle PeopleSoft Strategic Sourcing (PS_AUC_HDR / VW_GOV_SOURCING_RFPS)."
+        statement: |
+          SELECT
+            AUCTION_HEADER_ID,
+            RFP_NUMBER,
+            SOLICITATION_TITLE,
+            AUCTION_STATUS,
+            DOCUMENT_ID,
+            SOLICITATION_PACKAGE_FILE,
+            RFP_AND_BIDS_EVIDENCE_DOSSIER
+          FROM SYSADM.VW_GOV_SOURCING_RFPS
+          WHERE BID_NUMBER IN (990511, 990521, 990531)
+            AND UPPER('ALL * ' || RFP_NUMBER || ' ' || SOLICITATION_TITLE || ' ' || TO_CHAR(AUCTION_HEADER_ID))
+                LIKE '%' || UPPER(NVL(:rfp_number, '')) || '%'
+          ORDER BY AUCTION_HEADER_ID
+        parameters:
+          - name: rfp_number
+            type: string
+            required: false
+            default: ""
+            description: "Strategic Sourcing RFP event number, auction ID, or keyword (e.g. 'RFP-2026-CLOUD-MOD', 'RFP-N00061838C', '41900-DCH0000120', '990501', or 'ALL')."
+
+    ps_get_vendor_responses:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Skill 3.5 (RFP Vendor Evaluation Scorer): Retrieves vendor bid responses, bid prices, MQ compliance evidence, and cross-document proposal sections from Oracle PeopleSoft Strategic Sourcing (VW_GOV_SOURCING_RFPS) for a given RFP event or vendor."
+        statement: |
+          SELECT
+            AUCTION_HEADER_ID,
+            RFP_NUMBER,
+            BID_NUMBER,
+            VENDOR_NAME,
+            TOTAL_BID_PRICE_USD,
+            BID_STATUS,
+            SOLICITATION_PACKAGE_FILE,
+            RFP_AND_BIDS_EVIDENCE_DOSSIER
+          FROM SYSADM.VW_GOV_SOURCING_RFPS
+          WHERE UPPER('ALL * ' || RFP_NUMBER || ' ' || VENDOR_NAME || ' ' || TO_CHAR(BID_NUMBER) || ' ' || NVL(RFP_AND_BIDS_EVIDENCE_DOSSIER, ''))
+                LIKE '%' || UPPER(NVL(:bid_or_rfp_query, '')) || '%'
+          ORDER BY BID_NUMBER
+        parameters:
+          - name: bid_or_rfp_query
+            type: string
+            required: false
+            default: ""
+            description: "RFP number, vendor name, or bid number (e.g. 'RFP-2026-CLOUD-MOD', 'CivicCloud', 'LegacyGov', 'MetroTech', 'Helios', 'Conduent', '990511', or 'ALL')."
+
+    ps_get_expense_sheets:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Skill 3.6 (Expense Auditor): Retrieves PeopleSoft Travel and Expenses sheet headers (PS_EX_SHEET_HDR), itemized expense lines (PS_EX_SHEET_LINE), GSA per-diem audit notes, and attached hotel/flight receipt OCR folios from Oracle PeopleSoft Expenses (VW_GOV_EXPENSE_REPORTS)."
+        statement: |
+          SELECT
+            REPORT_HEADER_ID,
+            EXPENSE_REPORT_NUMBER,
+            REPORT_DATE,
+            REPORT_SUMMARY_AND_AWARD,
+            REPORT_TOTAL_CLAIMED_USD,
+            EXPENSE_STATUS_CODE,
+            REPORT_LINE_ID,
+            LINE_NUM,
+            EXPENSE_LINE_DESCRIPTION,
+            LINE_CLAIMED_AMOUNT_USD,
+            REGULATORY_AUDIT_NOTE,
+            ATTACHED_FOLIO_OCR_TRANSCRIPT
+          FROM SYSADM.VW_GOV_EXPENSE_REPORTS
+          WHERE UPPER('ALL * ' || EXPENSE_REPORT_NUMBER || ' ' || REPORT_SUMMARY_AND_AWARD || ' ' || NVL(EXPENSE_LINE_DESCRIPTION, ''))
+                LIKE '%' || UPPER(NVL(:report_query, '')) || '%'
+          ORDER BY REPORT_HEADER_ID, LINE_NUM
+        parameters:
+          - name: report_query
+            type: string
+            required: false
+            default: ""
+            description: "Expense sheet number, claimant name, federal grant award ID, or city (e.g. 'EXP-ATL-9921', 'EXP-ATL-9921-V2', 'EXP-DEN-5521', 'EXP-CHI-8812', 'Marcus Sterling', 'DOJ-JUST-2026', 'NSF-ENG-2025-44', or 'ALL')."
+
+    ps_get_voucher_details:
+        kind: oracle-sql
+        source: psft-oracle-source
+        description: "Skill 3.6 (Expense Auditor): Retrieves PeopleSoft Accounts Payable vendor vouchers (PS_VOUCHER), matched Purchase Orders (PS_PO_HDR), procurement method notes (sole source vs. competitive quotes), and PeopleSoft Grants award Period of Performance / NICRA metadata (PS_GM_AWARD, VW_GOV_PO_INVOICE_MATCH)."
+        statement: |
+          SELECT
+            INVOICE_ID,
+            INVOICE_NUM,
+            INVOICE_DATE,
+            INVOICE_TOTAL_USD,
+            INVOICE_AND_GRANT_LINE_DETAILS,
+            PO_HEADER_ID,
+            MATCHED_PO_NUMBER,
+            PO_STATUS,
+            PO_PROCUREMENT_METHOD_NOTES,
+            FEDERAL_GRANT_AWARD_ID,
+            FEDERAL_GRANT_TITLE,
+            GRANT_POP_START,
+            GRANT_POP_END
+          FROM SYSADM.VW_GOV_PO_INVOICE_MATCH
+          WHERE UPPER('ALL * ' || INVOICE_NUM || ' ' || NVL(MATCHED_PO_NUMBER, '') || ' ' || NVL(FEDERAL_GRANT_AWARD_ID, '') || ' ' || NVL(INVOICE_AND_GRANT_LINE_DETAILS, ''))
+                LIKE '%' || UPPER(NVL(:invoice_or_po_query, '')) || '%'
+          ORDER BY INVOICE_ID
+        parameters:
+          - name: invoice_or_po_query
+            type: string
+            required: false
+            default: ""
+            description: "AP Voucher/Invoice number, PO number, vendor name, or federal grant award ID (e.g. 'HM-4409', 'HM-4409-V2', 'V-2026-301', 'MS-1049', 'PO-7801', 'HRSA-RURAL-2026', 'CDC-CHRONIC-26', 'NOAA-OCN-25-12', or 'ALL')."

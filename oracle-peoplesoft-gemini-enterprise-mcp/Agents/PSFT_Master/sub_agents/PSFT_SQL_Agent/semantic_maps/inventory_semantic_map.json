@@ -1,0 +1,61 @@
+{
+  "module": "PeopleSoft Inventory (IN)",
+  "description": "PeopleSoft FSCM 9.2 Inventory on-hand quantities, item master, and reservations.",
+  "tables": [
+    {
+      "table_name": "SYSADM.PS_PHYSICAL_INV",
+      "business_name": "Inventory On-Hand Balances",
+      "description": "Stores item quantities by BUSINESS_UNIT, INV_ITEM_ID, and STORAGE_AREA.",
+      "columns": [
+        {
+          "name": "BUSINESS_UNIT",
+          "description": "Inventory Business Unit (e.g., US001)."
+        },
+        {
+          "name": "INV_ITEM_ID",
+          "description": "Inventory Item ID (e.g., 10000)."
+        },
+        {
+          "name": "STORAGE_AREA",
+          "description": "Storage area code."
+        },
+        {
+          "name": "QTY",
+          "description": "Total quantity on hand."
+        },
+        {
+          "name": "QTY_RESERVED",
+          "description": "Reserved quantity."
+        }
+      ]
+    },
+    {
+      "table_name": "SYSADM.PS_GOV_INV_RESERVATIONS",
+      "business_name": "Inventory Reservations",
+      "description": "Stores active item reservations created via GE_PSFT_MCP_TOOLS.",
+      "columns": [
+        {
+          "name": "RESERVATION_ID",
+          "description": "Reservation ID."
+        },
+        {
+          "name": "BUSINESS_UNIT",
+          "description": "Business Unit."
+        },
+        {
+          "name": "INV_ITEM_ID",
+          "description": "Item ID."
+        },
+        {
+          "name": "DEMAND_SOURCE_HEADER_ID",
+          "description": "Sales order or demand header ID."
+        },
+        {
+          "name": "RESERVATION_QUANTITY",
+          "description": "Reserved quantity."
+        }
+      ]
+    }
+  ],
+  "common_joins": []
+}
