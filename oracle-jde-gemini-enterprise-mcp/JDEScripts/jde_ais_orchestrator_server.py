@@ -38,6 +38,14 @@ _db_pool: Optional[oracledb.ConnectionPool] = None
 _pool_lock = threading.Lock()
 
 
+def _reset_session_identifier(conn, requested_tag):
+    try:
+        with conn.cursor() as cur:
+            cur.execute("BEGIN DBMS_SESSION.CLEAR_IDENTIFIER; END;")
+    except Exception:
+        pass
+
+
 def get_pool() -> oracledb.ConnectionPool:
     global _db_pool
     if _db_pool is None:
@@ -51,6 +59,7 @@ def get_pool() -> oracledb.ConnectionPool:
                     min=1,
                     max=10,
                     increment=1,
+                    session_callback=_reset_session_identifier,
                 )
     return _db_pool
 
@@ -1329,6 +1338,10 @@ def form_service(body: dict, request: Request):
     rowset = []
     with pool.acquire() as conn:
         with conn.cursor() as cur:
+            try:
+                cur.execute("BEGIN DBMS_SESSION.CLEAR_IDENTIFIER; END;")
+            except Exception:
+                pass
             if "P48013" in form_name:
                 cur.execute(
                     """
@@ -1397,6 +1410,10 @@ def jde_web_portal():
     pool = get_pool()
     with pool.acquire() as conn:
         with conn.cursor() as cur:
+            try:
+                cur.execute("BEGIN DBMS_SESSION.CLEAR_IDENTIFIER; END;")
+            except Exception:
+                pass
             cur.execute(
                 """
                 SELECT WATCHLIST_ID, WATCHLIST_NAME, JDE_PROGRAM_ID, DETECTION_MODE,

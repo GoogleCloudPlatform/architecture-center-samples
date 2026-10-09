@@ -16,7 +16,7 @@ def load_semantic_maps(base_dir: str) -> list:
         filepath = os.path.join(maps_dir, filename)
         if os.path.exists(filepath):
             try:
-                with open(filepath, "r") as f:
+                with open(filepath, "r", encoding="utf-8") as f:
                     maps.append(json.load(f))
             except Exception as e:
                 logger.error(f"Error loading {filename}: {e}", exc_info=True)

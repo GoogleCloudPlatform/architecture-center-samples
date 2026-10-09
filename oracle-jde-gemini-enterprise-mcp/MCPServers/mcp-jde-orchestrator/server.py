@@ -995,7 +995,11 @@ async def jde_resolve_dmaai_accounting_exception(
           "JDE Orchestrator"
           " (/jderest/v3/orchestrator/ORCH_ResolveDMAAIException)"
       ),
-      "status": result.get("status", "SUCCESS"),
+      "status": (
+          result.get("status", "SUCCESS")
+          if isinstance(result, dict)
+          else "ERROR"
+      ),
       "orchestrator_response": result,
   }
 
@@ -1123,7 +1127,7 @@ async def jde_generate_a2ui_exception_approval_card(
 # ==============================================================================
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 import uvicorn
 import inspect
 
@@ -1184,8 +1188,29 @@ async def mcp_jsonrpc(request: Request):
     if clean_email and clean_email not in ("default_user", "user", "anonymous"):
       _request_user_email.set(clean_email)
 
-  body = await request.json()
-  req_id = body.get("id", 1)
+  try:
+    body = await request.json()
+  except Exception:
+    return JSONResponse(
+        status_code=400,
+        content={
+            "jsonrpc": "2.0",
+            "id": None,
+            "error": {"code": -32700, "message": "Parse error"},
+        },
+    )
+
+  if not isinstance(body, dict):
+    return JSONResponse(
+        status_code=400,
+        content={
+            "jsonrpc": "2.0",
+            "id": None,
+            "error": {"code": -32600, "message": "Invalid Request"},
+        },
+    )
+
+  req_id = body.get("id")
   method = body.get("method", "")
   params = body.get("params", {}) or {}
 
@@ -1202,8 +1227,8 @@ async def mcp_jsonrpc(request: Request):
             },
         },
     }
-  elif method.startswith("notifications/"):
-    return JSONResponse(status_code=200, content={"jsonrpc": "2.0", "id": req_id, "result": {}})
+  elif method.startswith("notifications/") or "id" not in body:
+    return Response(status_code=204)
   elif method == "tools/list":
     tools_meta = await mcp.list_tools()
     return {

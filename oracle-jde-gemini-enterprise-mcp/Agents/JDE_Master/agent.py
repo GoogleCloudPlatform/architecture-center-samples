@@ -105,6 +105,8 @@ def _build_safe_user_context(user_id: str) -> dict:
 
 
 def _extract_existing_session_user_id(tool_context: ToolContext):
+    if tool_context is None:
+        return None
     direct_user_id = getattr(tool_context, "user_id", None)
     if isinstance(direct_user_id, str) and "@" in direct_user_id.strip():
         return direct_user_id.strip()
