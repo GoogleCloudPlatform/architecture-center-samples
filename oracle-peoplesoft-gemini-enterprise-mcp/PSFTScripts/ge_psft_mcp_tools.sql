@@ -117,21 +117,29 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
          WHERE OPRID = 'VP1';
     END;
 
-    MERGE INTO SYSADM.PS_GOV_MCP_SESSION_CTX t
-    USING (SELECT NVL(SYS_CONTEXT('USERENV', 'SESSIONID'), 'ACTIVE_SESSION') AS SESSION_KEY FROM DUAL) s
-       ON (t.SESSION_KEY = s.SESSION_KEY)
-     WHEN MATCHED THEN
-       UPDATE SET OPRID = v_oprid,
-                  OPRDEFNDESC = v_oprdesc,
-                  EMAILID = v_email,
-                  EMPLID = v_emplid,
-                  BUSINESS_UNIT = v_bu,
-                  SETID = v_setid,
-                  ROLENAME = v_role,
-                  INITIALIZED_DTTM = CURRENT_TIMESTAMP
-     WHEN NOT MATCHED THEN
-       INSERT (SESSION_KEY, OPRID, OPRDEFNDESC, EMAILID, EMPLID, BUSINESS_UNIT, SETID, ROLENAME, INITIALIZED_DTTM)
-       VALUES (s.SESSION_KEY, v_oprid, v_oprdesc, v_email, v_emplid, v_bu, v_setid, v_role, CURRENT_TIMESTAMP);
+    FOR r_key IN (
+      SELECT DISTINCT column_value AS session_key
+        FROM TABLE(SYS.ODCIVARCHAR2LIST(
+               NVL(TO_CHAR(SYS_CONTEXT('USERENV', 'SESSIONID')), 'ACTIVE_SESSION'),
+               'ACTIVE_SESSION'
+             ))
+    ) LOOP
+      MERGE INTO SYSADM.PS_GOV_MCP_SESSION_CTX t
+      USING (SELECT r_key.session_key AS SESSION_KEY FROM DUAL) s
+         ON (t.SESSION_KEY = s.SESSION_KEY)
+       WHEN MATCHED THEN
+         UPDATE SET OPRID = v_oprid,
+                    OPRDEFNDESC = v_oprdesc,
+                    EMAILID = v_email,
+                    EMPLID = v_emplid,
+                    BUSINESS_UNIT = v_bu,
+                    SETID = v_setid,
+                    ROLENAME = v_role,
+                    INITIALIZED_DTTM = CURRENT_TIMESTAMP
+       WHEN NOT MATCHED THEN
+         INSERT (SESSION_KEY, OPRID, OPRDEFNDESC, EMAILID, EMPLID, BUSINESS_UNIT, SETID, ROLENAME, INITIALIZED_DTTM)
+         VALUES (s.SESSION_KEY, v_oprid, v_oprdesc, v_email, v_emplid, v_bu, v_setid, v_role, CURRENT_TIMESTAMP);
+    END LOOP;
 
     DBMS_APPLICATION_INFO.SET_CLIENT_INFO(v_oprid || ':' || v_bu || ':' || v_setid);
     COMMIT;
