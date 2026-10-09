@@ -89,10 +89,15 @@ _DEFAULT_JDE_CONTEXT: Dict[str, Any] = {
     "environment": JDE_ENVIRONMENT,
 }
 
+import collections
+
+_MAX_USER_CONTEXT_CACHE = 1000
 _context_lock = threading.Lock()
-_user_contexts_by_email: Dict[str, Dict[str, Any]] = {
-    DEFAULT_USER_EMAIL.lower(): dict(_DEFAULT_JDE_CONTEXT)
-}
+_user_contexts_by_email: "collections.OrderedDict[str, Dict[str, Any]]" = (
+    collections.OrderedDict(
+        {DEFAULT_USER_EMAIL.lower(): dict(_DEFAULT_JDE_CONTEXT)}
+    )
+)
 _request_user_email: contextvars.ContextVar[str] = contextvars.ContextVar(
     "request_user_email", default=DEFAULT_USER_EMAIL
 )
@@ -103,8 +108,11 @@ def get_active_jde_context() -> Dict[str, Any]:
   email_key = (_request_user_email.get() or DEFAULT_USER_EMAIL).strip().lower()
   with _context_lock:
     if email_key in _user_contexts_by_email:
+      _user_contexts_by_email.move_to_end(email_key)
       return dict(_user_contexts_by_email[email_key])
     ctx = {**_DEFAULT_JDE_CONTEXT, "email_or_user": email_key}
+    if len(_user_contexts_by_email) >= _MAX_USER_CONTEXT_CACHE:
+      _user_contexts_by_email.popitem(last=False)
     _user_contexts_by_email[email_key] = ctx
     return dict(ctx)
 
@@ -115,6 +123,10 @@ def set_active_jde_context(ctx: Dict[str, Any]) -> None:
   email_key = email_val.lower()
   _request_user_email.set(email_val)
   with _context_lock:
+    if email_key in _user_contexts_by_email:
+      _user_contexts_by_email.move_to_end(email_key)
+    elif len(_user_contexts_by_email) >= _MAX_USER_CONTEXT_CACHE:
+      _user_contexts_by_email.popitem(last=False)
     _user_contexts_by_email[email_key] = dict(ctx)
 
 
@@ -699,26 +711,11 @@ async def jde_issue_material_to_work_order(
         "status": "SUCCESS",
         "orchestrator_response": result,
     }
-  except Exception:
-    result = await jde_client.formservice_action(
-        form_name="P31113_W31113A",
-        version="ZJDE0001",
-        form_inputs=[{"id": "1", "value": str(work_order_number)}],
-        form_actions=[
-            {"command": "DoAction", "controlID": "15"},
-            {
-                "command": "SetGridCellValue",
-                "controlID": "1[0].28",
-                "value": str(quantity_to_issue),
-            },
-            {"command": "DoAction", "controlID": "12"},
-        ],
-    )
-    return {
-        "engine": "JDE AIS Form Service (/jderest/v2/formservice P31113)",
-        "status": "SUCCESS",
-        "ais_response": result,
-    }
+  except Exception as exc:
+    raise RuntimeError(
+        "ORCH_IssueMaterialToWorkOrder failed to issue component "
+        f"'{component_item_number}' to Work Order {work_order_number}: {exc}"
+    ) from exc
 
 
 @mcp.tool()

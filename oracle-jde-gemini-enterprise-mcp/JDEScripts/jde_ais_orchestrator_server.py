@@ -157,7 +157,7 @@ def check_f00950_security(cur, jde_user: str, app_id: str, branch_plant: str) ->
             {"u": jde_user.strip().upper(), "app": app_id.strip().upper(), "mcu": branch_plant.strip().upper()},
         )
         row = cur.fetchone()
-        if row and (row[0] != "Y" or row[1] != "Y"):
+        if not row or (row[0] != "Y" or row[1] != "Y"):
             raise HTTPException(
                 status_code=403,
                 detail=f"JDE Security Workbench (F00950) denied action on {app_id} for user {jde_user} in Branch/Plant {branch_plant}",
@@ -185,9 +185,14 @@ def log_audit(
         wo_num = payload.get("WorkOrderNumber") if isinstance(payload, dict) else None
         cur.execute(
             """
-            INSERT INTO PRODDTA.GGLTOOLBOX$MCP_LOG
-              (TOOL_NAME, JDE_USER, WORK_ORDER_NUM, PARAMETERS, EXECUTION_MODE, STATUS)
-            VALUES (:t, :usr, :wo, :p, :a, :s)
+            DECLARE
+              PRAGMA AUTONOMOUS_TRANSACTION;
+            BEGIN
+              INSERT INTO PRODDTA.GGLTOOLBOX$MCP_LOG
+                (TOOL_NAME, JDE_USER, WORK_ORDER_NUM, PARAMETERS, EXECUTION_MODE, STATUS)
+              VALUES (:t, :usr, :wo, :p, :a, :s);
+              COMMIT;
+            END;
             """,
             {
                 "t": f"{tool_name}:{target_object}"[:128],

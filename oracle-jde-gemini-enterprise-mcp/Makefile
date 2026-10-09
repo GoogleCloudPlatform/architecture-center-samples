@@ -95,16 +95,16 @@ destroy_mcp_server: ## Destroy JDE MCP Server
 
 plan_jde_agents: ## Plan Terraform for JDE Manufacturing AI Agent (JDE_Master)
 	@touch infra.auto.tfvars
-	$(eval MCP_URL=$(shell gcloud run services describe mcp-jde-orchestrator --project $(PROJECT_ID) --region $(REGION) --format 'value(status.url)' 2>/dev/null))
-	@if [ -z "$(MCP_URL)" ]; then \
+	@MCP_URL=$$(gcloud run services describe mcp-jde-orchestrator --project $(PROJECT_ID) --region $(REGION) --format 'value(status.url)' 2>/dev/null); \
+	if [ -z "$$MCP_URL" ]; then \
 		echo "Error: Could not find JDE MCP Server URL in region $(REGION). Is it deployed?"; \
 		exit 1; \
-	fi
-	@echo "Found JDE MCP URL: $(MCP_URL)/mcp"
-	@if grep -q "mcp_server_jde_url" infra.auto.tfvars; then \
-		sed -i.bak "s|^mcp_server_jde_url[[:space:]]*=.*|mcp_server_jde_url = \"$(MCP_URL)/mcp\"|" infra.auto.tfvars && rm infra.auto.tfvars.bak; \
+	fi; \
+	echo "Found JDE MCP URL: $$MCP_URL/mcp"; \
+	if grep -q "mcp_server_jde_url" infra.auto.tfvars; then \
+		sed -i.bak "s|^mcp_server_jde_url[[:space:]]*=.*|mcp_server_jde_url = \"$$MCP_URL/mcp\"|" infra.auto.tfvars && rm infra.auto.tfvars.bak; \
 	else \
-		echo "mcp_server_jde_url = \"$(MCP_URL)/mcp\"" >> infra.auto.tfvars; \
+		echo "mcp_server_jde_url = \"$$MCP_URL/mcp\"" >> infra.auto.tfvars; \
 	fi
 	terraform -chdir=$(TF_DIR) plan -target="null_resource.oracle_jde_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
 

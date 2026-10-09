@@ -17,6 +17,8 @@ resource "null_resource" "oracle_jde_gemini_enterprise_mcp_server" {
     deploy_script_hash = filemd5("${path.module}/MCPServers/mcp-jde-orchestrator/deploy.sh")
     env_template_hash  = filemd5("${path.module}/MCPServers/mcp-jde-orchestrator/.env.example")
     server_py_hash     = filemd5("${path.module}/MCPServers/mcp-jde-orchestrator/server.py")
+    dockerfile_hash    = filemd5("${path.module}/MCPServers/mcp-jde-orchestrator/Dockerfile")
+    requirements_hash  = filemd5("${path.module}/MCPServers/mcp-jde-orchestrator/requirements.txt")
   }
 
   provisioner "local-exec" {

@@ -16,13 +16,16 @@ resource "null_resource" "oracle_jde_gemini_enterprise_framework" {
   triggers = {
     deploy_script_hash = filemd5("${path.module}/Agents/deploy_gcloud.sh")
     env_template_hash  = filemd5("${path.module}/Agents/JDE_Master/env.example")
+    agent_code_hash    = sha256(join("", [for f in fileset("${path.module}/Agents/JDE_Master", "**/*.py") : filemd5("${path.module}/Agents/JDE_Master/${f}")]))
   }
 
   provisioner "local-exec" {
     command = <<EOT
       set -e
 
-      python3 -m venv .venv
+      if [ ! -d ".venv" ]; then
+        python3 -m venv .venv
+      fi
       . .venv/bin/activate
 
       pip install --upgrade pip
