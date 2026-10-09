@@ -1,0 +1,5 @@
+DISABLED: tables not in the HCM database HR92U054 (ORA-00942 on 2026-10-08); enable on an FSCM/Campus database.
+Retrieves AP vouchers, matched PO lines, receiving records, and federal grant budget charts from PeopleSoft Payables and Purchasing.
+Underlying Tables: PS_VOUCHER, PS_VOUCHER_LINE, PS_VCHR_LINE_WTHD, PS_PO_HDR, PS_PO_LINE_DISTRIB, PS_RECV_LN_SHIP, PS_PROJECT_RESOURCE.
+Procedures/APIs: Component Interface VOUCHER.CI, IB Service VOUCHER_BUILD.v1.
+Security Context: Accounts Payable business unit security.

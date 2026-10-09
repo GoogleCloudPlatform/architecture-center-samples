@@ -1,0 +1,6 @@
+Lists expense reports (one row per report, no line items or receipts) so an auditor can find reports to review.
+Every parameter is optional: pass an empty string to leave a filter off. Returns 50 reports per call, newest first, with the submitting employee (ID and name), total, status, line count, policy violation count, lines flagged receipt missing, lines whose required receipt is not verified, and the number of electronic attachments.
+Paging: total_matches is the number of reports that match the filters, and more_rows_follow is 'Y' when more remain. Pass offset 50, 100, ... to fetch the next pages.
+Use this tool to discover valid values for :report_header_id and :employee_id before calling ebs_get_expense_reports.
+Underlying Tables: AP_EXPENSE_REPORT_HEADERS_ALL, AP_EXPENSE_REPORT_LINES_ALL, AP_POL_VIOLATIONS_ALL, FND_ATTACHED_DOCUMENTS, PER_ALL_PEOPLE_F.
+Security Context: Financial auditor responsibility context (fnd_global.apps_initialize).

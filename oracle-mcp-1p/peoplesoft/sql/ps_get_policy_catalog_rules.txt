@@ -1,0 +1,5 @@
+DISABLED: tables not in the HCM database HR92U054 (ORA-00942 on 2026-10-08); enable on an FSCM/Campus database.
+Queries expense per-diem tables, delegation of authority rules, and regulatory compliance setups in PeopleSoft FSCM.
+Underlying Tables: PS_EX_POLICY_TBL, PS_EX_LOC_DTL, PS_EX_PER_DIEM_TBL, PS_PO_APPR_RULE, PS_APPROVAL_RULE.
+Procedures/APIs: Integration Broker Service EX_GET_POLICY_RULES.v1, CI EX_POLICY_TBL_CI.
+Security Context: SetID business unit security context.

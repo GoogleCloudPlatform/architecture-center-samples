@@ -1,0 +1,4 @@
+Retrieves employee personnel files, performance reviews, and absence documentation from EBS HRMS.
+Underlying Tables: PER_ALL_PEOPLE_F, PER_ALL_ASSIGNMENTS_F, PER_PERFORMANCE_REVIEWS, PER_ABSENCE_ATTENDANCES, FND_LOBS.
+APIs: HR_PERSON_API.GET_PERSON_DETAILS, View: APPS_AI.VW_FOIA_PERSONNEL_FILE.
+Security Context: Security profile context (fnd_profile.value('PER_SECURITY_PROFILE_ID')).

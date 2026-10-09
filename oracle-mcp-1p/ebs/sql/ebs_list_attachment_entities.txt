@@ -1,0 +1,3 @@
+Lists valid attachment business entity names from FND_DOCUMENT_ENTITIES_VL.
+Use this tool to discover valid values for the :entity_name bind variable (e.g. 'PO_HEADERS_ALL', 'RA_CUSTOMER_TRX_ALL', 'AP_INVOICES_ALL', 'PON_BID_HEADERS') used in document attachment tools.
+Underlying View: FND_DOCUMENT_ENTITIES_VL.

@@ -1,0 +1,75 @@
+# Keeps */tools.yaml in sync with the analyst-maintained SQL files in */sql/.
+#
+# - Push to any branch: validates the SQL files, merges changes into tools.yaml,
+#   commits the result back to the same branch, then runs the full validator.
+# - Pull request from a fork (cannot be pushed to): fails if tools.yaml is stale.
+#
+# Commits made with GITHUB_TOKEN do not re-trigger workflows, so there is no loop.
+name: Sync SQL into tools.yaml
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "ebs/**"
+      - "peoplesoft/**"
+      - "scripts/**"
+      - "requirements.txt"
+      - ".github/workflows/sync-tools-yaml.yml"
+  pull_request:
+    paths:
+      - "ebs/**"
+      - "peoplesoft/**"
+      - "scripts/**"
+      - "requirements.txt"
+      - ".github/workflows/sync-tools-yaml.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-tools-yaml-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    # Same-repo PR branches are handled by their push event.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Merge SQL changes into tools.yaml
+        if: github.event_name != 'pull_request'
+        run: python3 scripts/sync_sql_to_yaml.py --diff --no-input
+
+      - name: Check tools.yaml is in sync (fork PR)
+        if: github.event_name == 'pull_request'
+        run: python3 scripts/sync_sql_to_yaml.py --check --diff --no-input
+
+      - name: Commit updated tools.yaml
+        if: github.event_name != 'pull_request'
+        run: |
+          if git diff --quiet -- ebs/tools.yaml peoplesoft/tools.yaml; then
+            echo "tools.yaml already in sync"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ebs/tools.yaml peoplesoft/tools.yaml
+          git commit -m "chore: sync tools.yaml from SQL files" \
+                     -m "Automated by .github/workflows/sync-tools-yaml.yml for ${GITHUB_SHA::7}."
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Validate configurations
+        run: python3 scripts/build_and_validate.py --nocompile   # CI has no database; run it without the flag locally before pushing

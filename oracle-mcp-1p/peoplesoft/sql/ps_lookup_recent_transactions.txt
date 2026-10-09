@@ -1,0 +1,4 @@
+DISABLED: tables not in the HCM database HR92U054 (ORA-00942 on 2026-10-08); enable on an FSCM/Campus database.
+Searches recent AP Vouchers, Purchase Orders, Strategic Sourcing Events, or Expense Sheets.
+Use this tool to discover valid values for transactional bind variables :voucher_id, :invoice_id, :po_id, :event_id, and :sheet_id.
+Underlying Tables: PS_VOUCHER, PS_PO_HDR, PS_AUC_EVENT_HDR, PS_EX_SHEET_HDR.

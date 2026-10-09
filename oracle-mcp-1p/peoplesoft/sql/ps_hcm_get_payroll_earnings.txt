@@ -1,0 +1,5 @@
+Returns paychecks with their earnings rolled up: one row per paycheck with gross, taxes, deductions and net pay, regular and overtime hours and earnings (regular includes hourly and salary amounts), other earnings with their earnings codes, and gross_minus_earnings (paycheck gross less the sum of the earnings lines; a non-zero value means the ledger does not tie). Newest first, at most 200 paychecks.
+Use it to test the compensation side of a grant or project audit (2 CFR 200.430): that payroll for a person and period is consistent and reasonable, and to find off-cycle checks. It does not contain the person's name, address, bank details or national ID.
+Rolled-up earnings, department and account-code counts avoid the row multiplication that listing every earnings line would cause. For project-level charging see ps_hcm_get_labor_distribution.
+Underlying Tables: PS_PAY_CHECK, PS_PAY_EARNINGS, PS_PAY_OTH_EARNS.
+Security Context: Payroll data; use the PL/SQL wrapper and an authorised user in production.

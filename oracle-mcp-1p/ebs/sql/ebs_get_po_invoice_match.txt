@@ -1,0 +1,3 @@
+Retrieves purchase order distributions, matched invoice lines, receiving receipts, and 2 CFR 200 grant project codes from EBS Payables and Purchasing. All three parameters are optional (empty string = no filter) and at most 200 lines are returned.
+Underlying Tables: AP_INVOICES_ALL, AP_INVOICE_LINES_ALL, AP_INVOICE_DISTRIBUTIONS_ALL, PO_HEADERS_ALL, PO_LINES_ALL, RCV_TRANSACTIONS, GMS_AWARD_DISTRIBUTIONS.
+Security Context: Org ID security context; AP auditor role.

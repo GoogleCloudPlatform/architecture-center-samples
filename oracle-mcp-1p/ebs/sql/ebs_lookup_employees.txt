@@ -1,0 +1,3 @@
+Searches Oracle HRMS personnel directory by name or employee number. The national identifier is returned masked (last four characters only); the full value is not exposed by this tool.
+Use this tool to discover valid values for employee bind variables :person_id and :employee_number before invoking personnel file or expense report tools.
+Underlying Table: PER_ALL_PEOPLE_F.

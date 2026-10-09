@@ -1,0 +1,5 @@
+Retrieves attached determination letters, decision notes and case documents from JD Edwards Media Objects for any parent record (A/R invoice, voucher, address book, order).
+Underlying Tables: F00165 (Media Objects Storage), F00166 (Media Object Category Codes).
+JDE Applications: Media Object attachments (paperclip) on any application.
+Data Notes: Text attachments are returned inline in content_blob. File, image and URL attachments return the file name or URL and the media object queue; their bytes live on the media object file server, not in the database.
+Security Context: Attachment visibility follows the parent record's JDE row security; enforced only with the PL/SQL security wrapper.

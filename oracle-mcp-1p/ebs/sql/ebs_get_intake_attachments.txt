@@ -1,0 +1,4 @@
+Retrieves the documents attached to one intake record (for example applicant proof documents such as paystubs, W-2s or utility bills) from the EBS attachment store, in attachment order, with category, data type, title, file name, MIME type, size, upload date and uploader.
+entity_name is required (find it with ebs_list_attachment_entities); the key value alone is not unique across EBS. File data is returned only with include_content = 'Y' and is binary (for example a PDF or image), not text. At most 50 attachments are returned.
+Underlying Tables: FND_ATTACHED_DOCUMENTS, FND_DOCUMENTS, FND_DOCUMENTS_TL, FND_DOCUMENT_CATEGORIES_TL, FND_DOCUMENT_DATATYPES, FND_LOBS, FND_USER.
+Security Context: Per-user security only with the PL/SQL security wrapper.

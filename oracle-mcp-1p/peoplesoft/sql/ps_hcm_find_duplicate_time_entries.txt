@@ -1,0 +1,4 @@
+Finds possible duplicate billing of labor to projects: groups of payable time entries for the same employee, work date, time reporting code, quantity, project and fund that appear more than once. Returns the group, how many entries it holds, their sequence numbers, the estimated gross for the group and the payable statuses involved, largest groups first, at most 200 groups.
+Use it for the duplicate-billing test of the expense auditor skill, on labor charged to projects. Only entries that count as payable (status Approved, Closed, Sent to Payroll, Taken by Payroll or Distributed) are compared, so diluted, ignored, denied and rejected entries do not create false groups. A group is still a lead, not proof: a legitimate second shift looks the same, so check the sequence numbers and payable_statuses.
+Underlying Tables: PS_TL_PAYABLE_TIME.
+Security Context: HCM Time and Labor; no row security applies unless the PL/SQL wrapper is on.

@@ -1,0 +1,3 @@
+Searches the JD Edwards HR employee master by name or employee number; the SSN is masked to its last four digits.
+Use this tool to discover valid values for :employee_an8 and :employee_number before invoking the personnel file or expense report tools.
+Underlying Table: F060116 (Employee Master).

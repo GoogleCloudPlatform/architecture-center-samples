@@ -1,0 +1,4 @@
+Queries one AR transaction (determination, overpayment notice or billing adjustment): the customer, each invoice line with its reason code and meaning, the original and outstanding balance summed over all installments, and the grant award that billed it when the transaction came from Grants Accounting.
+This returns an individual's account data (name, account number, balances); the plain_language_notice_generator skill handles population-level notices only, so use this tool only where individual determinations are in scope.
+Underlying Tables: RA_CUSTOMER_TRX_ALL, RA_CUSTOMER_TRX_LINES_ALL, AR_PAYMENT_SCHEDULES_ALL, HZ_CUST_ACCOUNTS, HZ_PARTIES, AR_LOOKUPS (INVOICING_REASON), PA_PROJECTS_ALL, GMS_AWARDS_ALL.
+Security Context: Operating unit filter (org_id); per-user security only with the PL/SQL security wrapper.

@@ -1,0 +1,4 @@
+Searches agency policy bulletins, administrative guidelines and SOP documents stored as JD Edwards Media Objects, with their document type, status, effective dates and review date.
+Underlying Tables: F00165 (Media Objects Storage), F00166 (Media Object Category Codes).
+Data Notes: Returns metadata only; fetch a document's content with jde_get_media_object_attachment using object_name, text_key and sequence. Pass object_name or document_type when possible: a keyword-only search scans every media object.
+Security Context: Public agency policy documents; attachment visibility follows the parent record's JDE security.

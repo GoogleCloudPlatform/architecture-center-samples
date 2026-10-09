@@ -1,0 +1,5 @@
+DISABLED: tables not in the HCM database HR92U054 (ORA-00942 on 2026-10-08); enable on an FSCM/Campus database.
+Retrieves expense reports, itemized receipts, and accounting chartfields from PeopleSoft Expenses.
+Underlying Tables: PS_EX_SHEET_HDR, PS_EX_SHEET_LINE, PS_EX_SHEET_DIST, PS_EX_ATT_TBL, PS_ATTACHMENT_TBL.
+Procedures/APIs: Component Interface EX_EXP_SHEET.CI, IB Service EX_GET_EXPENSE_REPORT.v1.
+Security Context: Expenses auditor permission list; SetID security.

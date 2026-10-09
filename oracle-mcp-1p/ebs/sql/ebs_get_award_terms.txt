@@ -1,0 +1,6 @@
+Retrieves grant award terms from Oracle Grants Accounting: number, name, status, type, purpose, sponsor award number, active period (start, end, close date), award manager, funded direct and indirect amounts from the installments, and the current budget totals.
+period_status compares the award period with as_of_date (empty string = today) as WITHIN_PERIOD, NOT_STARTED or PAST_END_DATE, so an expense date can be tested against the period of performance.
+Use this tool to find the award behind an expense line (see award_number on ebs_get_expense_reports) before testing allowability. All parameters are optional: pass an empty string to leave a filter off. Returns at most 50 awards.
+The sponsor and funding-source tables are not readable by this database user, so only funding_source_id and sponsor_award_number are returned; whether an award is federal, state or local must be confirmed from the award documents.
+Underlying Tables: GMS_AWARDS_ALL, GMS_INSTALLMENTS, GMS_BUDGET_VERSIONS, PER_ALL_PEOPLE_F.
+Security Context: Standard APPS schema access; Org ID security context.

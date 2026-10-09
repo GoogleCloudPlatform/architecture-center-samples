@@ -1,0 +1,1396 @@
+# ==============================================================================
+# Model Context Protocol (MCP) Toolbox for Databases - Tools Configuration
+# System: PeopleSoft 9.2 (FSCM / HCM / Campus Solutions)
+# Target: Gemini for Government Plugin (Oct 2026)
+# Bind Variables: Oracle syntax (:param_name)
+# Connection Details: Unified connectionString (hostname:port/servicename)
+# ==============================================================================
+#
+# Authenticated parameters for the PL/SQL security wrapper (README §2.6).
+# To enable: uncomment the authServices block below, set GOOGLE_CLIENT_ID
+# in peoplesoft/.env, then run: python3 scripts/sync_sql_to_yaml.py --system peoplesoft --wrap
+# authServices:
+#   google-auth:
+#     type: google
+#     clientId: ${GOOGLE_CLIENT_ID}
+
+sources:
+  ps-oracle-source:
+    kind: oracle
+    connectionString: ${DB_CONNECTION_STRING:oracle-peoplesoft-hcm.c.gcp-project-id.internal:1521/HR92U054}
+    user: ${DB_USER:SYSADM_AI}
+    password: ${DB_PASSWORD:SYSADM_AI}
+tools:
+  ps_verify_constituent_data:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Cross-checks extracted income and demographic fields against PeopleSoft Person/Constituent master tables.
+      Underlying Tables: PS_PERSONAL_DATA, PS_PERS_NID, PS_NAMES, PS_ADDRESSES.
+      Procedures/APIs: Component Interface CI_PERSONAL_DATA, REST verification service.
+      Security Context: Row-level security and permission list context.
+    parameters:
+    - name: first_name
+      type: string
+      description: First name of the constituent.
+    - name: last_name
+      type: string
+      description: Last name of the constituent.
+    - name: emplid
+      type: string
+      description: Constituent EMPLID if available.
+    - name: nid
+      type: string
+      description: National ID / SSN hash or last 4 digits for identity matching.
+    - name: postal
+      type: string
+      description: Residential postal/ZIP code.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :first_name AS first_name,
+              :last_name AS last_name,
+              :emplid AS emplid,
+              :nid AS nid,
+              :postal AS postal
+          FROM dual
+      )
+      SELECT
+          pers.emplid,
+          nm.first_name,
+          nm.last_name,
+          nm.name_display,
+          addr.address1,
+          addr.city,
+          addr.state,
+          addr.postal,
+          CASE
+              WHEN UPPER(nm.first_name) = UPPER(p.first_name) AND UPPER(nm.last_name) = UPPER(p.last_name) THEN 100
+              WHEN UPPER(nm.last_name) = UPPER(p.last_name) THEN 75
+              ELSE 50
+          END AS name_match_confidence,
+          CASE
+              WHEN p.nid IS NOT NULL AND nid.national_id LIKE '%' || p.nid THEN 'VERIFIED_MATCH'
+              WHEN p.nid IS NOT NULL THEN 'NO_MATCH'
+              ELSE 'NOT_CHECKED'
+          END AS nid_match_status
+      FROM params p
+      JOIN sysadm.ps_personal_data pers
+          ON (p.emplid IS NULL OR pers.emplid = p.emplid)
+      JOIN sysadm.ps_names nm
+          ON pers.emplid = nm.emplid
+         AND nm.name_type = 'PRI'
+         AND (p.first_name IS NULL OR UPPER(nm.first_name) = UPPER(p.first_name))
+         AND (p.last_name IS NULL OR UPPER(nm.last_name) = UPPER(p.last_name))
+      LEFT JOIN sysadm.ps_pers_nid nid
+          ON pers.emplid = nid.emplid
+         AND nid.primary_nid = 'Y'
+      LEFT JOIN sysadm.ps_addresses addr
+          ON pers.emplid = addr.emplid
+         AND addr.address_type = 'HOME'
+         AND (p.postal IS NULL OR addr.postal = p.postal)
+      FETCH FIRST 10 ROWS ONLY
+  ps_list_business_units:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Lists valid PeopleSoft General Ledger and HCM Business Units from PS_BUS_UNIT_TBL_FS and PS_BUS_UNIT_TBL_HR.
+      Use this tool to discover valid values for the :business_unit bind variable across Strategic Sourcing, Voucher, and AP tools.
+      Underlying Tables: PS_BUS_UNIT_TBL_FS, PS_BUS_UNIT_TBL_HR.
+    parameters:
+    - name: bu_type
+      type: string
+      description: 'Optional business unit family filter: ''FS'' for Financials/SCM,
+        ''HR'' for HCM, or ''ALL''.'
+    statement: |-
+      WITH params AS (
+          SELECT :bu_type AS bu_type FROM dual
+      )
+      SELECT * FROM (
+          SELECT
+              fs.business_unit,
+              fs.descr AS unit_description,
+              'FSCM' AS bu_family
+          FROM sysadm.ps_bus_unit_tbl_fs fs, params p
+          WHERE (p.bu_type IS NULL OR UPPER(p.bu_type) IN ('FS', 'ALL'))
+          UNION ALL
+          SELECT
+              hr.business_unit,
+              hr.descr AS unit_description,
+              'HCM' AS bu_family
+          FROM sysadm.ps_bus_unit_tbl_hr hr, params p
+          WHERE (p.bu_type IS NULL OR UPPER(p.bu_type) IN ('HR', 'ALL'))
+      )
+      ORDER BY business_unit
+      FETCH FIRST 50 ROWS ONLY
+  ps_list_setids:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Lists valid PeopleSoft SetIDs from PS_SETID_TBL.
+      Use this tool to discover valid values for the :setid bind variable used in policy catalog and prompt table queries.
+      Underlying Table: PS_SETID_TBL.
+    parameters:
+    - name: search_pattern
+      type: string
+      description: Optional search pattern to filter SetID code or description (e.g.
+        '%SHARE%' or '%USA%').
+    statement: |-
+      WITH params AS (
+          SELECT :search_pattern AS search_pattern FROM dual
+      )
+      SELECT
+          st.setid,
+          st.descr AS setid_description
+      FROM sysadm.ps_setid_tbl st, params p
+      WHERE (p.search_pattern IS NULL OR UPPER(st.setid) LIKE UPPER(p.search_pattern) OR UPPER(st.descr) LIKE UPPER(p.search_pattern))
+      ORDER BY st.setid
+      FETCH FIRST 50 ROWS ONLY
+  ps_list_translate_values:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Queries the PeopleSoft Translate Table (PSXLATITEM) for valid field values.
+      Use this tool to discover valid codes for categorical bind variables like :document_type, :category, and status codes.
+      Underlying Table: PSXLATITEM.
+    parameters:
+    - name: fieldname
+      type: string
+      description: Field name in PeopleSoft data dictionary (e.g. 'CATEGORY', 'ACTION',
+        'STATUS', 'POLICY_CODE').
+    - name: search_keyword
+      type: string
+      description: Optional keyword to filter display name or description.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :fieldname AS fieldname,
+              :search_keyword AS search_keyword
+          FROM dual
+      )
+      SELECT
+          x.fieldname,
+          x.fieldvalue,
+          x.xlatlongname,
+          x.xlatshortname,
+          x.eff_status
+      FROM sysadm.psxlatitem x, params p
+      WHERE x.fieldname = UPPER(p.fieldname)
+        AND x.eff_status = 'A'
+        AND (p.search_keyword IS NULL OR UPPER(x.xlatlongname) LIKE UPPER('%' || p.search_keyword || '%'))
+      ORDER BY x.fieldvalue
+      FETCH FIRST 50 ROWS ONLY
+  ps_lookup_constituents:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Searches PeopleSoft HCM and Campus directory for constituents, students, or employees by name or postal code.
+      Use this tool to discover valid values for constituent bind variable :emplid before invoking case determination, personnel, or verification tools.
+      Underlying Tables: PS_NAMES, PS_PERSONAL_DATA, PS_ADDRESSES.
+    parameters:
+    - name: search_name
+      type: string
+      description: Full or partial constituent or employee name (e.g. 'Smith' or 'Jane').
+    - name: postal_code
+      type: string
+      description: Optional 5-digit postal code or ZIP code.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :search_name AS search_name,
+              :postal_code AS postal_code
+          FROM dual
+      )
+      SELECT
+          nm.emplid,
+          nm.name_display,
+          TO_CHAR(pd.birthdate, 'YYYY-MM-DD') AS birthdate,
+          addr.city,
+          addr.state,
+          addr.postal
+      FROM sysadm.ps_names nm
+      JOIN sysadm.ps_personal_data pd ON nm.emplid = pd.emplid
+      LEFT JOIN sysadm.ps_addresses addr ON nm.emplid = addr.emplid AND addr.address_type = 'HOME',
+      params p
+      WHERE nm.name_type = 'PRI'
+        AND (UPPER(nm.name_display) LIKE UPPER('%' || p.search_name || '%'))
+        AND (p.postal_code IS NULL OR addr.postal LIKE p.postal_code || '%')
+      ORDER BY nm.name_display
+      FETCH FIRST 25 ROWS ONLY
+  ps_hcm_describe_table:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Describes a PeopleSoft table in the connected database, or finds tables by name. With table_name it returns every column (position, name, type, length, nullable); with name_pattern and no table_name it lists matching tables with their statistics row estimate (which can be empty). At most 400 rows. Both table_name forms work: PS_JOB or JOB.
+      Use it before writing or changing a query, and to confirm a column exists in this database: the PeopleSoft equivalent of ebs_describe_table. The connected database is HCM only; tables of other PeopleSoft products (Financials, Campus Solutions) will be reported as not found.
+      Underlying Tables: ALL_TAB_COLUMNS, ALL_TABLES (SYSADM owner only).
+      Security Context: Dictionary views; shows only what the connected user can see.
+    parameters:
+    - name: table_name
+      type: string
+      description: Record or table name to describe (for example PS_JOB or JOB). Empty
+        = list tables by pattern instead.
+    - name: name_pattern
+      type: string
+      description: Pattern for listing tables when table_name is empty (for example
+        %CHECKLIST%). Case-insensitive; % is the wildcard.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :table_name AS table_name,
+              :name_pattern AS name_pattern
+          FROM dual
+      )
+      SELECT * FROM (
+          SELECT
+              'COLUMN' AS kind,
+              c.table_name,
+              c.column_id AS position,
+              c.column_name,
+              c.data_type,
+              c.data_length,
+              c.nullable,
+              CAST(NULL AS NUMBER) AS row_estimate
+          FROM params p
+          JOIN all_tab_columns c
+              ON p.table_name IS NOT NULL
+             AND c.owner = 'SYSADM'
+             AND c.table_name IN (UPPER(p.table_name), 'PS_' || UPPER(p.table_name))
+          UNION ALL
+          SELECT
+              'TABLE',
+              t.table_name,
+              CAST(NULL AS NUMBER),
+              CAST(NULL AS VARCHAR2(128)),
+              CAST(NULL AS VARCHAR2(106)),
+              CAST(NULL AS NUMBER),
+              CAST(NULL AS VARCHAR2(1)),
+              t.num_rows
+          FROM params p
+          JOIN all_tables t
+              ON p.table_name IS NULL
+             AND p.name_pattern IS NOT NULL
+             AND t.owner = 'SYSADM'
+             AND t.table_name LIKE UPPER(p.name_pattern)
+          ORDER BY 1, 2, 3
+      )
+      WHERE ROWNUM <= 400
+  ps_hcm_find_duplicate_time_entries:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Finds possible duplicate billing of labor to projects: groups of payable time entries for the same employee, work date, time reporting code, quantity, project and fund that appear more than once. Returns the group, how many entries it holds, their sequence numbers, the estimated gross for the group and the payable statuses involved, largest groups first, at most 200 groups.
+      Use it for the duplicate-billing test of the expense auditor skill, on labor charged to projects. Only entries that count as payable (status Approved, Closed, Sent to Payroll, Taken by Payroll or Distributed) are compared, so diluted, ignored, denied and rejected entries do not create false groups. A group is still a lead, not proof: a legitimate second shift looks the same, so check the sequence numbers and payable_statuses.
+      Underlying Tables: PS_TL_PAYABLE_TIME.
+      Security Context: HCM Time and Labor; no row security applies unless the PL/SQL wrapper is on.
+    parameters:
+    - name: project_id
+      type: string
+      description: Project ID to check. Empty = all projects.
+    - name: start_date
+      type: string
+      description: First work date (YYYY-MM-DD). Empty = no lower bound.
+    - name: end_date
+      type: string
+      description: Last work date (YYYY-MM-DD). Empty = no upper bound.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :project_id AS project_id,
+              :start_date AS start_date,
+              :end_date AS end_date
+          FROM dual
+      )
+      SELECT * FROM (
+          SELECT
+              t.emplid,
+              TO_CHAR(t.dur, 'YYYY-MM-DD') AS work_date,
+              t.trc AS time_reporting_code,
+              t.tl_quantity AS hours_or_quantity,
+              TRIM(t.project_id) AS project_id,
+              TRIM(t.fund_code) AS fund_code,
+              COUNT(*) AS entry_count,
+              COUNT(DISTINCT t.seq_nbr) AS distinct_sequences,
+              MIN(t.seq_nbr) AS first_seq_nbr,
+              MAX(t.seq_nbr) AS last_seq_nbr,
+              SUM(t.est_gross) AS total_estimated_gross,
+              LISTAGG(DISTINCT t.payable_status, ',') WITHIN GROUP (ORDER BY t.payable_status) AS payable_statuses
+          FROM params p
+          JOIN sysadm.ps_tl_payable_time t
+              ON TRIM(t.project_id) IS NOT NULL
+             AND t.payable_status IN ('AP', 'CL', 'SP', 'TP', 'PD')
+             AND (p.project_id IS NULL OR t.project_id = p.project_id)
+             AND (p.start_date IS NULL OR t.dur >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+             AND (p.end_date IS NULL OR t.dur <= TO_DATE(p.end_date, 'YYYY-MM-DD'))
+          GROUP BY t.emplid, t.dur, t.trc, t.tl_quantity, TRIM(t.project_id), TRIM(t.fund_code)
+          HAVING COUNT(*) > 1
+          ORDER BY COUNT(*) DESC, SUM(t.est_gross) DESC
+      )
+      WHERE ROWNUM <= 200
+  ps_hcm_get_agency_contact_info:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Returns the agency's own contact details as stored in HCM setup: office locations (address, phone, extension, fax) and companies (legal entity name and address), as of today. Search by SetID and location, by company, or by text in the name or city. At most 100 rows; a location filter returns locations only, a company filter returns companies only, no filter returns both.
+      Use it for the required contact elements of a plain-language notice (where to call, where to write, office address). TTY or relay numbers, website URLs and hours are not stored in these tables: report them as 'not found in the source' rather than inventing them. This is organisational data with no personal information.
+      Underlying Tables: PS_LOCATION_TBL, PS_COMPANY_TBL.
+      Security Context: HCM setup data; no row security applies unless the PL/SQL wrapper is on.
+    parameters:
+    - name: setid
+      type: string
+      description: Location SetID. Empty = any.
+    - name: location
+      type: string
+      description: Location code. Empty = any.
+    - name: company
+      type: string
+      description: Company code. Empty = any.
+    - name: keyword
+      type: string
+      description: Text to find in the description or city (case-insensitive). Empty
+        = no text filter.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :setid AS setid,
+              :location AS location,
+              :company AS company,
+              :keyword AS keyword
+          FROM dual
+      )
+      SELECT * FROM (
+          SELECT
+              'LOCATION' AS entity_type,
+              l.setid,
+              l.location AS code,
+              l.descr AS name,
+              l.address1,
+              l.address2,
+              l.city,
+              l.state,
+              l.postal,
+              l.country,
+              l.phone,
+              l.extension,
+              l.fax,
+              l.eff_status
+          FROM params p
+          JOIN sysadm.ps_location_tbl l
+              ON (p.company IS NULL)
+             AND (p.setid IS NULL OR l.setid = p.setid)
+             AND (p.location IS NULL OR l.location = p.location)
+             AND (p.keyword IS NULL OR UPPER(l.descr) LIKE '%' || UPPER(p.keyword) || '%'
+                  OR UPPER(l.city) LIKE '%' || UPPER(p.keyword) || '%')
+             AND l.effdt = (SELECT MAX(l2.effdt) FROM sysadm.ps_location_tbl l2
+                             WHERE l2.setid = l.setid AND l2.location = l.location AND l2.effdt <= TRUNC(SYSDATE))
+          UNION ALL
+          SELECT
+              'COMPANY' AS entity_type,
+              CAST(NULL AS VARCHAR2(5)) AS setid,
+              c.company AS code,
+              c.descr AS name,
+              c.address1,
+              c.address2,
+              c.city,
+              c.state,
+              c.postal,
+              c.country,
+              CAST(NULL AS VARCHAR2(24)) AS phone,
+              CAST(NULL AS VARCHAR2(6)) AS extension,
+              CAST(NULL AS VARCHAR2(24)) AS fax,
+              c.eff_status
+          FROM params p
+          JOIN sysadm.ps_company_tbl c
+              ON (p.setid IS NULL AND p.location IS NULL)
+             AND (p.company IS NULL OR c.company = p.company)
+             AND (p.keyword IS NULL OR UPPER(c.descr) LIKE '%' || UPPER(p.keyword) || '%'
+                  OR UPPER(c.city) LIKE '%' || UPPER(p.keyword) || '%')
+             AND c.effdt = (SELECT MAX(c2.effdt) FROM sysadm.ps_company_tbl c2
+                             WHERE c2.company = c.company AND c2.effdt <= TRUNC(SYSDATE))
+          ORDER BY 1, 3
+      )
+      WHERE ROWNUM <= 100
+  ps_hcm_get_attachment_text:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Returns the text of a stored attachment, 2,000 bytes at a time, for files that are plain text, HTML, XML or JSON. For every file it returns the source table, size, version, last update and the detected format (PDF, Word or Excel, image, binary or text), so the agent knows what it has. Give the stored file name (attachsysfilename) from ps_hcm_get_person_documents or ps_hcm_search_policy_documents; one row comes back per stored file part and version, at most 10.
+      PDF, Word, Excel and image files are NOT decoded: is_text is N and text_chunk is empty. Reading those needs text extraction that this database does not provide (same limit as the EBS equivalent, which needs a DBA-installed function); do not guess their content. When has_more is Y, call again with chunk_start set to chunk_start + chunk_length. A multi-byte character can be cut at a chunk boundary.
+      Attachments can hold personal data. The text is returned as stored; masking belongs to the calling skill.
+      Underlying Tables: PS_HR_ATT_FILES, PSFILE_ATTDET.
+      Security Context: Attachment data; use the PL/SQL wrapper and an authorised user in production.
+    parameters:
+    - name: attach_sys_filename
+      type: string
+      description: Stored attachment file name (ATTACHSYSFILENAME), as returned by
+        ps_hcm_get_person_documents or ps_hcm_search_policy_documents. Required.
+    - name: source
+      type: string
+      description: PS_HR_ATT_FILES, PSFILE_ATTDET, or empty to look in both.
+    - name: chunk_start
+      type: string
+      description: 1-based byte position to start reading the text from. Empty = 1.
+        Use start + chunk_length for the next chunk while has_more is Y.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :attach_sys_filename AS attach_sys_filename,
+              :source AS source,
+              :chunk_start AS chunk_start
+          FROM dual
+      )
+      SELECT * FROM (
+          SELECT
+              y.src AS source_table,
+              y.attachsysfilename,
+              y.file_seq,
+              y.version AS file_version,
+              y.file_size AS file_bytes,
+              TO_CHAR(y.lastupddttm, 'YYYY-MM-DD HH24:MI:SS') AS last_updated,
+              y.detected_format,
+              y.is_text,
+              y.start_pos AS chunk_start,
+              CASE WHEN y.is_text = 'Y' THEN LEAST(2000, GREATEST(DBMS_LOB.GETLENGTH(y.file_data) - y.start_pos + 1, 0)) END AS chunk_length,
+              CASE WHEN y.is_text = 'Y' AND y.start_pos + 2000 <= DBMS_LOB.GETLENGTH(y.file_data) THEN 'Y' ELSE 'N' END AS has_more,
+              CASE WHEN y.is_text = 'Y' THEN UTL_RAW.CAST_TO_VARCHAR2(DBMS_LOB.SUBSTR(y.file_data, 2000, y.start_pos)) END AS text_chunk
+          FROM (
+              SELECT
+                  z.*,
+                  CASE
+                      WHEN z.head_hex LIKE '25504446%' THEN 'PDF'
+                      WHEN z.head_hex LIKE '504B0304%' THEN 'ZIP/OOXML (docx, xlsx, pptx)'
+                      WHEN z.head_hex LIKE 'D0CF11E0%' THEN 'OLE (doc, xls, ppt)'
+                      WHEN z.head_hex LIKE '89504E47%' THEN 'PNG image'
+                      WHEN z.head_hex LIKE 'FFD8FF%' THEN 'JPEG image'
+                      WHEN z.head_hex LIKE '47494638%' THEN 'GIF image'
+                      WHEN INSTR(z.head_txt, CHR(0)) > 0 THEN 'BINARY'
+                      ELSE 'TEXT'
+                  END AS detected_format,
+                  CASE
+                      WHEN z.head_hex LIKE '25504446%' OR z.head_hex LIKE '504B0304%' OR z.head_hex LIKE 'D0CF11E0%'
+                        OR z.head_hex LIKE '89504E47%' OR z.head_hex LIKE 'FFD8FF%' OR z.head_hex LIKE '47494638%'
+                        OR INSTR(z.head_txt, CHR(0)) > 0 THEN 'N'
+                      ELSE 'Y'
+                  END AS is_text
+              FROM (
+                  SELECT
+                      u.*,
+                      GREATEST(NVL(TO_NUMBER(p.chunk_start), 1), 1) AS start_pos,
+                      RAWTOHEX(DBMS_LOB.SUBSTR(u.file_data, 8, 1)) AS head_hex,
+                      UTL_RAW.CAST_TO_VARCHAR2(DBMS_LOB.SUBSTR(u.file_data, 512, 1)) AS head_txt
+                  FROM params p
+                  JOIN (
+                      SELECT 'PS_HR_ATT_FILES' AS src, f.* FROM sysadm.ps_hr_att_files f
+                      UNION ALL
+                      SELECT 'PSFILE_ATTDET' AS src, d.* FROM sysadm.psfile_attdet d
+                  ) u
+                      ON u.attachsysfilename = p.attach_sys_filename
+                     AND (p.source IS NULL OR u.src = UPPER(p.source))
+              ) z
+          ) y
+          ORDER BY y.src, y.file_seq, y.version
+      )
+      WHERE ROWNUM <= 10
+  ps_hcm_get_earnings_rules:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Returns payroll earnings code rules in force on a date: payment type, maximum hourly rate, flat amount, year-to-date maximum, rate multiplier (for example overtime factors), tax subjectivity and FLSA treatment. One row per earnings code, from the latest effective-dated row on or before as_of_date (default today). At most 100 codes.
+      Use it as the agency's own rule source when the policy skill, or an audit, needs the limit or treatment behind a pay type (overtime, shift differential, caps). The earnings codes seen on paychecks come from ps_hcm_get_payroll_earnings (other_earnings_codes).
+      Underlying Tables: PS_EARNINGS_TBL.
+      Security Context: HCM setup data; no row security applies unless the PL/SQL wrapper is on.
+    parameters:
+    - name: as_of_date
+      type: string
+      description: Date the rules must be in force on (YYYY-MM-DD). Empty = today.
+    - name: erncd
+      type: string
+      description: Earnings code. Empty = any.
+    - name: keyword
+      type: string
+      description: Text to find in the earnings code description (case-insensitive).
+        Empty = no text filter.
+    - name: active_only
+      type: string
+      description: Y = only active codes, N or empty = include inactive.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :as_of_date AS as_of_date,
+              :erncd AS erncd,
+              :keyword AS keyword,
+              :active_only AS active_only
+          FROM dual
+      )
+      SELECT * FROM (
+          SELECT
+              e.erncd AS earnings_code,
+              e.descr AS description,
+              e.eff_status,
+              TO_CHAR(e.effdt, 'YYYY-MM-DD') AS effective_date,
+              NVL(p.as_of_date, TO_CHAR(TRUNC(SYSDATE), 'YYYY-MM-DD')) AS as_of_date,
+              e.payment_type,
+              e.amt_or_hours,
+              e.hrly_rt_maximum AS hourly_rate_maximum,
+              e.earn_flat_amt AS flat_amount,
+              e.earn_ytd_max AS year_to_date_maximum,
+              e.factor_mult AS rate_multiplier,
+              e.add_gross AS adds_to_gross,
+              e.subject_fwt AS subject_to_federal_tax,
+              e.subject_fica AS subject_to_fica,
+              e.effect_on_flsa,
+              e.flsa_category,
+              e.shift_diff_elig AS shift_differential_eligible
+          FROM params p
+          JOIN sysadm.ps_earnings_tbl e
+              ON (p.erncd IS NULL OR e.erncd = p.erncd)
+             AND (p.keyword IS NULL OR UPPER(e.descr) LIKE '%' || UPPER(p.keyword) || '%')
+             AND (p.active_only IS NULL OR UPPER(p.active_only) <> 'Y' OR e.eff_status = 'A')
+             AND e.effdt = (SELECT MAX(e2.effdt) FROM sysadm.ps_earnings_tbl e2
+                             WHERE e2.erncd = e.erncd
+                               AND e2.effdt <= NVL(TO_DATE(p.as_of_date, 'YYYY-MM-DD'), TRUNC(SYSDATE)))
+          ORDER BY e.erncd
+      )
+      WHERE ROWNUM <= 100
+  ps_hcm_get_employee_record_documents:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Returns one person's HR record as a flat list for public-records review: identity (name and the national ID masked to its last four digits), disciplinary actions, grievances, the latest 12 paychecks (gross and net only), absence history and attachments (title and file name, no content). Each row has a record type, key, date, title, a detail text and up to two amounts. EMPLID is required; at most 300 rows; rows of different types are listed one after another instead of being joined, so nothing is multiplied.
+      Use it to assemble what exists for one person before redaction. The full national ID, bank details, address and long-text descriptions are not returned. The FSCM-based tool of the same purpose (which returned the unmasked national ID) is disabled. There is no FOIA skill in google_oracle_skills yet; this toolset is a placeholder until one is delivered.
+      Underlying Tables: PS_NAMES, PS_PERS_NID, PS_DISCIPLIN_ACTN, PS_GRIEVANCE, PS_PAY_CHECK, PS_ABSENCE_HIST, PS_GP_ABS_ATTACH, PS_HR_PER_BIOG_ATT, PS_BEN_ATTACH_DTL.
+      Security Context: Highly sensitive personal data; use the PL/SQL wrapper and an authorised user in production.
+    parameters:
+    - name: emplid
+      type: string
+      description: Employee ID whose record is wanted. Required.
+    - name: document_type
+      type: string
+      description: IDENTITY, DISCIPLINE, GRIEVANCE, PAYCHECK, ABSENCE, ATTACHMENT,
+        or empty for all.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :emplid AS emplid,
+              :document_type AS document_type
+          FROM dual
+      ),
+      nm AS (
+          SELECT n.emplid, n.name_display
+          FROM sysadm.ps_names n
+          WHERE n.name_type = 'PRI'
+            AND n.effdt = (SELECT MAX(n2.effdt) FROM sysadm.ps_names n2
+                            WHERE n2.emplid = n.emplid AND n2.name_type = n.name_type AND n2.effdt <= TRUNC(SYSDATE))
+      )
+      SELECT * FROM (
+          SELECT
+              'IDENTITY' AS record_type,
+              nm.emplid AS record_key,
+              CAST(NULL AS VARCHAR2(10)) AS record_date,
+              nm.name_display AS title,
+              (SELECT n.national_id_type || ' ending ' || SUBSTR(n.national_id, -4)
+                 FROM sysadm.ps_pers_nid n
+                WHERE n.emplid = nm.emplid AND n.primary_nid = 'Y' AND ROWNUM = 1) AS detail,
+              CAST(NULL AS NUMBER) AS amount1,
+              CAST(NULL AS NUMBER) AS amount2
+          FROM params p
+          JOIN nm ON nm.emplid = p.emplid AND (p.document_type IS NULL OR UPPER(p.document_type) = 'IDENTITY')
+          UNION ALL
+          SELECT
+              'DISCIPLINE', d.emplid || '/' || TO_CHAR(d.discipline_dt, 'YYYYMMDD'), TO_CHAR(d.discipline_dt, 'YYYY-MM-DD'),
+              d.disciplinary_type, d.final_resolution, CAST(NULL AS NUMBER), CAST(NULL AS NUMBER)
+          FROM params p
+          JOIN sysadm.ps_disciplin_actn d ON d.emplid = p.emplid AND (p.document_type IS NULL OR UPPER(p.document_type) = 'DISCIPLINE')
+          UNION ALL
+          SELECT
+              'GRIEVANCE', g.grievance_id, TO_CHAR(g.grievance_dt, 'YYYY-MM-DD'),
+              g.grievance_type, g.grievance_status || ' / ' || g.final_resolution, CAST(NULL AS NUMBER), CAST(NULL AS NUMBER)
+          FROM params p
+          JOIN sysadm.ps_grievance g ON g.emplid = p.emplid AND (p.document_type IS NULL OR UPPER(p.document_type) = 'GRIEVANCE')
+          UNION ALL
+          SELECT * FROM (
+              SELECT
+                  'PAYCHECK', TO_CHAR(c.paycheck_nbr), TO_CHAR(c.check_dt, 'YYYY-MM-DD'),
+                  'Paycheck ' || c.company || '/' || c.paygroup, c.paycheck_status, c.total_gross, c.net_pay
+              FROM params p
+              JOIN sysadm.ps_pay_check c ON c.emplid = p.emplid AND (p.document_type IS NULL OR UPPER(p.document_type) = 'PAYCHECK')
+              ORDER BY c.check_dt DESC
+          ) WHERE ROWNUM <= 12
+          UNION ALL
+          SELECT
+              'ABSENCE', TO_CHAR(a.begin_dt, 'YYYYMMDD') || '/' || a.absence_type, TO_CHAR(a.begin_dt, 'YYYY-MM-DD'),
+              a.absence_type || ' ' || a.absence_code, a.paid_unpaid, a.duration_days, a.duration_hours
+          FROM params p
+          JOIN sysadm.ps_absence_hist a ON a.emplid = p.emplid AND (p.document_type IS NULL OR UPPER(p.document_type) = 'ABSENCE')
+          UNION ALL
+          SELECT
+              'ATTACHMENT', att.source_record || '/' || att.attachsysfilename, TO_CHAR(att.created_dttm, 'YYYY-MM-DD'),
+              att.hr_att_subject, att.attachuserfile, CAST(NULL AS NUMBER), CAST(NULL AS NUMBER)
+          FROM params p
+          JOIN (
+              SELECT 'GP_ABS_ATTACH' AS source_record, emplid, hr_att_subject, attachuserfile, attachsysfilename, created_dttm FROM sysadm.ps_gp_abs_attach
+              UNION ALL
+              SELECT 'HR_PER_BIOG_ATT', emplid, hr_att_subject, attachuserfile, attachsysfilename, created_dttm FROM sysadm.ps_hr_per_biog_att
+              UNION ALL
+              SELECT 'BEN_ATTACH_DTL', emplid, hr_att_subject, attachuserfile, attachsysfilename, created_dttm FROM sysadm.ps_ben_attach_dtl
+          ) att ON att.emplid = p.emplid AND (p.document_type IS NULL OR UPPER(p.document_type) = 'ATTACHMENT')
+          ORDER BY 1, 3 DESC NULLS LAST
+      )
+      WHERE ROWNUM <= 300
+  ps_hcm_get_labor_distribution:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Returns payable time (Time and Labor) that is charged to a project, with the chartfields it carries: project, activity, fund, account, program and department. This is the HCM-side labor cost evidence for grant and project audits (2 CFR 200.430 effort and compensation). One row per payable time entry, newest first, at most 200 rows. Only entries with a project are returned. The project's business unit is blank on many entries, so the project description is often empty even when the project exists; look it up with ps_hcm_get_project_setup.
+      Use it to test allocability (is the time charged to the right project and fund?), to look at one employee or project over a date window, and to see payable status (approved, sent to payroll, deleted). Combine with ps_hcm_find_duplicate_time_entries for duplicate billing and ps_hcm_get_project_setup for project terms.
+      Contains employee IDs but no names. Reported (punch) time is not included; this is payable time.
+      Underlying Tables: PS_TL_PAYABLE_TIME, PS_PROJECT.
+      Security Context: HCM Time and Labor; no row security applies unless the PL/SQL wrapper is on.
+    parameters:
+    - name: emplid
+      type: string
+      description: Employee ID. Empty = any.
+    - name: project_id
+      type: string
+      description: Project ID that the time is charged to. Empty = any project.
+    - name: business_unit_pc
+      type: string
+      description: Project Costing business unit of the project. Empty = any.
+    - name: start_date
+      type: string
+      description: First work date (YYYY-MM-DD). Empty = no lower bound.
+    - name: end_date
+      type: string
+      description: Last work date (YYYY-MM-DD). Empty = no upper bound.
+    - name: payable_status
+      type: string
+      description: Time and Labor payable status code (see ps_list_translate_values,
+        field PAYABLE_STATUS). Empty = any.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :emplid AS emplid,
+              :project_id AS project_id,
+              :business_unit_pc AS business_unit_pc,
+              :start_date AS start_date,
+              :end_date AS end_date,
+              :payable_status AS payable_status
+          FROM dual
+      )
+      SELECT * FROM (
+          SELECT
+              t.emplid,
+              t.empl_rcd,
+              TO_CHAR(t.dur, 'YYYY-MM-DD') AS work_date,
+              t.seq_nbr,
+              t.trc AS time_reporting_code,
+              t.tl_quantity AS hours_or_quantity,
+              t.payable_status,
+              t.est_gross AS estimated_gross,
+              t.lbr_dist_amt AS labor_distribution_amount,
+              TRIM(t.business_unit_pc) AS project_business_unit,
+              TRIM(t.project_id) AS project_id,
+              pr.descr AS project_description,
+              TRIM(t.activity_id) AS activity_id,
+              TRIM(t.fund_code) AS fund_code,
+              TRIM(t.account) AS account,
+              TRIM(t.acct_cd) AS account_code,
+              TRIM(t.program_code) AS program_code,
+              t.deptid,
+              t.jobcode,
+              t.company,
+              t.billable_ind,
+              t.oprid AS entered_by,
+              TO_CHAR(t.lastupddttm, 'YYYY-MM-DD HH24:MI:SS') AS last_updated
+          FROM params p
+          JOIN sysadm.ps_tl_payable_time t
+              ON TRIM(t.project_id) IS NOT NULL
+             AND (p.emplid IS NULL OR t.emplid = p.emplid)
+             AND (p.project_id IS NULL OR t.project_id = p.project_id)
+             AND (p.business_unit_pc IS NULL OR t.business_unit_pc = p.business_unit_pc)
+             AND (p.start_date IS NULL OR t.dur >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+             AND (p.end_date IS NULL OR t.dur <= TO_DATE(p.end_date, 'YYYY-MM-DD'))
+             AND (p.payable_status IS NULL OR t.payable_status = p.payable_status)
+          LEFT JOIN sysadm.ps_project pr
+              ON pr.business_unit = t.business_unit_pc
+             AND pr.project_id = t.project_id
+          ORDER BY t.dur DESC, t.emplid, t.seq_nbr
+      )
+      WHERE ROWNUM <= 200
+  ps_hcm_get_leave_policy_rules:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Returns the leave plan rules in force on a date: accrual frequency, maximum balance and carryover, payout at termination, whether the balance may go negative. One row per leave plan, using the latest effective-dated row on or before as_of_date (default today); rows that started after the date, and earlier versions, are not returned. At most 100 plans.
+      Use it as the agency's own written rule source for the policy skill when a question concerns leave limits, with as_of_date driving the retrieval so a past period is answered with the rules that applied then. The statute and regulation tiers (federal and state law) are not in PeopleSoft.
+      Plan descriptions are not stored in this table; use ps_list_translate_values for code meanings where they exist.
+      Underlying Tables: PS_LEAVE_PLAN_TBL.
+      Security Context: HCM setup data; no row security applies unless the PL/SQL wrapper is on.
+    parameters:
+    - name: as_of_date
+      type: string
+      description: Date the rules must be in force on (YYYY-MM-DD). Empty = today.
+    - name: plan_type
+      type: string
+      description: Leave plan type code (for example 50, 51, 52). Empty = any.
+    - name: benefit_plan
+      type: string
+      description: Leave benefit plan code. Empty = any.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :as_of_date AS as_of_date,
+              :plan_type AS plan_type,
+              :benefit_plan AS benefit_plan
+          FROM dual
+      )
+      SELECT * FROM (
+          SELECT
+              lp.plan_type,
+              lp.benefit_plan,
+              TO_CHAR(lp.effdt, 'YYYY-MM-DD') AS effective_date,
+              NVL(p.as_of_date, TO_CHAR(TRUNC(SYSDATE), 'YYYY-MM-DD')) AS as_of_date,
+              lp.accrual_frequency,
+              lp.service_interval,
+              lp.year_begin_calc,
+              lp.maximum_leave_bal AS maximum_leave_balance,
+              lp.maximum_carryover,
+              lp.pay_at_termination,
+              lp.pay_term_pct AS pay_at_termination_pct,
+              lp.pay_vs_leave,
+              lp.hrs_go_negative AS may_go_negative,
+              lp.max_neg_hrs AS maximum_negative_hours,
+              lp.balance_visible
+          FROM params p
+          JOIN sysadm.ps_leave_plan_tbl lp
+              ON (p.plan_type IS NULL OR lp.plan_type = p.plan_type)
+             AND (p.benefit_plan IS NULL OR lp.benefit_plan = p.benefit_plan)
+             AND lp.effdt = (SELECT MAX(lp2.effdt) FROM sysadm.ps_leave_plan_tbl lp2
+                              WHERE lp2.plan_type = lp.plan_type AND lp2.benefit_plan = lp.benefit_plan
+                                AND lp2.effdt <= NVL(TO_DATE(p.as_of_date, 'YYYY-MM-DD'), TRUNC(SYSDATE)))
+          ORDER BY lp.plan_type, lp.benefit_plan
+      )
+      WHERE ROWNUM <= 100
+  ps_hcm_get_payroll_earnings:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Returns paychecks with their earnings rolled up: one row per paycheck with gross, taxes, deductions and net pay, regular and overtime hours and earnings (regular includes hourly and salary amounts), other earnings with their earnings codes, and gross_minus_earnings (paycheck gross less the sum of the earnings lines; a non-zero value means the ledger does not tie). Newest first, at most 200 paychecks.
+      Use it to test the compensation side of a grant or project audit (2 CFR 200.430): that payroll for a person and period is consistent and reasonable, and to find off-cycle checks. It does not contain the person's name, address, bank details or national ID.
+      Rolled-up earnings, department and account-code counts avoid the row multiplication that listing every earnings line would cause. For project-level charging see ps_hcm_get_labor_distribution.
+      Underlying Tables: PS_PAY_CHECK, PS_PAY_EARNINGS, PS_PAY_OTH_EARNS.
+      Security Context: Payroll data; use the PL/SQL wrapper and an authorised user in production.
+    parameters:
+    - name: emplid
+      type: string
+      description: Employee ID. Empty = any.
+    - name: company
+      type: string
+      description: Company code. Empty = any.
+    - name: start_date
+      type: string
+      description: Earliest pay period end date (YYYY-MM-DD). Empty = no lower bound.
+    - name: end_date
+      type: string
+      description: Latest pay period end date (YYYY-MM-DD). Empty = no upper bound.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :emplid AS emplid,
+              :company AS company,
+              :start_date AS start_date,
+              :end_date AS end_date
+          FROM dual
+      ),
+      ern AS (
+          SELECT
+              e.company, e.paygroup, e.pay_end_dt, e.off_cycle, e.page_num, e.line_num, e.sepchk,
+              COUNT(*) AS earnings_lines,
+              SUM(e.reg_hrs) AS regular_hours,
+              SUM(e.ot_hrs) AS overtime_hours,
+              SUM(NVL(e.reg_earns, 0) + NVL(e.reg_pay, 0) + NVL(e.reg_hrly_earns, 0)) AS regular_earnings,
+              SUM(e.ot_hrly_earns) AS overtime_earnings,
+              COUNT(DISTINCT e.deptid) AS department_count,
+              COUNT(DISTINCT TRIM(e.acct_cd)) AS account_code_count
+          FROM params p
+          JOIN sysadm.ps_pay_earnings e
+              ON (p.emplid IS NULL OR e.emplid = p.emplid)
+             AND (p.company IS NULL OR e.company = p.company)
+             AND (p.start_date IS NULL OR e.pay_end_dt >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+             AND (p.end_date IS NULL OR e.pay_end_dt <= TO_DATE(p.end_date, 'YYYY-MM-DD'))
+          GROUP BY e.company, e.paygroup, e.pay_end_dt, e.off_cycle, e.page_num, e.line_num, e.sepchk
+      ),
+      oth AS (
+          SELECT
+              o.company, o.paygroup, o.pay_end_dt, o.off_cycle, o.page_num, o.line_num, o.sepchk,
+              SUM(o.oth_earns) AS other_earnings,
+              SUM(o.oth_hrs) AS other_hours,
+              LISTAGG(DISTINCT o.erncd, ',') WITHIN GROUP (ORDER BY o.erncd) AS other_earnings_codes
+          FROM params p
+          JOIN sysadm.ps_pay_oth_earns o
+              ON (p.company IS NULL OR o.company = p.company)
+             AND (p.start_date IS NULL OR o.pay_end_dt >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+             AND (p.end_date IS NULL OR o.pay_end_dt <= TO_DATE(p.end_date, 'YYYY-MM-DD'))
+          GROUP BY o.company, o.paygroup, o.pay_end_dt, o.off_cycle, o.page_num, o.line_num, o.sepchk
+      )
+      SELECT * FROM (
+          SELECT
+              c.emplid,
+              c.company,
+              c.paygroup,
+              TO_CHAR(c.pay_end_dt, 'YYYY-MM-DD') AS pay_period_end,
+              TO_CHAR(c.check_dt, 'YYYY-MM-DD') AS check_date,
+              c.paycheck_nbr,
+              c.off_cycle,
+              c.paycheck_status,
+              c.deptid,
+              c.total_gross,
+              c.total_taxes,
+              c.total_deductions,
+              c.net_pay,
+              e.earnings_lines,
+              e.regular_hours,
+              e.overtime_hours,
+              e.regular_earnings,
+              e.overtime_earnings,
+              o.other_earnings,
+              o.other_earnings_codes,
+              e.department_count,
+              e.account_code_count,
+              c.total_gross - (NVL(e.regular_earnings, 0) + NVL(e.overtime_earnings, 0) + NVL(o.other_earnings, 0)) AS gross_minus_earnings
+          FROM params p
+          JOIN sysadm.ps_pay_check c
+              ON (p.emplid IS NULL OR c.emplid = p.emplid)
+             AND (p.company IS NULL OR c.company = p.company)
+             AND (p.start_date IS NULL OR c.pay_end_dt >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+             AND (p.end_date IS NULL OR c.pay_end_dt <= TO_DATE(p.end_date, 'YYYY-MM-DD'))
+          LEFT JOIN ern e
+              ON e.company = c.company AND e.paygroup = c.paygroup AND e.pay_end_dt = c.pay_end_dt
+             AND e.off_cycle = c.off_cycle AND e.page_num = c.page_num AND e.line_num = c.line_num AND e.sepchk = c.sepchk
+          LEFT JOIN oth o
+              ON o.company = c.company AND o.paygroup = c.paygroup AND o.pay_end_dt = c.pay_end_dt
+             AND o.off_cycle = c.off_cycle AND o.page_num = c.page_num AND o.line_num = c.line_num AND o.sepchk = c.sepchk
+          ORDER BY c.check_dt DESC, c.emplid
+      )
+      WHERE ROWNUM <= 200
+  ps_hcm_get_person_documents:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Returns what is on file for one person: attachments (absence, biographical and benefits attachments, with title, type, file name, the stored file name, upload time and size in bytes where the file is stored) and HR checklists assigned to the person (checklist code, description, type, assigned date). EMPLID is required; at most 200 rows, newest first.
+      Use it as the document list for the document intake skill: which proof documents exist for a person and when they were added, and which checklists are open. It does not return file content: pass attachsysfilename to ps_hcm_get_attachment_text. It carries no per-item verification status because this database stores none for checklists.
+      For the identity cross-check (name, national ID suffix, address) use ps_verify_constituent_data.
+      Underlying Tables: PS_GP_ABS_ATTACH, PS_HR_PER_BIOG_ATT, PS_BEN_ATTACH_DTL, PS_HR_ATT_FILES, PS_PER_CHECKLIST, PS_CHECKLIST_TBL.
+      Security Context: Personal data; use the PL/SQL wrapper and an authorised user in production.
+    parameters:
+    - name: emplid
+      type: string
+      description: Person (EMPLID) whose documents and checklists are wanted. Required.
+    - name: kind
+      type: string
+      description: ATTACHMENT, CHECKLIST, or empty for both.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :emplid AS emplid,
+              :kind AS kind
+          FROM dual
+      )
+      SELECT * FROM (
+          SELECT
+              'ATTACHMENT' AS record_kind,
+              a.source_record,
+              a.emplid,
+              TO_CHAR(a.seq_nbr) AS item_code,
+              a.hr_att_subject AS title,
+              a.hr_att_type AS document_type,
+              a.attachuserfile AS file_name,
+              a.attachsysfilename,
+              TO_CHAR(a.created_dttm, 'YYYY-MM-DD HH24:MI:SS') AS item_date,
+              a.status,
+              (SELECT SUM(f.file_size) FROM sysadm.ps_hr_att_files f WHERE f.attachsysfilename = a.attachsysfilename) AS file_bytes
+          FROM params p
+          JOIN (
+              SELECT 'GP_ABS_ATTACH' AS source_record, emplid, seq_nbr, hr_att_subject, hr_att_type, attachuserfile, attachsysfilename, created_dttm, status
+                FROM sysadm.ps_gp_abs_attach
+              UNION ALL
+              SELECT 'HR_PER_BIOG_ATT', emplid, seq_nbr, hr_att_subject, hr_att_type, attachuserfile, attachsysfilename, created_dttm, status
+                FROM sysadm.ps_hr_per_biog_att
+              UNION ALL
+              SELECT 'BEN_ATTACH_DTL', emplid, seq_nbr, hr_att_subject, hr_att_type, attachuserfile, attachsysfilename, created_dttm, status
+                FROM sysadm.ps_ben_attach_dtl
+          ) a
+              ON a.emplid = p.emplid
+             AND (p.kind IS NULL OR UPPER(p.kind) = 'ATTACHMENT')
+          UNION ALL
+          SELECT
+              'CHECKLIST' AS record_kind,
+              'PER_CHECKLIST' AS source_record,
+              pc.emplid,
+              pc.checklist_cd AS item_code,
+              ct.descr AS title,
+              ct.checklist_type AS document_type,
+              CAST(NULL AS VARCHAR2(200)) AS file_name,
+              CAST(NULL AS VARCHAR2(200)) AS attachsysfilename,
+              TO_CHAR(pc.checklist_dt, 'YYYY-MM-DD') AS item_date,
+              ct.eff_status AS status,
+              CAST(NULL AS NUMBER) AS file_bytes
+          FROM params p
+          JOIN sysadm.ps_per_checklist pc
+              ON pc.emplid = p.emplid
+             AND (p.kind IS NULL OR UPPER(p.kind) = 'CHECKLIST')
+          LEFT JOIN sysadm.ps_checklist_tbl ct
+              ON ct.checklist_cd = pc.checklist_cd
+             AND ct.effdt = (SELECT MAX(ct2.effdt) FROM sysadm.ps_checklist_tbl ct2
+                              WHERE ct2.checklist_cd = ct.checklist_cd AND ct2.effdt <= TRUNC(SYSDATE))
+          ORDER BY 9 DESC
+      )
+      WHERE ROWNUM <= 200
+  ps_hcm_get_project_setup:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Returns Project Costing project definitions: description, type, function, status, in-use flag, start and end dates, currency, percent complete, docket number, source and the size and roles of the project team. At most 100 projects.
+      This is the HCM database's nearest equivalent of award terms for the expense auditor skill. It is project setup only: sponsor, funding stream, award budget, period of performance and allowable-cost terms are not in this database (Grants and Contracts are not installed), and start and end dates are blank on almost all projects. Report those items as 'not available' rather than guessing.
+      Use it to confirm that a project exists, is active and has a team before testing time charged to it with ps_hcm_get_labor_distribution.
+      Underlying Tables: PS_PROJECT, PS_PROJECT_TEAM.
+      Security Context: Project Costing business unit security; no row security applies unless the PL/SQL wrapper is on.
+    parameters:
+    - name: business_unit
+      type: string
+      description: Project Costing business unit. Empty = any.
+    - name: project_id
+      type: string
+      description: Project ID. Empty = any.
+    - name: keyword
+      type: string
+      description: Text to find in the project ID or description (case-insensitive).
+        Empty = no text filter.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :business_unit AS business_unit,
+              :project_id AS project_id,
+              :keyword AS keyword
+          FROM dual
+      ),
+      team AS (
+          SELECT
+              tm.business_unit, tm.project_id,
+              COUNT(*) AS team_member_count,
+              LISTAGG(DISTINCT tm.proj_role, ',') WITHIN GROUP (ORDER BY tm.proj_role) AS team_roles
+          FROM sysadm.ps_project_team tm
+          GROUP BY tm.business_unit, tm.project_id
+      )
+      SELECT * FROM (
+          SELECT
+              pr.business_unit,
+              pr.project_id,
+              pr.descr AS project_description,
+              pr.eff_status,
+              pr.project_type,
+              pr.project_function,
+              pr.in_use_sw AS in_use,
+              TO_CHAR(pr.start_dt, 'YYYY-MM-DD') AS start_date,
+              TO_CHAR(pr.end_dt, 'YYYY-MM-DD') AS end_date,
+              pr.currency_cd,
+              pr.percent_complete,
+              pr.docket_number,
+              pr.system_source,
+              pr.template_sw AS is_template,
+              pr.summary_sw AS is_summary,
+              NVL(tm.team_member_count, 0) AS team_member_count,
+              tm.team_roles
+          FROM params p
+          JOIN sysadm.ps_project pr
+              ON (p.business_unit IS NULL OR pr.business_unit = p.business_unit)
+             AND (p.project_id IS NULL OR pr.project_id = p.project_id)
+             AND (p.keyword IS NULL
+                  OR UPPER(pr.project_id) LIKE '%' || UPPER(p.keyword) || '%'
+                  OR UPPER(pr.descr) LIKE '%' || UPPER(p.keyword) || '%')
+          LEFT JOIN team tm
+              ON tm.business_unit = pr.business_unit
+             AND tm.project_id = pr.project_id
+          ORDER BY pr.business_unit, pr.project_id
+      )
+      WHERE ROWNUM <= 100
+  ps_hcm_get_vendor_profile:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Returns the vendor master record for a supplier: legal name, status, class, whether it is the primary or a corporate-parent record, hub-zone and EEO certification date, last activity, primary address (as of today), default payment terms and currency, and how many vendor policies are on file. At most 50 vendors, found by SetID, vendor ID or part of the name.
+      Use it for vendor identity and consistency checks in the RFP vendor evaluation skill (does the legal name and address on a proposal match the vendor master? is the vendor active?), and to ground a vendor ID before another call. It contains no tax identifiers and no bank details.
+      Sourcing events, bids and evaluation criteria are NOT in this database (Strategic Sourcing is not installed), so there is no tool for the solicitation or the vendor responses; that part of the skill cannot be served from HCM.
+      Underlying Tables: PS_VENDOR, PS_VENDOR_ADDR, PS_VENDOR_LOC, PS_VENDOR_POLICY.
+      Security Context: Supplier SetID security; no row security applies unless the PL/SQL wrapper is on.
+    parameters:
+    - name: setid
+      type: string
+      description: Vendor SetID. Empty = any.
+    - name: vendor_id
+      type: string
+      description: Vendor ID. Empty = any.
+    - name: name_pattern
+      type: string
+      description: Text to find in the vendor name (case-insensitive, matched anywhere).
+        Empty = no name filter.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :setid AS setid,
+              :vendor_id AS vendor_id,
+              :name_pattern AS name_pattern
+          FROM dual
+      ),
+      pol AS (
+          SELECT vp.setid, vp.vendor_id, COUNT(*) AS policy_count, MAX(vp.policy_end_date) AS latest_policy_end
+          FROM sysadm.ps_vendor_policy vp
+          GROUP BY vp.setid, vp.vendor_id
+      )
+      SELECT * FROM (
+          SELECT
+              v.setid,
+              v.vendor_id,
+              v.name1 AS vendor_name,
+              v.name2 AS vendor_name_2,
+              v.vendor_status,
+              v.vendor_class,
+              v.vendor_persistence,
+              v.vndr_status_po AS purchasing_status,
+              v.primary_vendor,
+              v.corporate_setid,
+              v.corporate_vendor,
+              v.hub_zone,
+              TO_CHAR(v.eeo_certif_dt, 'YYYY-MM-DD') AS eeo_certification_date,
+              TO_CHAR(v.last_activity_dt, 'YYYY-MM-DD') AS last_activity_date,
+              v.wthd_sw AS subject_to_withholding,
+              a.address1,
+              a.city,
+              a.state,
+              a.postal,
+              a.country,
+              l.pymnt_terms_cd AS payment_terms,
+              l.currency_cd,
+              NVL(pol.policy_count, 0) AS policy_count,
+              TO_CHAR(pol.latest_policy_end, 'YYYY-MM-DD') AS latest_policy_end_date
+          FROM params p
+          JOIN sysadm.ps_vendor v
+              ON (p.setid IS NULL OR v.setid = p.setid)
+             AND (p.vendor_id IS NULL OR v.vendor_id = p.vendor_id)
+             AND (p.name_pattern IS NULL
+                  OR UPPER(v.name1) LIKE '%' || UPPER(p.name_pattern) || '%'
+                  OR UPPER(v.name2) LIKE '%' || UPPER(p.name_pattern) || '%')
+          LEFT JOIN sysadm.ps_vendor_addr a
+              ON a.setid = v.setid
+             AND a.vendor_id = v.vendor_id
+             AND a.address_seq_num = v.prim_addr_seq_num
+             AND a.effdt = (SELECT MAX(a2.effdt) FROM sysadm.ps_vendor_addr a2
+                             WHERE a2.setid = a.setid AND a2.vendor_id = a.vendor_id
+                               AND a2.address_seq_num = a.address_seq_num AND a2.effdt <= TRUNC(SYSDATE))
+          LEFT JOIN sysadm.ps_vendor_loc l
+              ON l.setid = v.setid
+             AND l.vendor_id = v.vendor_id
+             AND l.vndr_loc = v.default_loc
+             AND l.effdt = (SELECT MAX(l2.effdt) FROM sysadm.ps_vendor_loc l2
+                             WHERE l2.setid = l.setid AND l2.vendor_id = l.vendor_id
+                               AND l2.vndr_loc = l.vndr_loc AND l2.effdt <= TRUNC(SYSDATE))
+          LEFT JOIN pol
+              ON pol.setid = v.setid AND pol.vendor_id = v.vendor_id
+          ORDER BY v.name1
+      )
+      WHERE ROWNUM <= 50
+  ps_hcm_lookup_recent_transactions:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Finds recent payroll, project and vendor records so the agent can ground an ID before calling a detail tool. doc_type is PAYCHECK (number, EMPLID, date, status, gross), PROJECT (project ID, description, status) or VENDOR (vendor ID, name, status, last activity). The ID is matched from its start, not anywhere in it. At most 25 rows, newest first.
+      Replaces the FSCM lookup (vouchers, purchase orders, sourcing events and expense sheets), which cannot run on this HCM database.
+      Underlying Tables: PS_PAY_CHECK, PS_PROJECT, PS_VENDOR.
+      Security Context: HCM data; no row security applies unless the PL/SQL wrapper is on.
+    parameters:
+    - name: doc_type
+      type: string
+      description: PAYCHECK, PROJECT or VENDOR. Required.
+    - name: org_code
+      type: string
+      description: Company (PAYCHECK), Project Costing business unit (PROJECT) or
+        SetID (VENDOR). Empty = any.
+    - name: doc_id
+      type: string
+      description: 'Start of the ID: paycheck number or EMPLID (PAYCHECK), project
+        ID (PROJECT), vendor ID (VENDOR). Empty = latest records.'
+    statement: |-
+      WITH params AS (
+          SELECT
+              :doc_type AS doc_type,
+              :org_code AS org_code,
+              :doc_id AS doc_id
+          FROM dual
+      )
+      SELECT * FROM (
+          SELECT
+              'PAYCHECK' AS doc_type,
+              c.company AS org_code,
+              TO_CHAR(c.paycheck_nbr) AS doc_id,
+              c.emplid AS alt_number,
+              TO_CHAR(c.check_dt, 'YYYY-MM-DD') AS doc_date,
+              c.paycheck_status AS doc_status,
+              c.total_gross AS total_amt
+          FROM params p
+          JOIN sysadm.ps_pay_check c
+              ON UPPER(p.doc_type) = 'PAYCHECK'
+             AND (p.org_code IS NULL OR c.company = p.org_code)
+             AND (p.doc_id IS NULL OR TO_CHAR(c.paycheck_nbr) LIKE p.doc_id || '%' OR c.emplid = p.doc_id)
+          UNION ALL
+          SELECT
+              'PROJECT',
+              pr.business_unit,
+              pr.project_id,
+              pr.descr,
+              TO_CHAR(pr.dttm_stamp, 'YYYY-MM-DD'),
+              pr.eff_status,
+              CAST(NULL AS NUMBER)
+          FROM params p
+          JOIN sysadm.ps_project pr
+              ON UPPER(p.doc_type) = 'PROJECT'
+             AND (p.org_code IS NULL OR pr.business_unit = p.org_code)
+             AND (p.doc_id IS NULL OR pr.project_id LIKE p.doc_id || '%')
+          UNION ALL
+          SELECT
+              'VENDOR',
+              v.setid,
+              v.vendor_id,
+              v.name1,
+              TO_CHAR(v.last_activity_dt, 'YYYY-MM-DD'),
+              v.vendor_status,
+              CAST(NULL AS NUMBER)
+          FROM params p
+          JOIN sysadm.ps_vendor v
+              ON UPPER(p.doc_type) = 'VENDOR'
+             AND (p.org_code IS NULL OR v.setid = p.org_code)
+             AND (p.doc_id IS NULL OR v.vendor_id LIKE p.doc_id || '%')
+          ORDER BY 5 DESC NULLS LAST
+      )
+      WHERE ROWNUM <= 25
+  ps_hcm_search_foia_records:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Searches the HR and vendor records that could be requested under public-records (FOIA) rules and returns where they are, not what they say: category, reference ID, party name, a title and a date. Categories: personnel records (by name or EMPLID), disciplinary actions, grievances, training records and vendor records. At most 100 rows. At least a keyword or a category is required so that a broad dump is not returned; person records carry no date, so they are left out when a date range is given.
+      Use it to locate candidate records for a request; fetch the content of one person's record with ps_hcm_get_employee_record_documents. Purchase orders and vouchers are not in this database. There is no FOIA skill in google_oracle_skills yet, so this toolset is a placeholder until one is delivered.
+      Underlying Tables: PS_NAMES, PS_DISCIPLIN_ACTN, PS_GRIEVANCE, PS_TRAINING, PS_VENDOR.
+      Security Context: Personal data; use the PL/SQL wrapper and an authorised user in production.
+    parameters:
+    - name: search_keyword
+      type: string
+      description: Name, ID or title text to find (case-insensitive). Empty = no text
+        filter, but then a category is required.
+    - name: category
+      type: string
+      description: PERSON, DISCIPLINE, GRIEVANCE, TRAINING, VENDOR, or ALL. Empty
+        = all, but then a keyword is required.
+    - name: start_date
+      type: string
+      description: Earliest record date (YYYY-MM-DD). Empty = no lower bound; person
+        records have no date and are left out when a date is given.
+    - name: end_date
+      type: string
+      description: Latest record date (YYYY-MM-DD). Empty = no upper bound.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :search_keyword AS search_keyword,
+              :category AS category,
+              :start_date AS start_date,
+              :end_date AS end_date
+          FROM dual
+      ),
+      nm AS (
+          SELECT n.emplid, n.name_display
+          FROM sysadm.ps_names n
+          WHERE n.name_type = 'PRI'
+            AND n.effdt = (SELECT MAX(n2.effdt) FROM sysadm.ps_names n2
+                            WHERE n2.emplid = n.emplid AND n2.name_type = n.name_type AND n2.effdt <= TRUNC(SYSDATE))
+      )
+      SELECT * FROM (
+          SELECT
+              'PERSON' AS record_category,
+              nm.emplid AS reference_id,
+              nm.name_display AS party_name,
+              'Personnel record' AS record_title,
+              CAST(NULL AS VARCHAR2(10)) AS record_date
+          FROM params p
+          JOIN nm
+              ON (p.search_keyword IS NOT NULL OR p.category IS NOT NULL)
+             AND (p.category IS NULL OR UPPER(p.category) IN ('PERSON', 'ALL'))
+             AND p.start_date IS NULL AND p.end_date IS NULL
+             AND (p.search_keyword IS NULL OR nm.emplid = p.search_keyword
+                  OR UPPER(nm.name_display) LIKE '%' || UPPER(p.search_keyword) || '%')
+          UNION ALL
+          SELECT
+              'DISCIPLINE',
+              d.emplid || '/' || TO_CHAR(d.discipline_dt, 'YYYYMMDD'),
+              nm.name_display,
+              'Disciplinary action: ' || d.disciplinary_type,
+              TO_CHAR(d.discipline_dt, 'YYYY-MM-DD')
+          FROM params p
+          JOIN sysadm.ps_disciplin_actn d
+              ON (p.search_keyword IS NOT NULL OR p.category IS NOT NULL)
+             AND (p.category IS NULL OR UPPER(p.category) IN ('DISCIPLINE', 'ALL'))
+             AND (p.start_date IS NULL OR d.discipline_dt >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+             AND (p.end_date IS NULL OR d.discipline_dt <= TO_DATE(p.end_date, 'YYYY-MM-DD'))
+          LEFT JOIN nm ON nm.emplid = d.emplid
+          WHERE p.search_keyword IS NULL OR d.emplid = p.search_keyword
+             OR UPPER(nm.name_display) LIKE '%' || UPPER(p.search_keyword) || '%'
+             OR UPPER(d.disciplinary_type) LIKE '%' || UPPER(p.search_keyword) || '%'
+          UNION ALL
+          SELECT
+              'GRIEVANCE',
+              g.grievance_id,
+              nm.name_display,
+              'Grievance: ' || g.grievance_type,
+              TO_CHAR(g.grievance_dt, 'YYYY-MM-DD')
+          FROM params p
+          JOIN sysadm.ps_grievance g
+              ON (p.search_keyword IS NOT NULL OR p.category IS NOT NULL)
+             AND (p.category IS NULL OR UPPER(p.category) IN ('GRIEVANCE', 'ALL'))
+             AND (p.start_date IS NULL OR g.grievance_dt >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+             AND (p.end_date IS NULL OR g.grievance_dt <= TO_DATE(p.end_date, 'YYYY-MM-DD'))
+          LEFT JOIN nm ON nm.emplid = g.emplid
+          WHERE p.search_keyword IS NULL OR g.grievance_id = p.search_keyword OR g.emplid = p.search_keyword
+             OR UPPER(nm.name_display) LIKE '%' || UPPER(p.search_keyword) || '%'
+             OR UPPER(g.grievance_type) LIKE '%' || UPPER(p.search_keyword) || '%'
+          UNION ALL
+          SELECT
+              'TRAINING',
+              tr.emplid || '/' || tr.course || '/' || TO_CHAR(tr.course_start_dt, 'YYYYMMDD'),
+              nm.name_display,
+              'Training: ' || tr.course_title,
+              TO_CHAR(tr.course_start_dt, 'YYYY-MM-DD')
+          FROM params p
+          JOIN sysadm.ps_training tr
+              ON (p.search_keyword IS NOT NULL OR p.category IS NOT NULL)
+             AND (p.category IS NULL OR UPPER(p.category) IN ('TRAINING', 'ALL'))
+             AND (p.start_date IS NULL OR tr.course_start_dt >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+             AND (p.end_date IS NULL OR tr.course_start_dt <= TO_DATE(p.end_date, 'YYYY-MM-DD'))
+          LEFT JOIN nm ON nm.emplid = tr.emplid
+          WHERE p.search_keyword IS NULL OR tr.emplid = p.search_keyword
+             OR UPPER(nm.name_display) LIKE '%' || UPPER(p.search_keyword) || '%'
+             OR UPPER(tr.course_title) LIKE '%' || UPPER(p.search_keyword) || '%'
+          UNION ALL
+          SELECT
+              'VENDOR',
+              v.setid || '/' || v.vendor_id,
+              v.name1,
+              'Vendor record',
+              TO_CHAR(v.last_activity_dt, 'YYYY-MM-DD')
+          FROM params p
+          JOIN sysadm.ps_vendor v
+              ON (p.search_keyword IS NOT NULL OR p.category IS NOT NULL)
+             AND (p.category IS NULL OR UPPER(p.category) IN ('VENDOR', 'ALL'))
+             AND (p.start_date IS NULL OR v.last_activity_dt >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+             AND (p.end_date IS NULL OR v.last_activity_dt <= TO_DATE(p.end_date, 'YYYY-MM-DD'))
+             AND (p.search_keyword IS NULL OR v.vendor_id = p.search_keyword
+                  OR UPPER(v.name1) LIKE '%' || UPPER(p.search_keyword) || '%')
+          ORDER BY 5 DESC NULLS LAST, 3
+      )
+      WHERE ROWNUM <= 100
+  ps_hcm_search_policy_documents:
+    kind: oracle-sql
+    source: ps-oracle-source
+    description: |-
+      Searches the agency-written procedure text that exists in this HCM database: checklist item instructions (what an HR checklist step requires) and HR attachment configurations (attachment types and their stock documents, with file names). Each entry is the version in force on as_of_date (default today). At most 50 entries, newest effective date first.
+      This is not a policy manual library: this database has no portal policy documents, so most agency policy documents cannot be searched here. Use attachsysfilename with ps_hcm_get_attachment_text to read a stock document, if it has one. Federal and state law (the statute and regulation tiers of the policy skill) are not in PeopleSoft.
+      Underlying Tables: PS_CHKLST_ITEM_TBL, PS_HR_ATT_CNFG_TBL.
+      Security Context: HCM setup data; no row security applies unless the PL/SQL wrapper is on.
+    parameters:
+    - name: search_text
+      type: string
+      description: Text to find in the title, description or instructions (case-insensitive).
+        Empty = no text filter.
+    - name: source
+      type: string
+      description: CHECKLIST_ITEM (checklist item instructions), ATTACHMENT_CONFIG
+        (HR attachment types and their stock documents), or empty for both.
+    - name: as_of_date
+      type: string
+      description: Date the entries must be in force on (YYYY-MM-DD). Empty = today.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :search_text AS search_text,
+              :source AS source,
+              :as_of_date AS as_of_date
+          FROM dual
+      )
+      SELECT * FROM (
+          SELECT
+              'CHECKLIST_ITEM' AS source,
+              i.chklst_item_cd AS document_id,
+              i.descr AS title,
+              DBMS_LOB.SUBSTR(i.descrlong, 1000, 1) AS summary,
+              i.eff_status AS status,
+              TO_CHAR(i.effdt, 'YYYY-MM-DD') AS effective_date,
+              CAST(NULL AS VARCHAR2(200)) AS file_name,
+              CAST(NULL AS VARCHAR2(200)) AS attachsysfilename
+          FROM params p
+          JOIN sysadm.ps_chklst_item_tbl i
+              ON (p.source IS NULL OR UPPER(p.source) = 'CHECKLIST_ITEM')
+             AND (p.search_text IS NULL
+                  OR UPPER(i.descr) LIKE '%' || UPPER(p.search_text) || '%'
+                  OR UPPER(DBMS_LOB.SUBSTR(i.descrlong, 2000, 1)) LIKE '%' || UPPER(p.search_text) || '%')
+             AND i.effdt = (SELECT MAX(i2.effdt) FROM sysadm.ps_chklst_item_tbl i2
+                             WHERE i2.chklst_item_cd = i.chklst_item_cd
+                               AND i2.effdt <= NVL(TO_DATE(p.as_of_date, 'YYYY-MM-DD'), TRUNC(SYSDATE)))
+          UNION ALL
+          SELECT
+              'ATTACHMENT_CONFIG' AS source,
+              c.hr_att_cnfg_id AS document_id,
+              c.descr AS title,
+              DBMS_LOB.SUBSTR(c.comments, 1000, 1) AS summary,
+              c.eff_status AS status,
+              TO_CHAR(c.effdt, 'YYYY-MM-DD') AS effective_date,
+              c.attachuserfile AS file_name,
+              c.attachsysfilename AS attachsysfilename
+          FROM params p
+          JOIN sysadm.ps_hr_att_cnfg_tbl c
+              ON (p.source IS NULL OR UPPER(p.source) = 'ATTACHMENT_CONFIG')
+             AND (p.search_text IS NULL
+                  OR UPPER(c.descr) LIKE '%' || UPPER(p.search_text) || '%'
+                  OR UPPER(DBMS_LOB.SUBSTR(c.comments, 2000, 1)) LIKE '%' || UPPER(p.search_text) || '%')
+             AND c.effdt = (SELECT MAX(c2.effdt) FROM sysadm.ps_hr_att_cnfg_tbl c2
+                             WHERE c2.hr_att_cnfg_id = c.hr_att_cnfg_id
+                               AND c2.effdt <= NVL(TO_DATE(p.as_of_date, 'YYYY-MM-DD'), TRUNC(SYSDATE)))
+          ORDER BY 6 DESC, 3
+      )
+      WHERE ROWNUM <= 50
+toolsets:
+  document_intake_cleanup_and_validation:
+  - ps_verify_constituent_data
+  schema_discovery_and_lovs:
+  - ps_list_business_units
+  - ps_list_setids
+  - ps_list_translate_values
+  - ps_lookup_constituents
+  ps_hcm_schema_discovery_and_lovs:
+  - ps_hcm_describe_table
+  - ps_hcm_lookup_recent_transactions
+  ps_hcm_expense_auditor:
+  - ps_hcm_find_duplicate_time_entries
+  - ps_hcm_get_labor_distribution
+  - ps_hcm_get_payroll_earnings
+  - ps_hcm_get_project_setup
+  ps_hcm_plain_language_notice_generator:
+  - ps_hcm_get_agency_contact_info
+  - ps_hcm_get_attachment_text
+  ps_hcm_policy_and_statute_assistant:
+  - ps_hcm_get_earnings_rules
+  - ps_hcm_get_leave_policy_rules
+  - ps_hcm_search_policy_documents
+  ps_hcm_redaction_and_foia_compliance:
+  - ps_hcm_get_employee_record_documents
+  - ps_hcm_search_foia_records
+  ps_hcm_document_intake_cleanup_and_validation:
+  - ps_hcm_get_person_documents
+  ps_hcm_rfp_vendor_evaluation_scorer:
+  - ps_hcm_get_vendor_profile

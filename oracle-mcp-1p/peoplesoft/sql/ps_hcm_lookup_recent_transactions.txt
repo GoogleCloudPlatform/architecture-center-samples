@@ -1,0 +1,4 @@
+Finds recent payroll, project and vendor records so the agent can ground an ID before calling a detail tool. doc_type is PAYCHECK (number, EMPLID, date, status, gross), PROJECT (project ID, description, status) or VENDOR (vendor ID, name, status, last activity). The ID is matched from its start, not anywhere in it. At most 25 rows, newest first.
+Replaces the FSCM lookup (vouchers, purchase orders, sourcing events and expense sheets), which cannot run on this HCM database.
+Underlying Tables: PS_PAY_CHECK, PS_PROJECT, PS_VENDOR.
+Security Context: HCM data; no row security applies unless the PL/SQL wrapper is on.

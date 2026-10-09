@@ -1,0 +1,3 @@
+Searches PeopleSoft HCM and Campus directory for constituents, students, or employees by name or postal code.
+Use this tool to discover valid values for constituent bind variable :emplid before invoking case determination, personnel, or verification tools.
+Underlying Tables: PS_NAMES, PS_PERSONAL_DATA, PS_ADDRESSES.

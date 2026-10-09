@@ -1,0 +1,3 @@
+Lists active Oracle EBS Operating Units (organization_id, name, short_code) from HR_OPERATING_UNITS.
+Use this tool to discover valid values for the :org_id bind variable required across AR, AP, PO, and Grants tools.
+Underlying Table: HR_OPERATING_UNITS.

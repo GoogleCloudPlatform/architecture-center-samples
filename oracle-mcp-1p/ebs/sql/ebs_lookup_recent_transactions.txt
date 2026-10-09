@@ -1,0 +1,4 @@
+Searches recent POs, Invoices, Customer Notices, RFPs, or Expense Reports by document number or type.
+Use this tool to discover valid values for transactional bind variables :po_number, :po_header_id, :invoice_id, :transaction_id, :auction_header_id, and :report_header_id.
+Underlying Tables: PO_HEADERS_ALL, AP_INVOICES_ALL, RA_CUSTOMER_TRX_ALL, PON_AUCTION_HEADERS_ALL, AP_EXPENSE_REPORT_HEADERS_ALL.
+Parameters doc_number and org_id are optional: pass an empty string to leave them off.

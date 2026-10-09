@@ -1,0 +1,5 @@
+Retrieves an employee's personnel file from JD Edwards HCM: identity (name, SSN, date of birth, home address), job, status and pay rates, the HR change history, and recent pay stubs.
+Underlying Tables: F060116 (Employee Master), F0111 (Who's Who), F0116 (Address by Date), F08042 (HR History), F06156 (Payment Header), F0006 (Business Unit Master).
+JDE Applications: Employee Master (P0801), HR History, Payroll Check Inquiry.
+Data Notes: hr_history and pay_history are text lists, newest first, truncated at 4000 bytes. Contains SSN and date of birth, which are redaction targets.
+Security Context: JDE HR business unit and home company row security (F00950); enforced only with the PL/SQL security wrapper.

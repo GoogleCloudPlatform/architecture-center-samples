@@ -1,0 +1,4 @@
+Queries one Oracle Sourcing negotiation (RFP, RFQ, RFI or auction) by header ID or document number: document type, title, status, sealed-bid visibility, amendment number and the latest amendment number (an amended solicitation is a new negotiation version), open and close dates, then one row per item line (record_type LINE) and one row per requirement (record_type REQUIREMENT) with section, text, mandatory flag, weight, scoring type and method, maximum and knockout score.
+Requirements with requirement_line_number -1 apply to the whole solicitation. Requirement rows describe the published criteria; the evaluation itself and any scores are not returned.
+Underlying Tables: PON_AUCTION_HEADERS_ALL, PON_AUC_DOCTYPES, PON_AUCTION_ITEM_PRICES_ALL, PON_AUCTION_ATTRIBUTES.
+Security Context: Per-user security only with the PL/SQL security wrapper.

@@ -1,0 +1,4 @@
+Returns the agency's own contact details as stored in HCM setup: office locations (address, phone, extension, fax) and companies (legal entity name and address), as of today. Search by SetID and location, by company, or by text in the name or city. At most 100 rows; a location filter returns locations only, a company filter returns companies only, no filter returns both.
+Use it for the required contact elements of a plain-language notice (where to call, where to write, office address). TTY or relay numbers, website URLs and hours are not stored in these tables: report them as 'not found in the source' rather than inventing them. This is organisational data with no personal information.
+Underlying Tables: PS_LOCATION_TBL, PS_COMPANY_TBL.
+Security Context: HCM setup data; no row security applies unless the PL/SQL wrapper is on.

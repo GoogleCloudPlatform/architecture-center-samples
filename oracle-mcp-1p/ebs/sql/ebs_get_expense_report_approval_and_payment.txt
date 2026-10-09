@@ -1,0 +1,5 @@
+Retrieves the approval, receipts-audit and payment trail of expense reports, for segregation-of-duties checks and the incurred-versus-paid test.
+Per report it returns the status and last status date, the current and override approver (and whether the approver is the submitter), the workflow approval flag, the paper and image receipts status and received date, the audit code and last auditor, any hold or reject code, and the matching Payables invoice with its payments: amount, payment date, check or EFT number, payment status, method and cleared or void date. A report paid in several instalments returns one row per payment.
+All parameters are optional: pass an empty string to leave a filter off. Returns at most 200 rows, newest first. Per-step approval history from the approval workflow is not returned.
+Underlying Tables: AP_EXPENSE_REPORT_HEADERS_ALL, AP_INVOICES_ALL, AP_INVOICE_PAYMENTS_ALL, AP_CHECKS_ALL, PER_ALL_PEOPLE_F.
+Security Context: Financial auditor responsibility context (fnd_global.apps_initialize).

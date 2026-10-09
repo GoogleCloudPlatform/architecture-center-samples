@@ -1,0 +1,4 @@
+Returns payroll earnings code rules in force on a date: payment type, maximum hourly rate, flat amount, year-to-date maximum, rate multiplier (for example overtime factors), tax subjectivity and FLSA treatment. One row per earnings code, from the latest effective-dated row on or before as_of_date (default today). At most 100 codes.
+Use it as the agency's own rule source when the policy skill, or an audit, needs the limit or treatment behind a pay type (overtime, shift differential, caps). The earnings codes seen on paychecks come from ps_hcm_get_payroll_earnings (other_earnings_codes).
+Underlying Tables: PS_EARNINGS_TBL.
+Security Context: HCM setup data; no row security applies unless the PL/SQL wrapper is on.

@@ -1,0 +1,5 @@
+DISABLED: tables not in the HCM database HR92U054 (ORA-00942 on 2026-10-08); enable on an FSCM/Campus database.
+Retrieves applicant verification files and pending attachments from PeopleSoft Constituent / Student Case records.
+Underlying Tables: PS_SCC_ATT_DOC, PS_PROSPECT_DOC, PS_CHECKLIST_ITEM, PS_ATTACHMENT_TBL.
+Procedures/APIs: Component Interface SCC_INTAKE_DOC_CI, REST Service SCC_GET_INTAKE_ATTACHMENT.v1.
+Security Context: OPRID user context; checklist item status check.

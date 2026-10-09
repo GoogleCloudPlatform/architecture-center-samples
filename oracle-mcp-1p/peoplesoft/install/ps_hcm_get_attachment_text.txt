@@ -1,0 +1,5 @@
+Returns the plain text of a stored PeopleSoft attachment, 1,000 characters per call, for PDF, Word, Excel, PowerPoint, RTF, HTML and text files. Give the stored file name (attachsysfilename) from ps_hcm_get_person_documents or ps_hcm_search_policy_documents. The response says how big the file is, whether text could be read (text_status: OK, NO_TEXT for scanned or image-only files, ERROR with the reason for encrypted or unsupported files, NOT_FOUND, NO_CONTENT or TOO_LARGE over 50 MB), how many chunks there are and whether more follow; call again with the next chunk number until has_more is N.
+Attachments stored in several parts are joined first, and the newest version is used. Use ps_hcm_get_attachment_base64 when the raw file is needed.
+Attachments can hold personal data. The text is returned as stored; masking belongs to the calling skill.
+Underlying Tables: PS_HR_ATT_FILES, PSFILE_ATTDET (through the database package SYSADM.XX_AI_ATTACHMENT_PKG, installed by a DBA from peoplesoft/install).
+Security Context: Attachment data; use the PL/SQL wrapper and an authorised user in production.

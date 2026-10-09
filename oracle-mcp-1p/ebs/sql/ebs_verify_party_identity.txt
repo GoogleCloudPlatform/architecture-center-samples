@@ -1,0 +1,4 @@
+Validates extracted identity data (legal name, tax ID/SSN hash, postal code) for a person against the EBS Trading Community Architecture (TCA) registry. Returns one row per matching person, at most 10, with name match confidence (100 exact, 75 partial, 0 no match), VERIFIED_MATCH / NO_MATCH / NOT_CHECKED results for the tax ID hash and postal code, the matching or identifying address and its uses (BILL_TO, SHIP_TO and so on), and the primary email and phone.
+Pass party_id when known; otherwise legal_name must be at least 3 characters. The tax ID is never returned: send its SHA-256 hash (hex, either case) computed over the value exactly as stored.
+Underlying Tables: HZ_PARTIES, HZ_PERSON_PROFILES, HZ_PARTY_SITES, HZ_PARTY_SITE_USES, HZ_LOCATIONS, HZ_CONTACT_POINTS.
+Security Context: Per-user security only with the PL/SQL security wrapper.

@@ -1,0 +1,5 @@
+Queries agency-configured travel and expense policy rules (per diem allowances, receipt thresholds, audit sampling) and procurement approval limits (delegation of authority) from JD Edwards setups.
+Underlying Tables: F09E108 (Expense Policy Rules), F09E110 (Audit Selection Rules), F43008 (Approval Level Revisions), F0101 (Address Book).
+JDE Applications: Expense Management policy setup (system 09E), Approval Routing Revisions for Procurement.
+Data Notes: Dates converted from JDE Julian (CYYDDD); expense amounts converted from implied decimals (2 places, rates 3 places); approval limits (APALIM) are stored with no decimals.
+Security Context: Setup data, readable by all agency users.

@@ -1,0 +1,5 @@
+Returns Project Costing project definitions: description, type, function, status, in-use flag, start and end dates, currency, percent complete, docket number, source and the size and roles of the project team. At most 100 projects.
+This is the HCM database's nearest equivalent of award terms for the expense auditor skill. It is project setup only: sponsor, funding stream, award budget, period of performance and allowable-cost terms are not in this database (Grants and Contracts are not installed), and start and end dates are blank on almost all projects. Report those items as 'not available' rather than guessing.
+Use it to confirm that a project exists, is active and has a team before testing time charged to it with ps_hcm_get_labor_distribution.
+Underlying Tables: PS_PROJECT, PS_PROJECT_TEAM.
+Security Context: Project Costing business unit security; no row security applies unless the PL/SQL wrapper is on.

@@ -1,0 +1,5 @@
+DISABLED: tables not in the HCM database HR92U054 (ORA-00942 on 2026-10-08); enable on an FSCM/Campus database.
+Retrieves personnel files, payroll stubs, and HR attachment records from PeopleSoft HCM Document Management.
+Underlying Tables: PS_NAMES, PS_PERS_NID, PS_DISCIPLINARY, PS_GRIEVANCE, PS_PAY_CHECK, PS_HR_ATT_DATA.
+Procedures/APIs: Component Interface CI_JOB_DATA, App Package HR_DOC_MGMT:DocumentHandler.
+Security Context: Row-level department security tree filtering.

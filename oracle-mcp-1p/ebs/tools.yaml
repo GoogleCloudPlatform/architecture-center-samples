@@ -1,0 +1,2030 @@
+# ==============================================================================
+# Model Context Protocol (MCP) Toolbox for Databases - Tools Configuration
+# System: Oracle E-Business Suite (EBS) R12.2
+# Target: Gemini for Government Plugin (Oct 2026)
+# Bind Variables: Oracle syntax (:param_name)
+# Connection Details: Unified connectionString (hostname:port/servicename)
+# ==============================================================================
+#
+# Authenticated parameters for the PL/SQL security wrapper (README §2.6).
+# To enable: uncomment the authServices block below, set GOOGLE_CLIENT_ID
+# in ebs/.env, then run: python3 scripts/sync_sql_to_yaml.py --system ebs --wrap
+# authServices:
+#   google-auth:
+#     type: google
+#     clientId: ${GOOGLE_CLIENT_ID}
+
+sources:
+  ebs-oracle-source:
+    kind: oracle
+    connectionString: ${DB_CONNECTION_STRING:apps.example.com:1521/EBSDB}
+    user: ${DB_USER:apps_ai}
+    password: ${DB_PASSWORD:apps_ai}
+tools:
+  ebs_get_constituent_notice_details:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Queries one AR transaction (determination, overpayment notice or billing adjustment): the customer, each invoice line with its reason code and meaning, the original and outstanding balance summed over all installments, and the grant award that billed it when the transaction came from Grants Accounting.
+      This returns an individual's account data (name, account number, balances); the plain_language_notice_generator skill handles population-level notices only, so use this tool only where individual determinations are in scope.
+      Underlying Tables: RA_CUSTOMER_TRX_ALL, RA_CUSTOMER_TRX_LINES_ALL, AR_PAYMENT_SCHEDULES_ALL, HZ_CUST_ACCOUNTS, HZ_PARTIES, AR_LOOKUPS (INVOICING_REASON), PA_PROJECTS_ALL, GMS_AWARDS_ALL.
+      Security Context: Operating unit filter (org_id); per-user security only with the PL/SQL security wrapper.
+    parameters:
+    - name: transaction_id
+      type: string
+      description: Customer transaction ID or transaction number (e.g., Claim / Determination
+        ID).
+    - name: org_id
+      type: string
+      description: Operating unit ID. Empty string = any operating unit.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :transaction_id AS transaction_id,
+              :org_id AS org_id
+          FROM dual
+      )
+      -- Balances are summed over the transaction's payment schedules (installments), and the
+      -- award is the one whose award project billed this invoice (Grants invoices carry the
+      -- project number in INTERFACE_HEADER_ATTRIBUTE1), so each invoice line is one row.
+      SELECT
+          trx.customer_trx_id,
+          trx.trx_number,
+          TO_CHAR(trx.trx_date, 'YYYY-MM-DD') AS notice_date,
+          trx.org_id,
+          party.party_name AS constituent_name,
+          cust.account_number,
+          lines.line_number,
+          lines.line_type,
+          lines.description AS statutory_description,
+          lines.extended_amount AS line_amount,
+          lines.reason_code,
+          rsn.meaning AS reason_meaning,
+          sched.amount_due_original AS total_overpayment_amount,
+          sched.amount_due_remaining AS outstanding_balance,
+          sched.payment_status,
+          sched.installment_count,
+          gms.award_number,
+          gms.award_full_name AS award_name
+      FROM params p
+      JOIN apps.ra_customer_trx_all trx
+          ON (TO_CHAR(trx.customer_trx_id) = p.transaction_id OR trx.trx_number = p.transaction_id)
+         AND (p.org_id IS NULL OR trx.org_id = TO_NUMBER(p.org_id))
+      JOIN apps.ra_customer_trx_lines_all lines
+          ON trx.customer_trx_id = lines.customer_trx_id
+      JOIN (
+          SELECT
+              customer_trx_id,
+              SUM(amount_due_original) AS amount_due_original,
+              SUM(amount_due_remaining) AS amount_due_remaining,
+              CASE WHEN MIN(status) = MAX(status) THEN MIN(status) ELSE 'MIXED' END AS payment_status,
+              COUNT(*) AS installment_count
+          FROM apps.ar_payment_schedules_all
+          GROUP BY customer_trx_id
+      ) sched
+          ON trx.customer_trx_id = sched.customer_trx_id
+      JOIN apps.hz_cust_accounts cust
+          ON trx.bill_to_customer_id = cust.cust_account_id
+      JOIN apps.hz_parties party
+          ON cust.party_id = party.party_id
+      LEFT JOIN apps.ar_lookups rsn
+          ON rsn.lookup_type = 'INVOICING_REASON'
+         AND rsn.lookup_code = lines.reason_code
+      LEFT JOIN apps.pa_projects_all ppa
+          ON trx.interface_header_context IN ('PROJECTS INVOICES', 'PA INVOICES')
+         AND ppa.segment1 = trx.interface_header_attribute1
+      LEFT JOIN apps.gms_awards_all gms
+          ON gms.award_project_id = ppa.project_id
+      ORDER BY lines.line_number
+  ebs_get_document_attachment:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Retrieves one attached document (for example a determination letter or decision PDF) from the EBS attachment store: category, data type, title, description, file name or URL, MIME type, size and the file data.
+      The file data is binary (PDF, Word, image), not text. Only file attachments have file data; text and web-page attachments return their type and URL only. attachment_count shows how many records the same document is attached to.
+      Underlying Tables: FND_DOCUMENTS, FND_ATTACHED_DOCUMENTS, FND_DOCUMENTS_TL, FND_DOCUMENT_CATEGORIES_TL, FND_DOCUMENT_DATATYPES, FND_LOBS.
+      Security Context: Per-user security only with the PL/SQL security wrapper.
+    parameters:
+    - name: document_id
+      type: string
+      description: Document identifier (FND_DOCUMENTS.DOCUMENT_ID).
+    - name: entity_name
+      type: string
+      description: Optional entity the document is attached to (e.g. RA_CUSTOMER_TRX_ALL).
+        Empty string = any.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :document_id AS document_id,
+              :entity_name AS entity_name
+          FROM dual
+      )
+      -- A document can be attached to several records; the lowest attached_document_id is
+      -- returned and attachment_count says how many attachments share the document.
+      SELECT
+          fad.attached_document_id,
+          fd.document_id,
+          fad.entity_name,
+          fad.pk1_value AS entity_pk1,
+          COUNT(*) OVER () AS attachment_count,
+          cat.user_name AS document_category,
+          dtype.user_name AS document_datatype,
+          fdt.title AS document_name,
+          fdt.description AS document_description,
+          NVL(fl.file_name, fd.file_name) AS file_name,
+          fd.url,
+          fl.file_content_type AS mime_type,
+          fl.file_format,
+          DBMS_LOB.GETLENGTH(fl.file_data) AS file_size_bytes,
+          fl.file_data
+      FROM params p
+      JOIN apps.fnd_documents fd
+          ON fd.document_id = TO_NUMBER(p.document_id)
+      JOIN apps.fnd_attached_documents fad
+          ON fad.document_id = fd.document_id
+         AND (p.entity_name IS NULL OR fad.entity_name = p.entity_name)
+      LEFT JOIN apps.fnd_documents_tl fdt
+          ON fd.document_id = fdt.document_id
+         AND fdt.language = USERENV('LANG')
+      LEFT JOIN apps.fnd_document_categories_tl cat
+          ON cat.category_id = fd.category_id
+         AND cat.language = USERENV('LANG')
+      LEFT JOIN apps.fnd_document_datatypes dtype
+          ON dtype.datatype_id = fd.datatype_id
+         AND dtype.language = USERENV('LANG')
+      LEFT JOIN apps.fnd_lobs fl
+          ON fd.datatype_id = 6
+         AND fd.media_id = fl.file_id
+      ORDER BY fad.attached_document_id
+      FETCH FIRST 1 ROWS ONLY
+  ebs_search_foia_records:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Searches discoverable case records, HR employee files, vendor agreements, and correspondence across EBS modules by date, party, or keyword.
+      Underlying Tables: PER_ALL_PEOPLE_F, PO_HEADERS_ALL, PO_LINES_ALL, AP_INVOICES_ALL, FND_ATTACHED_DOCUMENTS.
+      APIs: APPS_AI.EBS_FOIA_SEARCH_PKG.SEARCH_DOCUMENTS.
+      Security Context: Cross-module discovery context; filtered by agency tenant Org ID.
+    parameters:
+    - name: query_keyword
+      type: string
+      description: Keyword, party name, or solicitation identifier for discovery search.
+    - name: start_date
+      type: string
+      description: Discovery date window start in YYYY-MM-DD format.
+    - name: end_date
+      type: string
+      description: Discovery date window end in YYYY-MM-DD format.
+    - name: org_id
+      type: integer
+      description: Agency tenant Operating Unit / Organization ID to filter discovery.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :query_keyword AS query_keyword,
+              :start_date AS start_date,
+              :end_date AS end_date,
+              :org_id AS org_id
+          FROM dual
+      )
+      SELECT * FROM (
+          SELECT
+              'PO' AS source_module,
+              TO_CHAR(po.po_header_id) AS record_id,
+              po.segment1 AS document_number,
+              po.type_lookup_code AS document_type,
+              TO_CHAR(po.creation_date, 'YYYY-MM-DD') AS creation_date,
+              po.org_id,
+              vend.vendor_name AS party_name,
+              po.comments AS record_summary
+          FROM params p
+          JOIN apps.po_headers_all po
+              ON (p.start_date IS NULL OR po.creation_date >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+             AND (p.end_date IS NULL OR po.creation_date <= TO_DATE(p.end_date, 'YYYY-MM-DD') + 1)
+             AND (p.org_id IS NULL OR po.org_id = TO_NUMBER(p.org_id))
+          LEFT JOIN apps.ap_suppliers vend
+              ON po.vendor_id = vend.vendor_id
+          WHERE (p.query_keyword IS NULL
+              OR UPPER(po.segment1) LIKE UPPER('%' || p.query_keyword || '%')
+              OR UPPER(po.comments) LIKE UPPER('%' || p.query_keyword || '%')
+              OR UPPER(vend.vendor_name) LIKE UPPER('%' || p.query_keyword || '%'))
+
+          UNION ALL
+
+          SELECT
+              'AP' AS source_module,
+              TO_CHAR(inv.invoice_id) AS record_id,
+              inv.invoice_num AS document_number,
+              inv.invoice_type_lookup_code AS document_type,
+              TO_CHAR(inv.creation_date, 'YYYY-MM-DD') AS creation_date,
+              inv.org_id,
+              inv_vend.vendor_name AS party_name,
+              inv.description AS record_summary
+          FROM params p
+          JOIN apps.ap_invoices_all inv
+              ON (p.start_date IS NULL OR inv.creation_date >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+             AND (p.end_date IS NULL OR inv.creation_date <= TO_DATE(p.end_date, 'YYYY-MM-DD') + 1)
+             AND (p.org_id IS NULL OR inv.org_id = TO_NUMBER(p.org_id))
+          LEFT JOIN apps.ap_suppliers inv_vend
+              ON inv.vendor_id = inv_vend.vendor_id
+          WHERE (p.query_keyword IS NULL
+              OR UPPER(inv.invoice_num) LIKE UPPER('%' || p.query_keyword || '%')
+              OR UPPER(inv.description) LIKE UPPER('%' || p.query_keyword || '%')
+              OR UPPER(inv_vend.vendor_name) LIKE UPPER('%' || p.query_keyword || '%'))
+
+          UNION ALL
+
+          SELECT
+              'HR' AS source_module,
+              TO_CHAR(papf.person_id) AS record_id,
+              papf.employee_number AS document_number,
+              'PERSONNEL' AS document_type,
+              TO_CHAR(papf.creation_date, 'YYYY-MM-DD') AS creation_date,
+              papf.business_group_id AS org_id,
+              papf.full_name AS party_name,
+              'Title: ' || paaf.title || ' | Assignment: ' || paaf.assignment_number AS record_summary
+          FROM params p
+          JOIN apps.per_all_people_f papf
+              ON TRUNC(SYSDATE) BETWEEN papf.effective_start_date AND papf.effective_end_date
+             AND (p.start_date IS NULL OR papf.creation_date >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+             AND (p.end_date IS NULL OR papf.creation_date <= TO_DATE(p.end_date, 'YYYY-MM-DD') + 1)
+          LEFT JOIN apps.per_all_assignments_f paaf
+              ON papf.person_id = paaf.person_id
+             AND TRUNC(SYSDATE) BETWEEN paaf.effective_start_date AND paaf.effective_end_date
+          WHERE (p.query_keyword IS NULL
+              OR UPPER(papf.full_name) LIKE UPPER('%' || p.query_keyword || '%')
+              OR UPPER(papf.employee_number) LIKE UPPER('%' || p.query_keyword || '%'))
+      )
+      ORDER BY creation_date DESC
+      FETCH FIRST 100 ROWS ONLY
+  ebs_get_employee_personnel_file:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Retrieves employee personnel files, performance reviews, and absence documentation from EBS HRMS.
+      Underlying Tables: PER_ALL_PEOPLE_F, PER_ALL_ASSIGNMENTS_F, PER_PERFORMANCE_REVIEWS, PER_ABSENCE_ATTENDANCES, FND_LOBS.
+      APIs: HR_PERSON_API.GET_PERSON_DETAILS, View: APPS_AI.VW_FOIA_PERSONNEL_FILE.
+      Security Context: Security profile context (fnd_profile.value('PER_SECURITY_PROFILE_ID')).
+    parameters:
+    - name: person_id
+      type: integer
+      description: Unique identifier of the employee in HRMS (PER_ALL_PEOPLE_F.PERSON_ID).
+    - name: employee_number
+      type: string
+      description: Agency employee badge or identification number.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :person_id AS person_id,
+              :employee_number AS employee_number
+          FROM dual
+      )
+      SELECT
+          papf.person_id,
+          papf.employee_number,
+          papf.full_name,
+          papf.first_name,
+          papf.last_name,
+          papf.national_identifier AS ssn_tax_id,
+          TO_CHAR(papf.date_of_birth, 'YYYY-MM-DD') AS date_of_birth,
+          paaf.assignment_number,
+          paaf.job_id,
+          ppr.performance_review_id,
+          ppr.performance_rating,
+          TO_CHAR(ppr.review_date, 'YYYY-MM-DD') AS review_date,
+          paa.absence_attendance_type_id,
+          TO_CHAR(paa.date_start, 'YYYY-MM-DD') AS absence_start_date,
+          TO_CHAR(paa.date_end, 'YYYY-MM-DD') AS absence_end_date
+      FROM params p
+      JOIN apps.per_all_people_f papf
+          ON TRUNC(SYSDATE) BETWEEN papf.effective_start_date AND papf.effective_end_date
+         AND ((p.person_id IS NOT NULL AND papf.person_id = TO_NUMBER(p.person_id))
+           OR (p.employee_number IS NOT NULL AND papf.employee_number = p.employee_number))
+      JOIN apps.per_all_assignments_f paaf
+          ON papf.person_id = paaf.person_id
+         AND TRUNC(SYSDATE) BETWEEN paaf.effective_start_date AND paaf.effective_end_date
+      LEFT JOIN apps.per_performance_reviews ppr
+          ON papf.person_id = ppr.person_id
+      LEFT JOIN apps.per_absence_attendances paa
+          ON papf.person_id = paa.person_id
+  ebs_get_agency_policy_rules:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Queries agency-configured procurement approval limits and expense-type receipt rules from EBS setups. Pass an operating unit ID in org_id (empty string = all) and a name fragment in rule_name (empty string = all); pass as_of_date (YYYY-MM-DD) for the rules in force on a date (empty = all rules, active or not); at most 200 rows are returned. These tables have no start date: created_date is when the rule was set up, and effective_end_date is when it was ended or inactivated. In the EXPENSE category, threshold_amount is the amount above which a receipt is required (see threshold_meaning); it is not a spending cap. Per diem and lodging limits live in the expense policy schedules, which this tool does not read.
+      Underlying Tables: PO_CONTROL_RULES, PO_CONTROL_GROUPS_ALL, AP_EXPENSE_REPORT_PARAMS_ALL.
+      Security Context: Standard APPS schema access; Global profile options context.
+    parameters:
+    - name: policy_category
+      type: string
+      description: 'Policy category: ''PROCUREMENT'', ''TRAVEL'', ''EXPENSE'', or
+        ''ALL''.'
+    - name: rule_name
+      type: string
+      description: Specific rule name or control group parameter identifier.
+    - name: org_id
+      type: string
+      description: Operating unit ID to restrict the rules to. Empty string = all
+        operating units.
+    - name: as_of_date
+      type: string
+      description: YYYY-MM-DD; returns only rules that existed and had not ended on
+        that date. Empty string = all rules, active or not.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :policy_category AS policy_category,
+              :rule_name AS rule_name,
+              :org_id AS org_id,
+              :as_of_date AS as_of_date
+          FROM dual
+      )
+      -- These setup tables have no start date, only an end (inactive) date, so created_date
+      -- stands in for the start: a rule counts as in force on as_of_date if it was created
+      -- by then and had not ended.
+      SELECT * FROM (
+          SELECT
+              'PROCUREMENT' AS policy_category,
+              pcg.control_group_name AS rule_group,
+              pcr.rule_type_code AS rule_type,
+              pcr.object_code AS policy_object,
+              pcr.amount_limit AS threshold_amount,
+              'Approval amount limit' AS threshold_meaning,
+              TO_CHAR(pcr.creation_date, 'YYYY-MM-DD') AS created_date,
+              TO_CHAR(pcr.inactive_date, 'YYYY-MM-DD') AS effective_end_date,
+              'Org: ' || TO_CHAR(pcg.org_id) AS rule_scope
+          FROM apps.po_control_rules pcr
+          JOIN apps.po_control_groups_all pcg
+              ON pcr.control_group_id = pcg.control_group_id
+          CROSS JOIN params p
+          WHERE (p.policy_category IS NULL OR UPPER(p.policy_category) IN ('PROCUREMENT', 'ALL'))
+            AND (p.rule_name IS NULL OR UPPER(pcg.control_group_name) LIKE UPPER('%' || p.rule_name || '%'))
+            AND (p.org_id IS NULL OR pcg.org_id = TO_NUMBER(p.org_id))
+            AND (p.as_of_date IS NULL OR (TRUNC(pcr.creation_date) <= TO_DATE(p.as_of_date, 'YYYY-MM-DD')
+                 AND (pcr.inactive_date IS NULL OR pcr.inactive_date > TO_DATE(p.as_of_date, 'YYYY-MM-DD'))))
+
+          UNION ALL
+
+          SELECT
+              'EXPENSE' AS policy_category,
+              aerp.prompt AS rule_group,
+              aerp.category_code AS rule_type,
+              aerp.receipt_required_flag AS policy_object,
+              aerp.require_receipt_amount AS threshold_amount,
+              'Amount above which a receipt is required (0 = any amount); applies when policy_object is A' AS threshold_meaning,
+              TO_CHAR(aerp.creation_date, 'YYYY-MM-DD') AS created_date,
+              TO_CHAR(aerp.end_date, 'YYYY-MM-DD') AS effective_end_date,
+              'Org: ' || TO_CHAR(aerp.org_id) AS rule_scope
+          FROM apps.ap_expense_report_params_all aerp
+          CROSS JOIN params p
+          WHERE (p.policy_category IS NULL OR UPPER(p.policy_category) IN ('TRAVEL', 'EXPENSE', 'ALL'))
+            AND (p.rule_name IS NULL OR UPPER(aerp.prompt) LIKE UPPER('%' || p.rule_name || '%'))
+            AND (p.org_id IS NULL OR aerp.org_id = TO_NUMBER(p.org_id))
+            AND (p.as_of_date IS NULL OR (TRUNC(aerp.creation_date) <= TO_DATE(p.as_of_date, 'YYYY-MM-DD')
+                 AND (aerp.end_date IS NULL OR aerp.end_date > TO_DATE(p.as_of_date, 'YYYY-MM-DD'))))
+      )
+      ORDER BY policy_category, rule_group
+      FETCH FIRST 200 ROWS ONLY
+  ebs_search_policy_attachments:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Searches the EBS attachment store for agency policy bulletins, administrative guidelines and SOP documents by keyword, document category and entity. Returns one row per document, metadata only: category, data type, title, summary, file name or URL, MIME type, size, how many records it is attached to (attachment_count), the date the document was added (created_date), last update, and its active dates (effective_from, effective_to; often empty). At most 20, newest first.
+      created_date is not an effective date. The attachment store holds every kind of attachment, so narrow with policy_category (e.g. 'Standard Operating Procedures') or entity_name when possible. Fetch a document's file with ebs_get_document_attachment.
+      Underlying Tables: FND_ATTACHED_DOCUMENTS, FND_DOCUMENTS, FND_DOCUMENTS_TL, FND_DOCUMENT_CATEGORIES_TL, FND_DOCUMENT_DATATYPES, FND_LOBS.
+      Security Context: Per-user security only with the PL/SQL security wrapper.
+    parameters:
+    - name: keyword
+      type: string
+      description: Search keyword or policy topic, matched against title, description
+        and file name. Empty string = any.
+    - name: policy_category
+      type: string
+      description: Document category name or part of it (e.g. 'Standard Operating
+        Procedures'), matched against the attachment category. Empty string = any.
+    - name: entity_name
+      type: string
+      description: Optional entity the documents are attached to (use ebs_list_attachment_entities).
+        Empty string = any.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :keyword AS keyword,
+              :policy_category AS policy_category,
+              :entity_name AS entity_name
+          FROM dual
+      )
+      -- One row per document (a document can be attached to many records; attachment_count
+      -- says how many). created_date is when the document was added to EBS; effective_from
+      -- and effective_to are its active dates and are empty when not maintained.
+      SELECT
+          attached_document_id, document_id, entity_name, attachment_count, document_category,
+          document_datatype, policy_title, policy_summary, file_name, url, mime_type,
+          file_size_bytes, created_date, last_updated_date, effective_from, effective_to
+      FROM (
+      SELECT
+          ROW_NUMBER() OVER (PARTITION BY fd.document_id ORDER BY fad.attached_document_id) AS rn,
+          COUNT(*) OVER (PARTITION BY fd.document_id) AS attachment_count,
+          fd.last_update_date AS sort_date,
+          fad.attached_document_id,
+          fd.document_id,
+          fad.entity_name,
+          cat.user_name AS document_category,
+          dtype.user_name AS document_datatype,
+          fdt.title AS policy_title,
+          fdt.description AS policy_summary,
+          NVL(fl.file_name, fd.file_name) AS file_name,
+          fd.url,
+          fl.file_content_type AS mime_type,
+          DBMS_LOB.GETLENGTH(fl.file_data) AS file_size_bytes,
+          TO_CHAR(fd.creation_date, 'YYYY-MM-DD') AS created_date,
+          TO_CHAR(fd.last_update_date, 'YYYY-MM-DD') AS last_updated_date,
+          TO_CHAR(fd.start_date_active, 'YYYY-MM-DD') AS effective_from,
+          TO_CHAR(fd.end_date_active, 'YYYY-MM-DD') AS effective_to
+      FROM params p
+      JOIN apps.fnd_attached_documents fad
+          ON (p.entity_name IS NULL OR fad.entity_name = p.entity_name)
+      JOIN apps.fnd_documents fd
+          ON fad.document_id = fd.document_id
+      LEFT JOIN apps.fnd_documents_tl fdt
+          ON fd.document_id = fdt.document_id
+         AND fdt.language = USERENV('LANG')
+      LEFT JOIN apps.fnd_document_categories_tl cat
+          ON cat.category_id = NVL(fad.category_id, fd.category_id)
+         AND cat.language = USERENV('LANG')
+      LEFT JOIN apps.fnd_document_datatypes dtype
+          ON dtype.datatype_id = fd.datatype_id
+         AND dtype.language = USERENV('LANG')
+      LEFT JOIN apps.fnd_lobs fl
+          ON fd.datatype_id = 6
+         AND fd.media_id = fl.file_id
+      WHERE (p.policy_category IS NULL OR UPPER(cat.user_name) LIKE UPPER('%' || p.policy_category || '%'))
+        AND (p.keyword IS NULL
+          OR UPPER(fdt.title) LIKE UPPER('%' || p.keyword || '%')
+          OR UPPER(fdt.description) LIKE UPPER('%' || p.keyword || '%')
+          OR UPPER(NVL(fl.file_name, fd.file_name)) LIKE UPPER('%' || p.keyword || '%'))
+      )
+      WHERE rn = 1
+      ORDER BY sort_date DESC, document_id DESC
+      FETCH FIRST 20 ROWS ONLY
+  ebs_get_intake_attachments:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Retrieves the documents attached to one intake record (for example applicant proof documents such as paystubs, W-2s or utility bills) from the EBS attachment store, in attachment order, with category, data type, title, file name, MIME type, size, upload date and uploader.
+      entity_name is required (find it with ebs_list_attachment_entities); the key value alone is not unique across EBS. File data is returned only with include_content = 'Y' and is binary (for example a PDF or image), not text. At most 50 attachments are returned.
+      Underlying Tables: FND_ATTACHED_DOCUMENTS, FND_DOCUMENTS, FND_DOCUMENTS_TL, FND_DOCUMENT_CATEGORIES_TL, FND_DOCUMENT_DATATYPES, FND_LOBS, FND_USER.
+      Security Context: Per-user security only with the PL/SQL security wrapper.
+    parameters:
+    - name: intake_queue_id
+      type: string
+      description: Primary key value of the intake record the documents are attached
+        to (FND_ATTACHED_DOCUMENTS.PK1_VALUE).
+    - name: applicant_id
+      type: string
+      description: Optional second key value, e.g. the applicant or party ID (PK2_VALUE).
+        Empty string = any.
+    - name: entity_name
+      type: string
+      description: Required. Attachment entity of the intake record (e.g. the agency's
+        intake or party entity); use ebs_list_attachment_entities to find it. Without
+        it nothing is returned.
+    - name: include_content
+      type: string
+      description: '''Y'' returns the file data (large); anything else returns metadata
+        only.'
+    statement: |-
+      WITH params AS (
+          SELECT
+              :intake_queue_id AS intake_queue_id,
+              :applicant_id AS applicant_id,
+              :entity_name AS entity_name,
+              :include_content AS include_content
+          FROM dual
+      )
+      -- The entity filter is mandatory: the same key value is used by unrelated entities
+      -- (for example '1' appears on five, including HR performance plans).
+      SELECT
+          fad.attached_document_id,
+          fd.document_id,
+          fad.entity_name,
+          fad.pk1_value AS intake_queue_id,
+          fad.pk2_value AS applicant_id,
+          fad.seq_num AS attachment_sequence,
+          cat.user_name AS document_category,
+          dtype.user_name AS document_datatype,
+          fdt.title AS document_title,
+          fdt.description AS document_notes,
+          NVL(fl.file_name, fd.file_name) AS file_name,
+          fl.file_content_type AS mime_type,
+          DBMS_LOB.GETLENGTH(fl.file_data) AS file_size_bytes,
+          TO_CHAR(NVL(fl.upload_date, fad.creation_date), 'YYYY-MM-DD') AS upload_date,
+          fu.user_name AS uploaded_by,
+          CASE WHEN UPPER(p.include_content) = 'Y' THEN fl.file_data END AS file_data
+      FROM params p
+      JOIN apps.fnd_attached_documents fad
+          ON fad.entity_name = p.entity_name
+         AND fad.pk1_value = p.intake_queue_id
+         AND (p.applicant_id IS NULL OR fad.pk2_value = p.applicant_id)
+      JOIN apps.fnd_documents fd
+          ON fad.document_id = fd.document_id
+      LEFT JOIN apps.fnd_documents_tl fdt
+          ON fd.document_id = fdt.document_id
+         AND fdt.language = USERENV('LANG')
+      LEFT JOIN apps.fnd_document_categories_tl cat
+          ON cat.category_id = NVL(fad.category_id, fd.category_id)
+         AND cat.language = USERENV('LANG')
+      LEFT JOIN apps.fnd_document_datatypes dtype
+          ON dtype.datatype_id = fd.datatype_id
+         AND dtype.language = USERENV('LANG')
+      LEFT JOIN apps.fnd_lobs fl
+          ON fd.datatype_id = 6
+         AND fd.media_id = fl.file_id
+      LEFT JOIN apps.fnd_user fu
+          ON fu.user_id = fad.created_by
+      ORDER BY fad.seq_num, fad.attached_document_id
+      FETCH FIRST 50 ROWS ONLY
+  ebs_verify_party_identity:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Validates extracted identity data (legal name, tax ID/SSN hash, postal code) for a person against the EBS Trading Community Architecture (TCA) registry. Returns one row per matching person, at most 10, with name match confidence (100 exact, 75 partial, 0 no match), VERIFIED_MATCH / NO_MATCH / NOT_CHECKED results for the tax ID hash and postal code, the matching or identifying address and its uses (BILL_TO, SHIP_TO and so on), and the primary email and phone.
+      Pass party_id when known; otherwise legal_name must be at least 3 characters. The tax ID is never returned: send its SHA-256 hash (hex, either case) computed over the value exactly as stored.
+      Underlying Tables: HZ_PARTIES, HZ_PERSON_PROFILES, HZ_PARTY_SITES, HZ_PARTY_SITE_USES, HZ_LOCATIONS, HZ_CONTACT_POINTS.
+      Security Context: Per-user security only with the PL/SQL security wrapper.
+    parameters:
+    - name: legal_name
+      type: string
+      description: Legal full name of the person to cross-reference (at least 3 characters
+        when party_id is empty).
+    - name: tax_id_hash
+      type: string
+      description: SHA-256 hash (64 hex characters, either case) of the tax ID or
+        SSN exactly as stored in EBS. Empty string = not checked.
+    - name: postal_code
+      type: string
+      description: ZIP or postal code to verify against the person's active addresses.
+        Empty string = not checked.
+    - name: party_id
+      type: string
+      description: Existing TCA party ID, if known. Empty string = search by name.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :legal_name AS legal_name,
+              :tax_id_hash AS tax_id_hash,
+              :postal_code AS postal_code,
+              :party_id AS party_id
+          FROM dual
+      )
+      -- One row per person. The address shown is the one matching postal_code if any, else
+      -- the identifying address; email and phone are the primary active contact points.
+      SELECT
+          hp.party_id,
+          hp.party_number,
+          hp.party_name,
+          hpp.person_first_name,
+          hpp.person_last_name,
+          hl.address1,
+          hl.city,
+          hl.state,
+          hl.postal_code,
+          (SELECT LISTAGG(u.site_use_type, ',') WITHIN GROUP (ORDER BY u.site_use_type)
+             FROM apps.hz_party_site_uses u
+            WHERE u.party_site_id = hps.party_site_id AND u.status = 'A') AS address_uses,
+          (SELECT MAX(cp.email_address) KEEP (DENSE_RANK FIRST ORDER BY cp.primary_flag DESC NULLS LAST)
+             FROM apps.hz_contact_points cp
+            WHERE cp.owner_table_name = 'HZ_PARTIES' AND cp.owner_table_id = hp.party_id
+              AND cp.status = 'A' AND cp.contact_point_type = 'EMAIL') AS email_address,
+          (SELECT MAX(TRIM(cp.phone_area_code || ' ' || cp.phone_number)) KEEP (DENSE_RANK FIRST ORDER BY cp.primary_flag DESC NULLS LAST)
+             FROM apps.hz_contact_points cp
+            WHERE cp.owner_table_name = 'HZ_PARTIES' AND cp.owner_table_id = hp.party_id
+              AND cp.status = 'A' AND cp.contact_point_type = 'PHONE') AS phone_number,
+          CASE
+              WHEN p.legal_name IS NULL THEN NULL
+              WHEN UPPER(TRIM(hp.party_name)) = UPPER(TRIM(p.legal_name))
+                OR UPPER(hpp.person_first_name || ' ' || hpp.person_last_name) = UPPER(TRIM(p.legal_name))
+                OR UPPER(hpp.person_last_name || ', ' || hpp.person_first_name) = UPPER(TRIM(p.legal_name)) THEN 100
+              WHEN UPPER(hp.party_name) LIKE UPPER('%' || TRIM(p.legal_name) || '%') THEN 75
+              ELSE 0
+          END AS name_match_confidence,
+          CASE
+              WHEN p.tax_id_hash IS NULL THEN 'NOT_CHECKED'
+              WHEN hpp.jgzz_fiscal_code IS NULL THEN 'NO_TAX_ID_ON_FILE'
+              WHEN RAWTOHEX(STANDARD_HASH(hpp.jgzz_fiscal_code, 'SHA256')) = UPPER(TRIM(p.tax_id_hash)) THEN 'VERIFIED_MATCH'
+              ELSE 'NO_MATCH'
+          END AS tax_id_hash_verification,
+          CASE
+              WHEN p.postal_code IS NULL THEN 'NOT_CHECKED'
+              WHEN hl.postal_code LIKE TRIM(p.postal_code) || '%' THEN 'VERIFIED_MATCH'
+              ELSE 'NO_MATCH'
+          END AS postal_code_verification
+      FROM params p
+      JOIN apps.hz_parties hp
+          ON hp.party_type = 'PERSON'
+         AND ((p.party_id IS NOT NULL AND hp.party_id = TO_NUMBER(p.party_id))
+           OR (p.party_id IS NULL AND LENGTH(TRIM(p.legal_name)) >= 3
+               AND UPPER(hp.party_name) LIKE UPPER('%' || TRIM(p.legal_name) || '%')))
+      JOIN apps.hz_person_profiles hpp
+          ON hp.party_id = hpp.party_id
+         AND SYSDATE BETWEEN hpp.effective_start_date AND NVL(hpp.effective_end_date, SYSDATE + 1)
+      OUTER APPLY (
+          SELECT s.party_site_id, s.location_id
+          FROM apps.hz_party_sites s
+          JOIN apps.hz_locations l
+              ON l.location_id = s.location_id
+          WHERE s.party_id = hp.party_id
+            AND s.status = 'A'
+          ORDER BY CASE WHEN p.postal_code IS NOT NULL AND l.postal_code LIKE TRIM(p.postal_code) || '%' THEN 0 ELSE 1 END,
+                   CASE WHEN s.identifying_address_flag = 'Y' THEN 0 ELSE 1 END,
+                   s.party_site_id
+          FETCH FIRST 1 ROWS ONLY
+      ) hps
+      LEFT JOIN apps.hz_locations hl
+          ON hl.location_id = hps.location_id
+      ORDER BY name_match_confidence DESC NULLS LAST, hp.party_id
+      FETCH FIRST 10 ROWS ONLY
+  ebs_get_sourcing_rfp_details:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Queries one Oracle Sourcing negotiation (RFP, RFQ, RFI or auction) by header ID or document number: document type, title, status, sealed-bid visibility, amendment number and the latest amendment number (an amended solicitation is a new negotiation version), open and close dates, then one row per item line (record_type LINE) and one row per requirement (record_type REQUIREMENT) with section, text, mandatory flag, weight, scoring type and method, maximum and knockout score.
+      Requirements with requirement_line_number -1 apply to the whole solicitation. Requirement rows describe the published criteria; the evaluation itself and any scores are not returned.
+      Underlying Tables: PON_AUCTION_HEADERS_ALL, PON_AUC_DOCTYPES, PON_AUCTION_ITEM_PRICES_ALL, PON_AUCTION_ATTRIBUTES.
+      Security Context: Per-user security only with the PL/SQL security wrapper.
+    parameters:
+    - name: auction_header_id
+      type: string
+      description: Sourcing negotiation header ID (PON_AUCTION_HEADERS_ALL.AUCTION_HEADER_ID).
+        Empty string = look up by rfp_number.
+    - name: rfp_number
+      type: string
+      description: Solicitation document number (PON_AUCTION_HEADERS_ALL.DOCUMENT_NUMBER).
+        Empty string = look up by auction_header_id.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :auction_header_id AS auction_header_id,
+              :rfp_number AS rfp_number
+          FROM dual
+      )
+      -- Lines and requirements are separate record types (record_type LINE or REQUIREMENT) so
+      -- they don't multiply each other. Requirements with requirement_line_number -1 apply to
+      -- the whole solicitation; others apply to that line.
+      SELECT
+          paha.auction_header_id,
+          paha.document_number AS rfp_number,
+          dt.internal_name AS document_type,
+          paha.auction_title,
+          paha.auction_status,
+          paha.bid_visibility_code,
+          paha.amendment_number,
+          paha.amendment_description,
+          (SELECT MAX(a.amendment_number)
+             FROM apps.pon_auction_headers_all a
+            WHERE NVL(a.auction_header_id_orig_amend, a.auction_header_id) = NVL(paha.auction_header_id_orig_amend, paha.auction_header_id)
+              AND a.auction_status <> 'DELETED') AS latest_amendment_number,
+          TO_CHAR(paha.open_bidding_date, 'YYYY-MM-DD HH24:MI:SS') AS open_date,
+          TO_CHAR(paha.close_bidding_date, 'YYYY-MM-DD HH24:MI:SS') AS close_date,
+          rec.record_type,
+          rec.item_line_number,
+          rec.item_description,
+          rec.required_quantity,
+          rec.unit_of_measure,
+          rec.requirement_line_number,
+          rec.section_name,
+          rec.scoring_criteria_id,
+          rec.criteria_name,
+          rec.criteria_description,
+          rec.mandatory_flag,
+          rec.weight_percent,
+          rec.scoring_type,
+          rec.scoring_method,
+          rec.max_score,
+          rec.knockout_score,
+          rec.internal_only_flag
+      FROM params p
+      JOIN apps.pon_auction_headers_all paha
+          ON (p.auction_header_id IS NOT NULL AND paha.auction_header_id = TO_NUMBER(p.auction_header_id))
+          OR (p.auction_header_id IS NULL AND p.rfp_number IS NOT NULL AND paha.document_number = p.rfp_number)
+      LEFT JOIN apps.pon_auc_doctypes dt
+          ON dt.doctype_id = paha.doctype_id
+      LEFT JOIN (
+          SELECT
+              paip.auction_header_id,
+              'LINE' AS record_type,
+              paip.line_number AS item_line_number,
+              paip.item_description,
+              paip.quantity AS required_quantity,
+              paip.unit_of_measure,
+              TO_NUMBER(NULL) AS requirement_line_number,
+              NULL AS section_name,
+              TO_NUMBER(NULL) AS scoring_criteria_id,
+              NULL AS criteria_name,
+              NULL AS criteria_description,
+              NULL AS mandatory_flag,
+              TO_NUMBER(NULL) AS weight_percent,
+              NULL AS scoring_type,
+              NULL AS scoring_method,
+              TO_NUMBER(NULL) AS max_score,
+              TO_NUMBER(NULL) AS knockout_score,
+              NULL AS internal_only_flag
+          FROM apps.pon_auction_item_prices_all paip
+          UNION ALL
+          SELECT
+              paa.auction_header_id,
+              'REQUIREMENT' AS record_type,
+              TO_NUMBER(NULL) AS item_line_number,
+              NULL AS item_description,
+              TO_NUMBER(NULL) AS required_quantity,
+              NULL AS unit_of_measure,
+              paa.line_number AS requirement_line_number,
+              paa.section_name,
+              paa.sequence_number AS scoring_criteria_id,
+              paa.attribute_name AS criteria_name,
+              NVL(paa.description, paa.help_text) AS criteria_description,
+              paa.mandatory_flag,
+              paa.weight AS weight_percent,
+              paa.scoring_type,
+              paa.scoring_method,
+              paa.attr_max_score AS max_score,
+              paa.knockout_score,
+              paa.internal_attr_flag AS internal_only_flag
+          FROM apps.pon_auction_attributes paa
+      ) rec
+          ON rec.auction_header_id = paha.auction_header_id
+      ORDER BY rec.record_type, rec.item_line_number, rec.requirement_line_number, rec.section_name, rec.scoring_criteria_id
+  ebs_get_vendor_bids:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Retrieves current vendor bids on an Oracle Sourcing negotiation, one row per bid line: vendor and supplier ID, submission date and whether it came after the close date, the amendment of the solicitation it answered, how many earlier revisions the vendor superseded, the vendor's notes and promised dates, and the titles and document IDs of attached proposal files (per line and per bid; fetch a file with ebs_get_document_attachment).
+      Prices and totals are returned only with include_prices = 'Y', so technical evaluators can review without seeing price. Superseded revisions, drafts and disqualified bids are excluded; award, shortlist and score data is not returned. Pass at least one of auction_header_id, bid_number or vendor_name; at most 500 rows.
+      Underlying Tables: PON_BID_HEADERS, PON_BID_ITEM_PRICES, PON_AUCTION_HEADERS_ALL, FND_ATTACHED_DOCUMENTS, FND_DOCUMENTS, FND_DOCUMENTS_TL.
+      Security Context: Per-user security only with the PL/SQL security wrapper.
+    parameters:
+    - name: auction_header_id
+      type: string
+      description: Sourcing negotiation header ID. Empty string = any negotiation
+        (then pass bid_number or vendor_name).
+    - name: bid_number
+      type: string
+      description: Specific bid number (PON_BID_HEADERS.BID_NUMBER). Empty string
+        = any.
+    - name: vendor_name
+      type: string
+      description: Part of the bidding vendor's name. Empty string = any.
+    - name: include_prices
+      type: string
+      description: '''Y'' also returns bid prices and totals; anything else leaves
+        them empty, for technical review without price.'
+    statement: |-
+      WITH params AS (
+          SELECT
+              :auction_header_id AS auction_header_id,
+              :bid_number AS bid_number,
+              :vendor_name AS vendor_name,
+              :include_prices AS include_prices
+          FROM dual
+      )
+      -- Current bids only: superseded revisions (ARCHIVED), drafts and disqualified bids are
+      -- excluded, and superseded_revisions counts the vendor's archived revisions on the same
+      -- negotiation. Attachments are listed per bid line (entity PON_BID_ITEM_PRICES) and per
+      -- bid (PON_BID_HEADERS), keyed by negotiation, bid and line. Award, shortlist and score
+      -- columns are deliberately not returned.
+      SELECT
+          pbh.bid_number,
+          pbh.auction_header_id,
+          paha.document_number AS rfp_number,
+          paha.amendment_number AS bid_on_amendment_number,
+          pbh.vendor_id,
+          pbh.trading_partner_name AS vendor_name,
+          pbh.vendor_site_code,
+          pbh.bid_status,
+          TO_CHAR(pbh.publish_date, 'YYYY-MM-DD HH24:MI:SS') AS submitted_date,
+          TO_CHAR(paha.close_bidding_date, 'YYYY-MM-DD HH24:MI:SS') AS close_date,
+          CASE WHEN pbh.publish_date > paha.close_bidding_date THEN 'Y' ELSE 'N' END AS submitted_after_close,
+          (SELECT COUNT(*)
+             FROM apps.pon_bid_headers old
+            WHERE old.auction_header_id = pbh.auction_header_id
+              AND old.trading_partner_id = pbh.trading_partner_id
+              AND old.bid_status = 'ARCHIVED') AS superseded_revisions,
+          pbh.note_to_auction_owner AS bid_note,
+          CASE WHEN UPPER(p.include_prices) = 'Y' THEN pbh.buyer_bid_total END AS total_bid_price,
+          CASE WHEN UPPER(p.include_prices) = 'Y' THEN pbh.bid_currency_code END AS bid_currency_code,
+          pbip.line_number,
+          CASE WHEN UPPER(p.include_prices) = 'Y' THEN pbip.price END AS bid_currency_price,
+          TO_CHAR(pbip.promised_date, 'YYYY-MM-DD') AS promise_date,
+          pbip.note_to_auction_owner AS technical_response_summary,
+          (SELECT LISTAGG(NVL(fdt.title, fd.file_name) || ' [document ' || fd.document_id || ']', '; ')
+                      WITHIN GROUP (ORDER BY fad.seq_num)
+             FROM apps.fnd_attached_documents fad
+             JOIN apps.fnd_documents fd
+                 ON fd.document_id = fad.document_id
+             LEFT JOIN apps.fnd_documents_tl fdt
+                 ON fdt.document_id = fd.document_id
+                AND fdt.language = USERENV('LANG')
+            WHERE fad.entity_name = 'PON_BID_ITEM_PRICES'
+              AND fad.pk1_value = TO_CHAR(pbh.auction_header_id)
+              AND fad.pk2_value = TO_CHAR(pbh.bid_number)
+              AND fad.pk3_value = TO_CHAR(pbip.line_number)) AS line_attachments,
+          (SELECT LISTAGG(NVL(fdt.title, fd.file_name) || ' [document ' || fd.document_id || ']', '; ')
+                      WITHIN GROUP (ORDER BY fad.seq_num)
+             FROM apps.fnd_attached_documents fad
+             JOIN apps.fnd_documents fd
+                 ON fd.document_id = fad.document_id
+             LEFT JOIN apps.fnd_documents_tl fdt
+                 ON fdt.document_id = fd.document_id
+                AND fdt.language = USERENV('LANG')
+            WHERE fad.entity_name = 'PON_BID_HEADERS'
+              AND fad.pk1_value = TO_CHAR(pbh.auction_header_id)
+              AND fad.pk2_value = TO_CHAR(pbh.bid_number)) AS bid_attachments
+      FROM params p
+      JOIN apps.pon_bid_headers pbh
+          ON pbh.bid_status NOT IN ('ARCHIVED', 'DRAFT', 'DISQUALIFIED')
+         AND (p.auction_header_id IS NULL OR pbh.auction_header_id = TO_NUMBER(p.auction_header_id))
+         AND (p.bid_number IS NULL OR pbh.bid_number = TO_NUMBER(p.bid_number))
+         AND (p.vendor_name IS NULL OR UPPER(pbh.trading_partner_name) LIKE UPPER('%' || p.vendor_name || '%'))
+         AND COALESCE(p.auction_header_id, p.bid_number, p.vendor_name) IS NOT NULL
+      JOIN apps.pon_auction_headers_all paha
+          ON paha.auction_header_id = pbh.auction_header_id
+      LEFT JOIN apps.pon_bid_item_prices pbip
+          ON pbip.bid_number = pbh.bid_number
+      ORDER BY pbh.auction_header_id, pbh.bid_number, pbip.line_number
+      FETCH FIRST 500 ROWS ONLY
+  ebs_get_expense_reports:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Retrieves employee travel and operational expense reports with their itemized expense lines, corporate policy setup, policy violation status (and allowable amount) per line, and receipt attachments (header and line level) from Oracle Internet Expenses (OIE) / AP.
+      All filters are optional: pass an empty string to leave one off. At most 500 lines are returned. Receipt image data is returned only when include_receipts is 'Y'; otherwise only the attachment name and type come back, which keeps responses small. Use ebs_list_expense_reports to find report and employee IDs.
+      Underlying Tables: AP_EXPENSE_REPORT_HEADERS_ALL, AP_EXPENSE_REPORT_LINES_ALL, AP_EXPENSE_REPORT_PARAMS_ALL, AP_POL_HEADERS, AP_POL_VIOLATIONS_ALL, FND_ATTACHED_DOCUMENTS, FND_DOCUMENTS, FND_LOBS.
+      Security Context: Financial auditor responsibility context (fnd_global.apps_initialize).
+    parameters:
+    - name: report_header_id
+      type: string
+      description: Expense report header ID (AP_EXPENSE_REPORT_HEADERS_ALL.REPORT_HEADER_ID).
+        Empty string = any report.
+    - name: employee_id
+      type: string
+      description: Employee person ID who submitted the expense report. Empty string
+        = any employee.
+    - name: start_date
+      type: string
+      description: Submission date window start in YYYY-MM-DD format. Empty string
+        = no lower bound.
+    - name: end_date
+      type: string
+      description: Submission date window end in YYYY-MM-DD format. Empty string =
+        no upper bound.
+    - name: include_receipts
+      type: string
+      description: '''Y'' returns the receipt image data (large); anything else returns
+        attachment names only.'
+    statement: |-
+      WITH params AS (
+          SELECT
+              :report_header_id AS report_header_id,
+              :employee_id AS employee_id,
+              :start_date AS start_date,
+              :end_date AS end_date,
+              :include_receipts AS include_receipts
+          FROM dual
+      )
+      SELECT
+          aerh.report_header_id,
+          aerh.invoice_num AS report_number,
+          aerh.employee_id,
+          aerh.total AS report_total,
+          aerh.expense_status_code,
+          TO_CHAR(aerh.week_end_date, 'YYYY-MM-DD') AS submission_date,
+          aerl.report_line_id,
+          aerl.distribution_line_number AS line_num,
+          aerl.category_code AS expense_category,
+          aerl.amount AS line_amount,
+          TO_CHAR(aerl.start_expense_date, 'YYYY-MM-DD') AS expense_date,
+          TO_CHAR(aerl.end_expense_date, 'YYYY-MM-DD') AS expense_end_date,
+          aerl.location AS expense_location,
+          aerl.currency_code,
+          aerl.receipt_currency_code,
+          aerl.receipt_currency_amount,
+          aerl.daily_amount,
+          aerl.attendees,
+          aerl.number_attendees,
+          aerl.travel_type,
+          aerl.ticket_class_code,
+          aerl.project_number,
+          aerl.task_number,
+          aerl.award_number,
+          aerl.expenditure_type,
+          aerl.itemization_parent_id,
+          aerl.item_description,
+          aerl.justification,
+          -- Corporate Setup Policies (Shows even if the expense is OK)
+          er_param.prompt AS configured_expense_type,
+          aph.policy_name AS assigned_policy_rule,
+          aph.description AS policy_rule_description,
+          -- Status Flag (Checks if a violation actually occurred)
+          CASE
+              WHEN apv.violation_type IS NOT NULL THEN 'VIOLATED: ' || apv.violation_type
+              ELSE 'OK'
+          END AS policy_status,
+          apv.allowable_amount,
+          apv.exceeded_amount,
+          apv.dup_report_header_id,
+          apv.dup_report_line_id,
+          -- Receipt rules (setup for the expense type, the value copied onto the line, and the line's receipt status)
+          er_param.receipt_required_flag AS type_receipt_required_flag,
+          er_param.require_receipt_amount AS type_require_receipt_amount,
+          aerl.receipt_required_flag AS line_receipt_required_flag,
+          aerl.receipt_missing_flag,
+          aerl.receipt_verified_flag,
+          aerl.image_receipt_required_flag,
+          -- Attachment Metadata
+          fad.entity_name AS attachment_level,
+          fdt.title AS attachment_title,
+          fdt.description AS attachment_description,
+          fl.file_name AS receipt_file_name,
+          fl.file_content_type AS receipt_mime_type,
+          CASE WHEN UPPER(p.include_receipts) = 'Y' THEN fl.file_data END AS receipt_image_blob
+      FROM params p
+      JOIN apps.ap_expense_report_headers_all aerh
+          ON (p.report_header_id IS NULL OR aerh.report_header_id = TO_NUMBER(p.report_header_id))
+         AND (p.employee_id IS NULL OR aerh.employee_id = TO_NUMBER(p.employee_id))
+         AND (p.start_date IS NULL OR aerh.week_end_date >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+         AND (p.end_date IS NULL OR aerh.week_end_date <= TO_DATE(p.end_date, 'YYYY-MM-DD'))
+      JOIN apps.ap_expense_report_lines_all aerl
+          ON aerh.report_header_id = aerl.report_header_id
+      -- 1. Bridge line item to the setup parameters of the template used
+      LEFT JOIN apps.ap_expense_report_params_all er_param
+          ON aerl.web_parameter_id = er_param.parameter_id
+      -- 2. Pull the policy rule tied to that template parameter setup
+      LEFT JOIN apps.ap_pol_headers aph
+          ON er_param.company_policy_id = aph.policy_id
+      -- 3. Match composite key (header_id + distribution_line_number) for violations
+      LEFT JOIN apps.ap_pol_violations_all apv
+          ON aerl.report_header_id = apv.report_header_id
+         AND aerl.distribution_line_number = apv.distribution_line_number
+      -- 4. Dual check for either Header or Line level iExpense attachments
+      LEFT JOIN apps.fnd_attached_documents fad
+          ON (fad.entity_name = 'OIE_HEADER_ATTACHMENTS' AND fad.pk1_value = TO_CHAR(aerh.report_header_id))
+          OR (fad.entity_name = 'OIE_LINE_ATTACHMENTS' AND fad.pk1_value = TO_CHAR(aerl.report_line_id))
+      LEFT JOIN apps.fnd_documents fd
+          ON fad.document_id = fd.document_id
+      LEFT JOIN apps.fnd_documents_tl fdt
+          ON fd.document_id = fdt.document_id
+         AND fdt.language = USERENV('LANG')
+      LEFT JOIN apps.fnd_lobs fl
+          ON fd.media_id = fl.file_id
+      ORDER BY aerh.report_header_id, aerl.distribution_line_number
+      FETCH FIRST 500 ROWS ONLY
+  ebs_get_po_invoice_match:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Retrieves purchase order distributions, matched invoice lines, receiving receipts, and 2 CFR 200 grant project codes from EBS Payables and Purchasing. All three parameters are optional (empty string = no filter) and at most 200 lines are returned.
+      Underlying Tables: AP_INVOICES_ALL, AP_INVOICE_LINES_ALL, AP_INVOICE_DISTRIBUTIONS_ALL, PO_HEADERS_ALL, PO_LINES_ALL, RCV_TRANSACTIONS, GMS_AWARD_DISTRIBUTIONS.
+      Security Context: Org ID security context; AP auditor role.
+    parameters:
+    - name: invoice_id
+      type: string
+      description: Accounts payable invoice ID (AP_INVOICES_ALL.INVOICE_ID). Empty
+        string = any invoice.
+    - name: po_header_id
+      type: string
+      description: Purchase order header ID (PO_HEADERS_ALL.PO_HEADER_ID). Empty string
+        = any purchase order.
+    - name: po_number
+      type: string
+      description: Purchase order reference number string. Empty string = any purchase
+        order number.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :invoice_id AS invoice_id,
+              :po_header_id AS po_header_id,
+              :po_number AS po_number
+          FROM dual
+      )
+      SELECT
+          aia.invoice_id,
+          aia.invoice_num,
+          TO_CHAR(aia.invoice_date, 'YYYY-MM-DD') AS invoice_date,
+          aia.invoice_amount,
+          pha.po_header_id,
+          pha.segment1 AS po_number,
+          pla.line_num AS po_line_number,
+          pla.quantity AS quantity_ordered,
+          pla.unit_price AS po_unit_price,
+          aila.line_number AS invoice_line_number,
+          aila.quantity_invoiced,
+          aila.amount AS invoice_line_amount,
+          rcv.quantity AS quantity_received,
+          (NVL(aila.amount, 0) - (NVL(pla.unit_price, 0) * NVL(rcv.quantity, 0))) AS match_variance,
+          gad.award_id,
+          gad.project_id,
+          gad.task_id
+      FROM params p
+      JOIN apps.ap_invoices_all aia
+          ON (p.invoice_id IS NULL OR aia.invoice_id = TO_NUMBER(p.invoice_id))
+      JOIN apps.ap_invoice_lines_all aila
+          ON aia.invoice_id = aila.invoice_id
+      LEFT JOIN apps.po_headers_all pha
+          ON aila.po_header_id = pha.po_header_id
+         AND (p.po_header_id IS NULL OR pha.po_header_id = TO_NUMBER(p.po_header_id))
+         AND (p.po_number IS NULL OR pha.segment1 = p.po_number)
+      LEFT JOIN apps.po_lines_all pla
+          ON aila.po_line_id = pla.po_line_id
+      LEFT JOIN apps.rcv_transactions rcv
+          ON aila.rcv_transaction_id = rcv.transaction_id
+      LEFT JOIN apps.ap_invoice_distributions_all aida
+          ON aila.invoice_id = aida.invoice_id
+         AND aila.line_number = aida.invoice_line_number
+      LEFT JOIN apps.gms_award_distributions gad
+          ON aida.invoice_distribution_id = gad.invoice_distribution_id
+      WHERE (p.po_header_id IS NULL AND p.po_number IS NULL) OR pha.po_header_id IS NOT NULL
+      ORDER BY aia.invoice_id, aila.line_number
+      FETCH FIRST 200 ROWS ONLY
+  ebs_list_operating_units:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Lists active Oracle EBS Operating Units (organization_id, name, short_code) from HR_OPERATING_UNITS.
+      Use this tool to discover valid values for the :org_id bind variable required across AR, AP, PO, and Grants tools.
+      Underlying Table: HR_OPERATING_UNITS.
+    parameters:
+    - name: name_pattern
+      type: string
+      description: Optional search pattern to filter operating units by name (e.g.
+        '%Vision%' or '%Government%'). Defaults to '%' if empty.
+    statement: |-
+      WITH params AS (
+          SELECT :name_pattern AS name_pattern FROM dual
+      )
+      SELECT
+          hou.organization_id,
+          hou.name AS operating_unit_name,
+          hou.short_code,
+          hou.business_group_id
+      FROM apps.hr_operating_units hou, params p
+      WHERE (p.name_pattern IS NULL OR UPPER(hou.name) LIKE UPPER(p.name_pattern) OR p.name_pattern = '%')
+      ORDER BY hou.name
+      FETCH FIRST 50 ROWS ONLY
+  ebs_list_attachment_entities:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Lists valid attachment business entity names from FND_DOCUMENT_ENTITIES_VL.
+      Use this tool to discover valid values for the :entity_name bind variable (e.g. 'PO_HEADERS_ALL', 'RA_CUSTOMER_TRX_ALL', 'AP_INVOICES_ALL', 'PON_BID_HEADERS') used in document attachment tools.
+      Underlying View: FND_DOCUMENT_ENTITIES_VL.
+    parameters:
+    - name: keyword
+      type: string
+      description: Keyword to filter entity code or user entity name (e.g. '%PO%'
+        or '%INVOICE%').
+    statement: |-
+      WITH params AS (
+          SELECT :keyword AS keyword FROM dual
+      )
+      SELECT
+          fde.data_object_code AS entity_name,
+          fde.user_entity_name,
+          fde.table_name
+      FROM apps.fnd_document_entities_vl fde, params p
+      WHERE (p.keyword IS NULL OR UPPER(fde.data_object_code) LIKE UPPER(p.keyword) OR UPPER(fde.user_entity_name) LIKE UPPER(p.keyword))
+      ORDER BY fde.data_object_code
+      FETCH FIRST 50 ROWS ONLY
+  ebs_list_lookup_values:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Queries QuickCodes / lookup values from FND_LOOKUP_VALUES for a specific lookup type or category.
+      Use this tool to discover valid codes for categorical bind variables like :policy_category, document types, or status codes.
+      Underlying View: FND_LOOKUP_VALUES.
+    parameters:
+    - name: lookup_type
+      type: string
+      description: The FND lookup type (e.g. 'PO_CONTROL_RULES', 'YES_NO', 'FOB_VALUES',
+        'DOCUMENT_TYPE').
+    - name: keyword
+      type: string
+      description: Optional keyword to filter lookup codes or descriptions.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :lookup_type AS lookup_type,
+              :keyword AS keyword
+          FROM dual
+      )
+      SELECT
+          flv.lookup_type,
+          flv.lookup_code,
+          flv.meaning,
+          flv.description
+      FROM apps.fnd_lookup_values flv, params p
+      WHERE flv.lookup_type = UPPER(p.lookup_type)
+        AND flv.language = USERENV('LANG')
+        AND flv.enabled_flag = 'Y'
+        AND (p.keyword IS NULL OR UPPER(flv.lookup_code) LIKE UPPER(p.keyword) OR UPPER(flv.meaning) LIKE UPPER(p.keyword))
+      ORDER BY flv.lookup_code
+      FETCH FIRST 50 ROWS ONLY
+  ebs_lookup_parties_and_vendors:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Searches AP suppliers (with their TCA party) by partial name or exact supplier number, optionally limited to suppliers with a site in one operating unit; at most 25.
+      Use this tool to discover valid values for :party_id, :vendor_name and supplier IDs before invoking verification, voucher or bid evaluation tools.
+      Underlying Tables: AP_SUPPLIERS, HZ_PARTIES, AP_SUPPLIER_SITES_ALL.
+    parameters:
+    - name: search_name
+      type: string
+      description: Partial supplier name or supplier number (e.g. 'Vision', 'Office'
+        or '1003'). Empty string = any.
+    - name: org_id
+      type: string
+      description: Operating unit ID; returns only suppliers with a site in that operating
+        unit. Empty string = any.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :search_name AS search_name,
+              :org_id AS org_id
+          FROM dual
+      )
+      SELECT
+          vend.vendor_id,
+          vend.segment1 AS vendor_number,
+          vend.vendor_name,
+          vend.party_id,
+          hp.party_name,
+          hp.party_number,
+          hp.party_type
+      FROM apps.ap_suppliers vend
+      JOIN apps.hz_parties hp ON vend.party_id = hp.party_id, params p
+      WHERE (p.search_name IS NULL
+          OR UPPER(vend.vendor_name) LIKE UPPER('%' || p.search_name || '%')
+          OR UPPER(hp.party_name) LIKE UPPER('%' || p.search_name || '%')
+          OR vend.segment1 = p.search_name)
+        AND (p.org_id IS NULL OR EXISTS (
+              SELECT 1 FROM apps.ap_supplier_sites_all ss
+              WHERE ss.vendor_id = vend.vendor_id AND ss.org_id = TO_NUMBER(p.org_id)))
+      ORDER BY vend.vendor_name
+      FETCH FIRST 25 ROWS ONLY
+  ebs_lookup_employees:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Searches Oracle HRMS personnel directory by name or employee number. The national identifier is returned masked (last four characters only); the full value is not exposed by this tool.
+      Use this tool to discover valid values for employee bind variables :person_id and :employee_number before invoking personnel file or expense report tools.
+      Underlying Table: PER_ALL_PEOPLE_F.
+    parameters:
+    - name: name_keyword
+      type: string
+      description: Full or partial employee name (e.g. 'Smith').
+    - name: employee_number
+      type: string
+      description: Exact or partial employee badge / worker number.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :name_keyword AS name_keyword,
+              :employee_number AS employee_number
+          FROM dual
+      )
+      SELECT
+          papf.person_id,
+          papf.employee_number,
+          papf.full_name,
+          papf.email_address,
+          CASE WHEN papf.national_identifier IS NULL THEN NULL
+               ELSE 'XXXXX' || SUBSTR(REGEXP_REPLACE(papf.national_identifier, '[^0-9A-Za-z]', ''), -4)
+          END AS ssn_masked,
+          TO_CHAR(papf.effective_start_date, 'YYYY-MM-DD') AS effective_start_date
+      FROM apps.per_all_people_f papf, params p
+      WHERE TRUNC(SYSDATE) BETWEEN papf.effective_start_date AND papf.effective_end_date
+        AND (p.name_keyword IS NULL OR UPPER(papf.full_name) LIKE UPPER('%' || p.name_keyword || '%'))
+        AND (p.employee_number IS NULL OR papf.employee_number = p.employee_number)
+      ORDER BY papf.full_name
+      FETCH FIRST 25 ROWS ONLY
+  ebs_lookup_recent_transactions:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Searches recent POs, Invoices, Customer Notices, RFPs, or Expense Reports by document number or type.
+      Use this tool to discover valid values for transactional bind variables :po_number, :po_header_id, :invoice_id, :transaction_id, :auction_header_id, and :report_header_id.
+      Underlying Tables: PO_HEADERS_ALL, AP_INVOICES_ALL, RA_CUSTOMER_TRX_ALL, PON_AUCTION_HEADERS_ALL, AP_EXPENSE_REPORT_HEADERS_ALL.
+      Parameters doc_number and org_id are optional: pass an empty string to leave them off.
+    parameters:
+    - name: doc_type
+      type: string
+      description: 'Document type filter: ''PO'', ''INVOICE'', ''NOTICE'', ''RFP'',
+        or ''EXPENSE''.'
+    - name: doc_number
+      type: string
+      description: Optional partial document or invoice number.
+    - name: org_id
+      type: string
+      description: Optional operating unit ID. Empty string = all operating units.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :doc_type AS doc_type,
+              :doc_number AS doc_number,
+              :org_id AS org_id
+          FROM dual
+      )
+      SELECT * FROM (
+          SELECT
+              'PO' AS doc_type,
+              po.po_header_id AS header_id,
+              po.segment1 AS doc_number,
+              TO_CHAR(po.creation_date, 'YYYY-MM-DD') AS doc_date,
+              po.authorization_status AS doc_status,
+              po.org_id
+          FROM apps.po_headers_all po, params p
+          WHERE UPPER(p.doc_type) = 'PO'
+            AND (p.doc_number IS NULL OR po.segment1 LIKE '%' || p.doc_number || '%')
+            AND (p.org_id IS NULL OR po.org_id = TO_NUMBER(p.org_id))
+          UNION ALL
+          SELECT
+              'INVOICE' AS doc_type,
+              inv.invoice_id AS header_id,
+              inv.invoice_num AS doc_number,
+              TO_CHAR(inv.invoice_date, 'YYYY-MM-DD') AS doc_date,
+              inv.payment_status_flag AS doc_status,
+              inv.org_id
+          FROM apps.ap_invoices_all inv, params p
+          WHERE UPPER(p.doc_type) = 'INVOICE'
+            AND (p.doc_number IS NULL OR inv.invoice_num LIKE '%' || p.doc_number || '%')
+            AND (p.org_id IS NULL OR inv.org_id = TO_NUMBER(p.org_id))
+          UNION ALL
+          SELECT
+              'NOTICE' AS doc_type,
+              trx.customer_trx_id AS header_id,
+              trx.trx_number AS doc_number,
+              TO_CHAR(trx.trx_date, 'YYYY-MM-DD') AS doc_date,
+              trx.complete_flag AS doc_status,
+              trx.org_id
+          FROM apps.ra_customer_trx_all trx, params p
+          WHERE UPPER(p.doc_type) = 'NOTICE'
+            AND (p.doc_number IS NULL OR trx.trx_number LIKE '%' || p.doc_number || '%')
+            AND (p.org_id IS NULL OR trx.org_id = TO_NUMBER(p.org_id))
+          UNION ALL
+          SELECT
+              'RFP' AS doc_type,
+              pon.auction_header_id AS header_id,
+              pon.document_number AS doc_number,
+              TO_CHAR(pon.creation_date, 'YYYY-MM-DD') AS doc_date,
+              pon.auction_status AS doc_status,
+              pon.org_id
+          FROM apps.pon_auction_headers_all pon, params p
+          WHERE UPPER(p.doc_type) = 'RFP'
+            AND (p.doc_number IS NULL OR pon.document_number LIKE '%' || p.doc_number || '%')
+            AND (p.org_id IS NULL OR pon.org_id = TO_NUMBER(p.org_id))
+          UNION ALL
+          SELECT
+              'EXPENSE' AS doc_type,
+              er.report_header_id AS header_id,
+              er.invoice_num AS doc_number,
+              TO_CHAR(er.creation_date, 'YYYY-MM-DD') AS doc_date,
+              er.expense_status_code AS doc_status,
+              er.org_id
+          FROM apps.ap_expense_report_headers_all er, params p
+          WHERE UPPER(p.doc_type) = 'EXPENSE'
+            AND (p.doc_number IS NULL OR er.invoice_num LIKE '%' || p.doc_number || '%')
+            AND (p.org_id IS NULL OR er.org_id = TO_NUMBER(p.org_id))
+      )
+      ORDER BY doc_date DESC
+      FETCH FIRST 25 ROWS ONLY
+  ebs_list_expense_reports:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Lists expense reports (one row per report, no line items or receipts) so an auditor can find reports to review.
+      Every parameter is optional: pass an empty string to leave a filter off. Returns 50 reports per call, newest first, with the submitting employee (ID and name), total, status, line count, policy violation count, lines flagged receipt missing, lines whose required receipt is not verified, and the number of electronic attachments.
+      Paging: total_matches is the number of reports that match the filters, and more_rows_follow is 'Y' when more remain. Pass offset 50, 100, ... to fetch the next pages.
+      Use this tool to discover valid values for :report_header_id and :employee_id before calling ebs_get_expense_reports.
+      Underlying Tables: AP_EXPENSE_REPORT_HEADERS_ALL, AP_EXPENSE_REPORT_LINES_ALL, AP_POL_VIOLATIONS_ALL, FND_ATTACHED_DOCUMENTS, PER_ALL_PEOPLE_F.
+      Security Context: Financial auditor responsibility context (fnd_global.apps_initialize).
+    parameters:
+    - name: org_id
+      type: string
+      description: Operating unit ID (ORG_ID). Empty string = all operating units.
+    - name: employee_id
+      type: string
+      description: Employee person ID who submitted the report. Empty string = all
+        employees.
+    - name: status
+      type: string
+      description: Expense status code, e.g. 'PAID', 'INVOICED', 'REJECTED', 'PENDING_MGRAPPRVL'.
+        Empty string = all statuses.
+    - name: start_date
+      type: string
+      description: Submission (week end) date window start in YYYY-MM-DD format. Empty
+        string = no lower bound.
+    - name: end_date
+      type: string
+      description: Submission (week end) date window end in YYYY-MM-DD format. Empty
+        string = no upper bound.
+    - name: min_total
+      type: string
+      description: Minimum report total, e.g. '500'. Empty string = no minimum.
+    - name: offset
+      type: string
+      description: Number of matching reports to skip, for paging (0 or empty string
+        = first page of 50).
+    statement: |-
+      WITH params AS (
+          SELECT
+              :org_id AS org_id,
+              :employee_id AS employee_id,
+              :status AS status,
+              :start_date AS start_date,
+              :end_date AS end_date,
+              :min_total AS min_total,
+              :offset AS offset_rows
+          FROM dual
+      )
+      SELECT
+          q.report_header_id,
+          q.report_number,
+          q.org_id,
+          q.employee_id,
+          q.employee_name,
+          q.report_total,
+          q.expense_status_code,
+          q.submission_date,
+          q.line_count,
+          q.policy_violation_count,
+          q.lines_receipt_missing,
+          q.lines_receipt_unverified,
+          q.attachment_count,
+          q.total_matches,
+          q.row_number,
+          CASE WHEN q.total_matches > q.row_number THEN 'Y' ELSE 'N' END AS more_rows_follow
+      FROM (
+          SELECT
+              aerh.report_header_id,
+              aerh.invoice_num AS report_number,
+              aerh.org_id,
+              aerh.employee_id,
+              (SELECT MAX(papf.full_name) KEEP (DENSE_RANK LAST ORDER BY papf.effective_start_date)
+                 FROM apps.per_all_people_f papf
+                WHERE papf.person_id = aerh.employee_id) AS employee_name,
+              aerh.total AS report_total,
+              aerh.expense_status_code,
+              TO_CHAR(aerh.week_end_date, 'YYYY-MM-DD') AS submission_date,
+              (SELECT COUNT(*)
+                 FROM apps.ap_expense_report_lines_all aerl
+                WHERE aerl.report_header_id = aerh.report_header_id) AS line_count,
+              (SELECT COUNT(*)
+                 FROM apps.ap_pol_violations_all apv
+                WHERE apv.report_header_id = aerh.report_header_id) AS policy_violation_count,
+              (SELECT COUNT(*)
+                 FROM apps.ap_expense_report_lines_all aerl
+                WHERE aerl.report_header_id = aerh.report_header_id
+                  AND aerl.receipt_missing_flag = 'Y') AS lines_receipt_missing,
+              (SELECT COUNT(*)
+                 FROM apps.ap_expense_report_lines_all aerl
+                WHERE aerl.report_header_id = aerh.report_header_id
+                  AND aerl.receipt_required_flag = 'Y'
+                  AND NVL(aerl.receipt_verified_flag, 'N') <> 'Y') AS lines_receipt_unverified,
+              (SELECT COUNT(*)
+                 FROM apps.fnd_attached_documents fad
+                WHERE (fad.entity_name = 'OIE_HEADER_ATTACHMENTS' AND fad.pk1_value = TO_CHAR(aerh.report_header_id))
+                   OR (fad.entity_name = 'OIE_LINE_ATTACHMENTS'
+                       AND fad.pk1_value IN (SELECT TO_CHAR(l.report_line_id)
+                                               FROM apps.ap_expense_report_lines_all l
+                                              WHERE l.report_header_id = aerh.report_header_id))) AS attachment_count,
+              COUNT(*) OVER () AS total_matches,
+              ROW_NUMBER() OVER (ORDER BY aerh.week_end_date DESC, aerh.report_header_id DESC) AS row_number,
+              p.offset_rows
+          FROM params p
+          JOIN apps.ap_expense_report_headers_all aerh
+              ON (p.org_id IS NULL OR aerh.org_id = TO_NUMBER(p.org_id))
+             AND (p.employee_id IS NULL OR aerh.employee_id = TO_NUMBER(p.employee_id))
+             AND (p.status IS NULL OR aerh.expense_status_code = p.status)
+             AND (p.start_date IS NULL OR aerh.week_end_date >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+             AND (p.end_date IS NULL OR aerh.week_end_date <= TO_DATE(p.end_date, 'YYYY-MM-DD'))
+             AND (p.min_total IS NULL OR aerh.total >= TO_NUMBER(p.min_total))
+      ) q
+      WHERE q.row_number > NVL(TO_NUMBER(q.offset_rows), 0)
+        AND q.row_number <= NVL(TO_NUMBER(q.offset_rows), 0) + 50
+      ORDER BY q.row_number
+  ebs_describe_table:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Lists the columns (name, data type, length) of a table or view that the database user can see.
+      Use this tool to check which columns exist before writing or changing a query against that table.
+      Underlying View: ALL_TAB_COLUMNS.
+    parameters:
+    - name: table_name
+      type: string
+      description: Table or view name to describe (e.g. 'AP_EXPENSE_REPORT_LINES_ALL').
+    statement: |-
+      WITH params AS (
+          SELECT :table_name AS table_name FROM dual
+      )
+      SELECT
+          atc.owner,
+          atc.table_name,
+          atc.column_id,
+          atc.column_name,
+          atc.data_type,
+          atc.data_length
+      FROM all_tab_columns atc, params p
+      WHERE atc.table_name = UPPER(p.table_name)
+      ORDER BY atc.owner, atc.column_id
+      FETCH FIRST 400 ROWS ONLY
+  ebs_find_duplicate_expense_lines:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Finds expense lines that look duplicated, to support duplicate-billing and cloned-claim review.
+      Returns two kinds of matches, labelled in match_type. SAME_LINE_ACROSS_REPORTS: one employee, same expense type, amount and justification text on two or more different reports (a recurring or copied line). SAME_DAY_SAME_AMOUNT: one employee, same expense type, amount and expense date on two or more lines (a possible double entry). Largest total first, at most 100 groups.
+      All parameters are optional: pass an empty string to leave a filter off. Use min_amount to ignore small lines. A match is a lead to review, not proof of a duplicate; compare receipts and dates before concluding.
+      Underlying Tables: AP_EXPENSE_REPORT_HEADERS_ALL, AP_EXPENSE_REPORT_LINES_ALL, AP_EXPENSE_REPORT_PARAMS_ALL, PER_ALL_PEOPLE_F.
+      Security Context: Financial auditor responsibility context (fnd_global.apps_initialize).
+    parameters:
+    - name: org_id
+      type: string
+      description: Operating unit ID (ORG_ID). Empty string = all operating units.
+    - name: start_date
+      type: string
+      description: Submission (week end) date window start in YYYY-MM-DD format. Empty
+        string = no lower bound.
+    - name: end_date
+      type: string
+      description: Submission (week end) date window end in YYYY-MM-DD format. Empty
+        string = no upper bound.
+    - name: min_amount
+      type: string
+      description: Ignore lines below this amount, e.g. '100'. Empty string = include
+        all amounts.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :org_id AS org_id,
+              :start_date AS start_date,
+              :end_date AS end_date,
+              :min_amount AS min_amount
+          FROM dual
+      ),
+      base AS (
+          SELECT
+              aerh.report_header_id,
+              aerh.invoice_num,
+              aerh.employee_id,
+              aerh.week_end_date,
+              aerl.report_line_id,
+              aerl.amount,
+              aerl.start_expense_date,
+              aerl.justification,
+              NVL(er_param.prompt, aerl.category_code) AS expense_type
+          FROM params p
+          JOIN apps.ap_expense_report_headers_all aerh
+              ON (p.org_id IS NULL OR aerh.org_id = TO_NUMBER(p.org_id))
+             AND (p.start_date IS NULL OR aerh.week_end_date >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+             AND (p.end_date IS NULL OR aerh.week_end_date <= TO_DATE(p.end_date, 'YYYY-MM-DD'))
+          JOIN apps.ap_expense_report_lines_all aerl
+              ON aerl.report_header_id = aerh.report_header_id
+             AND (p.min_amount IS NULL OR aerl.amount >= TO_NUMBER(p.min_amount))
+          LEFT JOIN apps.ap_expense_report_params_all er_param
+              ON aerl.web_parameter_id = er_param.parameter_id
+      )
+      SELECT * FROM (
+          SELECT
+              d.match_type,
+              d.employee_id,
+              (SELECT MAX(papf.full_name) KEEP (DENSE_RANK LAST ORDER BY papf.effective_start_date)
+                 FROM apps.per_all_people_f papf
+                WHERE papf.person_id = d.employee_id) AS employee_name,
+              d.expense_type,
+              d.line_amount,
+              d.justification,
+              d.expense_date,
+              d.report_count,
+              d.line_count,
+              d.total_amount,
+              d.first_submitted,
+              d.last_submitted,
+              d.reports
+          FROM (
+              SELECT
+                  'SAME_LINE_ACROSS_REPORTS' AS match_type,
+                  b.employee_id,
+                  b.expense_type,
+                  b.amount AS line_amount,
+                  b.justification,
+                  CAST(NULL AS VARCHAR2(10)) AS expense_date,
+                  COUNT(DISTINCT b.report_header_id) AS report_count,
+                  COUNT(*) AS line_count,
+                  SUM(b.amount) AS total_amount,
+                  TO_CHAR(MIN(b.week_end_date), 'YYYY-MM-DD') AS first_submitted,
+                  TO_CHAR(MAX(b.week_end_date), 'YYYY-MM-DD') AS last_submitted,
+                  LISTAGG(b.invoice_num, ', ' ON OVERFLOW TRUNCATE '...') WITHIN GROUP (ORDER BY b.week_end_date) AS reports
+              FROM base b
+              GROUP BY b.employee_id, b.expense_type, b.amount, b.justification
+              HAVING COUNT(DISTINCT b.report_header_id) >= 2
+              UNION ALL
+              SELECT
+                  'SAME_DAY_SAME_AMOUNT' AS match_type,
+                  b.employee_id,
+                  b.expense_type,
+                  b.amount AS line_amount,
+                  MAX(b.justification) AS justification,
+                  TO_CHAR(b.start_expense_date, 'YYYY-MM-DD') AS expense_date,
+                  COUNT(DISTINCT b.report_header_id) AS report_count,
+                  COUNT(*) AS line_count,
+                  SUM(b.amount) AS total_amount,
+                  TO_CHAR(MIN(b.week_end_date), 'YYYY-MM-DD') AS first_submitted,
+                  TO_CHAR(MAX(b.week_end_date), 'YYYY-MM-DD') AS last_submitted,
+                  LISTAGG(b.invoice_num, ', ' ON OVERFLOW TRUNCATE '...') WITHIN GROUP (ORDER BY b.week_end_date) AS reports
+              FROM base b
+              GROUP BY b.employee_id, b.expense_type, b.amount, b.start_expense_date
+              HAVING COUNT(*) >= 2
+          ) d
+          ORDER BY d.total_amount DESC, d.employee_id
+      )
+      FETCH FIRST 100 ROWS ONLY
+  ebs_get_award_terms:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Retrieves grant award terms from Oracle Grants Accounting: number, name, status, type, purpose, sponsor award number, active period (start, end, close date), award manager, funded direct and indirect amounts from the installments, and the current budget totals.
+      period_status compares the award period with as_of_date (empty string = today) as WITHIN_PERIOD, NOT_STARTED or PAST_END_DATE, so an expense date can be tested against the period of performance.
+      Use this tool to find the award behind an expense line (see award_number on ebs_get_expense_reports) before testing allowability. All parameters are optional: pass an empty string to leave a filter off. Returns at most 50 awards.
+      The sponsor and funding-source tables are not readable by this database user, so only funding_source_id and sponsor_award_number are returned; whether an award is federal, state or local must be confirmed from the award documents.
+      Underlying Tables: GMS_AWARDS_ALL, GMS_INSTALLMENTS, GMS_BUDGET_VERSIONS, PER_ALL_PEOPLE_F.
+      Security Context: Standard APPS schema access; Org ID security context.
+    parameters:
+    - name: org_id
+      type: string
+      description: Operating unit ID (ORG_ID). Empty string = all operating units.
+    - name: award_number
+      type: string
+      description: Full or partial award number or name. Empty string = all awards.
+    - name: as_of_date
+      type: string
+      description: Date to test the award period against, YYYY-MM-DD. Empty string
+        = today.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :org_id AS org_id,
+              :award_number AS award_number,
+              :as_of_date AS as_of_date
+          FROM dual
+      )
+      SELECT
+          ga.award_id,
+          ga.award_number,
+          ga.award_short_name,
+          ga.award_full_name,
+          ga.status AS award_status,
+          ga.type AS award_type,
+          ga.award_purpose_code,
+          ga.funding_source_id,
+          ga.funding_source_award_number AS sponsor_award_number,
+          TO_CHAR(ga.preaward_date, 'YYYY-MM-DD') AS preaward_date,
+          TO_CHAR(ga.start_date_active, 'YYYY-MM-DD') AS start_date,
+          TO_CHAR(ga.end_date_active, 'YYYY-MM-DD') AS end_date,
+          TO_CHAR(ga.close_date, 'YYYY-MM-DD') AS close_date,
+          CASE
+              WHEN ga.start_date_active IS NOT NULL
+               AND NVL(TO_DATE(p.as_of_date, 'YYYY-MM-DD'), TRUNC(SYSDATE)) < ga.start_date_active THEN 'NOT_STARTED'
+              WHEN ga.end_date_active IS NOT NULL
+               AND NVL(TO_DATE(p.as_of_date, 'YYYY-MM-DD'), TRUNC(SYSDATE)) > ga.end_date_active THEN 'PAST_END_DATE'
+              ELSE 'WITHIN_PERIOD'
+          END AS period_status,
+          ga.award_manager_id,
+          (SELECT MAX(papf.full_name) KEEP (DENSE_RANK LAST ORDER BY papf.effective_start_date)
+             FROM apps.per_all_people_f papf
+            WHERE papf.person_id = ga.award_manager_id) AS award_manager_name,
+          ga.award_organization_id,
+          ga.org_id,
+          ga.hard_limit_flag,
+          ga.fund_control_level_award,
+          ga.allowable_schedule_id,
+          ga.idc_schedule_id,
+          (SELECT COUNT(*)
+             FROM apps.gms_installments gi
+            WHERE gi.award_id = ga.award_id) AS installment_count,
+          (SELECT SUM(gi.direct_cost)
+             FROM apps.gms_installments gi
+            WHERE gi.award_id = ga.award_id
+              AND NVL(gi.active_flag, 'Y') = 'Y') AS funded_direct_cost,
+          (SELECT SUM(gi.indirect_cost)
+             FROM apps.gms_installments gi
+            WHERE gi.award_id = ga.award_id
+              AND NVL(gi.active_flag, 'Y') = 'Y') AS funded_indirect_cost,
+          (SELECT MAX(gbv.raw_cost) KEEP (DENSE_RANK LAST ORDER BY gbv.version_number)
+             FROM apps.gms_budget_versions gbv
+            WHERE gbv.award_id = ga.award_id
+              AND gbv.current_flag = 'Y') AS budget_raw_cost,
+          (SELECT MAX(gbv.burdened_cost) KEEP (DENSE_RANK LAST ORDER BY gbv.version_number)
+             FROM apps.gms_budget_versions gbv
+            WHERE gbv.award_id = ga.award_id
+              AND gbv.current_flag = 'Y') AS budget_burdened_cost,
+          (SELECT MAX(gbv.budget_status_code) KEEP (DENSE_RANK LAST ORDER BY gbv.version_number)
+             FROM apps.gms_budget_versions gbv
+            WHERE gbv.award_id = ga.award_id
+              AND gbv.current_flag = 'Y') AS budget_status
+      FROM params p
+      JOIN apps.gms_awards_all ga
+          ON (p.org_id IS NULL OR ga.org_id = TO_NUMBER(p.org_id))
+         AND (p.award_number IS NULL
+              OR UPPER(ga.award_number) LIKE UPPER('%' || p.award_number || '%')
+              OR UPPER(ga.award_full_name) LIKE UPPER('%' || p.award_number || '%'))
+      WHERE NVL(ga.award_template_flag, 'N') <> 'Y'
+      ORDER BY ga.award_number
+      FETCH FIRST 50 ROWS ONLY
+  ebs_get_award_expenditures:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Summarizes the costs charged to a grant award, by expenditure type and source, from Oracle Grants Accounting and Projects.
+      Each row is one expenditure type and source (system_linkage_function, for example ER for expense reports, VI for supplier invoices) with the item count, the actual raw cost (credits and adjustments show as negative amounts), and cost_outside_award_period: the part of the actual cost dated before the award start or after the award end (the period-of-performance test).
+      Pass an exact award number in award_number (see ebs_get_award_terms; empty string = all awards) and optionally an expenditure item date window. Returns at most 200 rows. Budget totals are not returned here; see ebs_get_award_terms for the award's funded and budgeted amounts.
+      Underlying Tables: GMS_AWARDS_ALL, GMS_AWARD_DISTRIBUTIONS, PA_EXPENDITURE_ITEMS_ALL.
+      Security Context: Standard APPS schema access; Org ID security context.
+    parameters:
+    - name: award_number
+      type: string
+      description: Exact award number (see ebs_get_award_terms). Empty string = all
+        awards.
+    - name: start_date
+      type: string
+      description: Expenditure item date window start in YYYY-MM-DD format. Empty
+        string = no lower bound.
+    - name: end_date
+      type: string
+      description: Expenditure item date window end in YYYY-MM-DD format. Empty string
+        = no upper bound.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :award_number AS award_number,
+              :start_date AS start_date,
+              :end_date AS end_date
+          FROM dual
+      ),
+      aw AS (
+          SELECT
+              ga.award_id,
+              ga.award_number,
+              ga.start_date_active,
+              ga.end_date_active
+          FROM params p
+          JOIN apps.gms_awards_all ga
+              ON (p.award_number IS NULL OR ga.award_number = p.award_number)
+      ),
+      act AS (
+          SELECT
+              aw.award_id,
+              pei.expenditure_type,
+              pei.system_linkage_function,
+              COUNT(*) AS item_count,
+              SUM(gad.raw_cost) AS actual_raw_cost,
+              TO_CHAR(MIN(pei.expenditure_item_date), 'YYYY-MM-DD') AS first_item_date,
+              TO_CHAR(MAX(pei.expenditure_item_date), 'YYYY-MM-DD') AS last_item_date,
+              SUM(CASE WHEN pei.expenditure_item_date < aw.start_date_active
+                         OR pei.expenditure_item_date > aw.end_date_active
+                       THEN gad.raw_cost ELSE 0 END) AS cost_outside_award_period
+          FROM aw
+          JOIN apps.gms_award_distributions gad
+              ON gad.award_id = aw.award_id
+             AND gad.document_type = 'EXP'
+             AND gad.line_type = 'R'
+             AND NVL(gad.reversed_flag, 'N') <> 'Y'
+          JOIN apps.pa_expenditure_items_all pei
+              ON pei.expenditure_item_id = gad.expenditure_item_id
+          CROSS JOIN params p
+          WHERE (p.start_date IS NULL OR pei.expenditure_item_date >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+            AND (p.end_date IS NULL OR pei.expenditure_item_date <= TO_DATE(p.end_date, 'YYYY-MM-DD'))
+          GROUP BY aw.award_id, pei.expenditure_type, pei.system_linkage_function
+      )
+      SELECT
+          aw.award_number,
+          act.expenditure_type,
+          act.system_linkage_function,
+          act.item_count,
+          act.actual_raw_cost,
+          act.cost_outside_award_period,
+          TO_CHAR(aw.start_date_active, 'YYYY-MM-DD') AS award_start_date,
+          TO_CHAR(aw.end_date_active, 'YYYY-MM-DD') AS award_end_date,
+          act.first_item_date,
+          act.last_item_date
+      FROM aw
+      JOIN act
+          ON act.award_id = aw.award_id
+      ORDER BY aw.award_number, act.expenditure_type
+      FETCH FIRST 200 ROWS ONLY
+  ebs_get_expense_report_approval_and_payment:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Retrieves the approval, receipts-audit and payment trail of expense reports, for segregation-of-duties checks and the incurred-versus-paid test.
+      Per report it returns the status and last status date, the current and override approver (and whether the approver is the submitter), the workflow approval flag, the paper and image receipts status and received date, the audit code and last auditor, any hold or reject code, and the matching Payables invoice with its payments: amount, payment date, check or EFT number, payment status, method and cleared or void date. A report paid in several instalments returns one row per payment.
+      All parameters are optional: pass an empty string to leave a filter off. Returns at most 200 rows, newest first. Per-step approval history from the approval workflow is not returned.
+      Underlying Tables: AP_EXPENSE_REPORT_HEADERS_ALL, AP_INVOICES_ALL, AP_INVOICE_PAYMENTS_ALL, AP_CHECKS_ALL, PER_ALL_PEOPLE_F.
+      Security Context: Financial auditor responsibility context (fnd_global.apps_initialize).
+    parameters:
+    - name: report_header_id
+      type: string
+      description: Expense report header ID. Empty string = any report.
+    - name: org_id
+      type: string
+      description: Operating unit ID (ORG_ID). Empty string = all operating units.
+    - name: start_date
+      type: string
+      description: Submission (week end) date window start in YYYY-MM-DD format. Empty
+        string = no lower bound.
+    - name: end_date
+      type: string
+      description: Submission (week end) date window end in YYYY-MM-DD format. Empty
+        string = no upper bound.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :report_header_id AS report_header_id,
+              :org_id AS org_id,
+              :start_date AS start_date,
+              :end_date AS end_date
+          FROM dual
+      )
+      SELECT
+          aerh.report_header_id,
+          aerh.invoice_num AS report_number,
+          aerh.employee_id,
+          (SELECT MAX(papf.full_name) KEEP (DENSE_RANK LAST ORDER BY papf.effective_start_date)
+             FROM apps.per_all_people_f papf
+            WHERE papf.person_id = aerh.employee_id) AS employee_name,
+          aerh.total AS report_total,
+          TO_CHAR(aerh.week_end_date, 'YYYY-MM-DD') AS submission_date,
+          TO_CHAR(aerh.report_submitted_date, 'YYYY-MM-DD') AS report_submitted_date,
+          aerh.expense_status_code,
+          TO_CHAR(aerh.expense_last_status_date, 'YYYY-MM-DD') AS last_status_date,
+          aerh.workflow_approved_flag,
+          aerh.approval_type,
+          aerh.expense_current_approver_id AS current_approver_id,
+          (SELECT MAX(papf.full_name) KEEP (DENSE_RANK LAST ORDER BY papf.effective_start_date)
+             FROM apps.per_all_people_f papf
+            WHERE papf.person_id = aerh.expense_current_approver_id) AS current_approver_name,
+          CASE WHEN aerh.expense_current_approver_id = aerh.employee_id THEN 'Y' ELSE 'N' END AS approver_is_submitter,
+          aerh.override_approver_id,
+          aerh.override_approver_name,
+          aerh.receipts_status,
+          TO_CHAR(aerh.receipts_received_date, 'YYYY-MM-DD') AS receipts_received_date,
+          aerh.image_receipts_status,
+          aerh.missing_img_just AS missing_image_justification,
+          aerh.audit_code,
+          aerh.last_audited_by,
+          aerh.hold_lookup_code,
+          aerh.reject_code,
+          aia.invoice_id,
+          aia.invoice_amount,
+          aia.amount_paid,
+          aia.payment_status_flag,
+          aia.approval_status AS invoice_approval_status,
+          TO_CHAR(aia.gl_date, 'YYYY-MM-DD') AS invoice_gl_date,
+          aip.amount AS payment_amount,
+          TO_CHAR(aip.accounting_date, 'YYYY-MM-DD') AS payment_accounting_date,
+          ac.check_number,
+          TO_CHAR(ac.check_date, 'YYYY-MM-DD') AS payment_date,
+          ac.status_lookup_code AS payment_status,
+          ac.payment_method_lookup_code AS payment_method,
+          TO_CHAR(ac.cleared_date, 'YYYY-MM-DD') AS cleared_date,
+          TO_CHAR(ac.void_date, 'YYYY-MM-DD') AS void_date
+      FROM params p
+      JOIN apps.ap_expense_report_headers_all aerh
+          ON (p.report_header_id IS NULL OR aerh.report_header_id = TO_NUMBER(p.report_header_id))
+         AND (p.org_id IS NULL OR aerh.org_id = TO_NUMBER(p.org_id))
+         AND (p.start_date IS NULL OR aerh.week_end_date >= TO_DATE(p.start_date, 'YYYY-MM-DD'))
+         AND (p.end_date IS NULL OR aerh.week_end_date <= TO_DATE(p.end_date, 'YYYY-MM-DD'))
+      LEFT JOIN apps.ap_invoices_all aia
+          ON aia.invoice_num = aerh.invoice_num
+         AND aia.org_id = aerh.org_id
+      LEFT JOIN apps.ap_invoice_payments_all aip
+          ON aip.invoice_id = aia.invoice_id
+      LEFT JOIN apps.ap_checks_all ac
+          ON ac.check_id = aip.check_id
+      ORDER BY aerh.week_end_date DESC, aerh.report_header_id DESC, aip.invoice_payment_id
+      FETCH FIRST 200 ROWS ONLY
+  ebs_get_attachment_text:
+    kind: oracle-sql
+    source: ebs-oracle-source
+    description: |-
+      Returns the text of one EBS attachment, for the notice, policy, intake and RFP skills: short and long text attachments, and plain-text, HTML (tags removed), XML or JSON files decoded with their own character set. Text comes back in order as numbered chunks (about 1,000 characters each, up to 24 per call); when more_chunks_follow is Y, call again with start_chunk = the last chunk_number + 1. Join the chunks in order, without separators, to get the full text; an HTML entity cut by a chunk boundary (e.g. &nbsp;) stays encoded.
+      PDF, Word, Excel and image files return one row with content_kind BINARY_FILE and an explanation instead of text: their text cannot be extracted with SQL in this database. Web-page attachments return their URL.
+      Find document IDs with ebs_search_policy_attachments, ebs_get_intake_attachments, ebs_get_vendor_bids or ebs_get_document_attachment.
+      Underlying Tables: FND_DOCUMENTS, FND_DOCUMENTS_TL, FND_DOCUMENT_DATATYPES, FND_DOCUMENTS_SHORT_TEXT, FND_DOCUMENTS_LONG_TEXT, FND_LOBS.
+      Security Context: Per-user security only with the PL/SQL security wrapper.
+    parameters:
+    - name: document_id
+      type: string
+      description: Document identifier (FND_DOCUMENTS.DOCUMENT_ID), e.g. from ebs_search_policy_attachments,
+        ebs_get_intake_attachments or ebs_get_vendor_bids.
+    - name: start_chunk
+      type: string
+      description: First chunk to return (1-based) for paging through long documents.
+        Empty string = 1.
+    statement: |-
+      WITH params AS (
+          SELECT
+              :document_id AS document_id,
+              :start_chunk AS start_chunk
+          FROM dual
+      ),
+      -- One row per document with its content kind. Files are decoded with the charset in
+      -- the MIME type (IANA name), else FND_LOBS.ORACLE_CHARSET. Chunks are 1200 bytes for
+      -- files (up to 3 bytes per character in AL32UTF8 stays under the 4000-byte SQL limit)
+      -- and 1000 characters for long text.
+      doc AS (
+          SELECT
+              fd.document_id,
+              dtype.user_name AS document_datatype,
+              fdt.title AS document_title,
+              NVL(fl.file_name, fd.file_name) AS file_name,
+              fd.url,
+              fl.file_content_type AS mime_type,
+              fl.file_data,
+              st.short_text,
+              lt.long_text,
+              CASE
+                  WHEN fd.datatype_id = 1 THEN 'SHORT_TEXT'
+                  WHEN fd.datatype_id = 2 THEN 'LONG_TEXT'
+                  WHEN fd.datatype_id = 5 THEN 'WEB_PAGE'
+                  WHEN fd.datatype_id = 6 AND fl.file_id IS NULL THEN 'FILE_MISSING'
+                  WHEN fd.datatype_id = 6 AND (LOWER(fl.file_content_type) LIKE 'text/html%'
+                                            OR LOWER(fl.file_content_type) LIKE 'application/xhtml%') THEN 'HTML_FILE'
+                  WHEN fd.datatype_id = 6 AND (LOWER(fl.file_content_type) LIKE 'text/%'
+                                            OR LOWER(fl.file_content_type) LIKE 'application/xml%'
+                                            OR LOWER(fl.file_content_type) LIKE 'application/json%') THEN 'TEXT_FILE'
+                  WHEN fd.datatype_id = 6 THEN 'BINARY_FILE'
+                  ELSE 'OTHER'
+              END AS content_kind,
+              NVL(UTL_I18N.MAP_CHARSET(REGEXP_SUBSTR(fl.file_content_type, 'charset=([^; ]+)', 1, 1, 'i', 1), 0, 1),
+                  NVL(fl.oracle_charset, 'WE8MSWIN1252')) AS source_charset,
+              CASE
+                  WHEN fd.datatype_id = 1 THEN 1
+                  WHEN fd.datatype_id = 2 THEN CEIL(NVL(DBMS_LOB.GETLENGTH(lt.long_text), 0) / 1000)
+                  WHEN fd.datatype_id = 6 THEN CEIL(NVL(DBMS_LOB.GETLENGTH(fl.file_data), 0) / 1200)
+                  ELSE 0
+              END AS total_chunks,
+              GREATEST(NVL(TO_NUMBER(p.start_chunk), 1), 1) AS first_chunk
+          FROM params p
+          JOIN apps.fnd_documents fd
+              ON fd.document_id = TO_NUMBER(p.document_id)
+          LEFT JOIN apps.fnd_documents_tl fdt
+              ON fdt.document_id = fd.document_id
+             AND fdt.language = USERENV('LANG')
+          LEFT JOIN apps.fnd_document_datatypes dtype
+              ON dtype.datatype_id = fd.datatype_id
+             AND dtype.language = USERENV('LANG')
+          LEFT JOIN apps.fnd_lobs fl
+              ON fd.datatype_id = 6
+             AND fl.file_id = fd.media_id
+          LEFT JOIN apps.fnd_documents_short_text st
+              ON fd.datatype_id = 1
+             AND st.media_id = fd.media_id
+          LEFT JOIN apps.fnd_documents_long_text lt
+              ON fd.datatype_id = 2
+             AND lt.media_id = fd.media_id
+      ),
+      chunks AS (
+          SELECT LEVEL - 1 AS k FROM dual CONNECT BY LEVEL <= 24
+      ),
+      bounds AS (
+          SELECT
+              d.document_id,
+              d.document_datatype,
+              d.document_title,
+              d.file_name,
+              d.url,
+              d.mime_type,
+              d.content_kind,
+              d.source_charset,
+              d.total_chunks,
+              d.short_text,
+              d.long_text,
+              d.file_data,
+              d.first_chunk + c.k AS chunk_number,
+              CASE WHEN d.source_charset IN ('AL32UTF8', 'UTF8') THEN 'Y' ELSE 'N' END AS utf8,
+              (d.first_chunk + c.k - 1) * 1200 + 1 AS byte_start,
+              (d.first_chunk + c.k) * 1200 + 1 AS byte_next,
+              CASE WHEN d.content_kind IN ('TEXT_FILE', 'HTML_FILE')
+                   THEN DBMS_LOB.SUBSTR(d.file_data, 3, (d.first_chunk + c.k - 1) * 1200 + 1) END AS head_bytes,
+              CASE WHEN d.content_kind IN ('TEXT_FILE', 'HTML_FILE')
+                   THEN DBMS_LOB.SUBSTR(d.file_data, 3, (d.first_chunk + c.k) * 1200 + 1) END AS next_head_bytes
+          FROM doc d
+          CROSS JOIN chunks c
+          WHERE (d.content_kind IN ('SHORT_TEXT', 'LONG_TEXT', 'TEXT_FILE', 'HTML_FILE')
+                 AND d.first_chunk + c.k <= GREATEST(d.total_chunks, 1))
+             OR (d.content_kind NOT IN ('SHORT_TEXT', 'LONG_TEXT', 'TEXT_FILE', 'HTML_FILE') AND c.k = 0)
+      ),
+      -- For UTF-8 files each chunk boundary moves past continuation bytes (80 to BF), so a
+      -- multi-byte character is never split (a split character raises ORA-01890).
+      aligned AS (
+          SELECT
+              bnd.*,
+              bnd.byte_start + CASE WHEN bnd.utf8 = 'Y' AND bnd.head_bytes IS NOT NULL
+                        AND UTL_RAW.SUBSTR(bnd.head_bytes, 1, 1) BETWEEN HEXTORAW('80') AND HEXTORAW('BF') THEN
+                      CASE WHEN UTL_RAW.LENGTH(bnd.head_bytes) >= 2 AND UTL_RAW.SUBSTR(bnd.head_bytes, 2, 1) BETWEEN HEXTORAW('80') AND HEXTORAW('BF') THEN
+                          CASE WHEN UTL_RAW.LENGTH(bnd.head_bytes) >= 3 AND UTL_RAW.SUBSTR(bnd.head_bytes, 3, 1) BETWEEN HEXTORAW('80') AND HEXTORAW('BF') THEN 3 ELSE 2 END
+                      ELSE 1 END
+                  ELSE 0 END AS char_start,
+              bnd.byte_next + CASE WHEN bnd.utf8 = 'Y' AND bnd.next_head_bytes IS NOT NULL
+                        AND UTL_RAW.SUBSTR(bnd.next_head_bytes, 1, 1) BETWEEN HEXTORAW('80') AND HEXTORAW('BF') THEN
+                      CASE WHEN UTL_RAW.LENGTH(bnd.next_head_bytes) >= 2 AND UTL_RAW.SUBSTR(bnd.next_head_bytes, 2, 1) BETWEEN HEXTORAW('80') AND HEXTORAW('BF') THEN
+                          CASE WHEN UTL_RAW.LENGTH(bnd.next_head_bytes) >= 3 AND UTL_RAW.SUBSTR(bnd.next_head_bytes, 3, 1) BETWEEN HEXTORAW('80') AND HEXTORAW('BF') THEN 3 ELSE 2 END
+                      ELSE 1 END
+                  ELSE 0 END AS char_next
+          FROM bounds bnd
+      ),
+      raw_text AS (
+          SELECT
+              a.document_id,
+              a.document_datatype,
+              a.document_title,
+              a.file_name,
+              a.url,
+              a.mime_type,
+              a.content_kind,
+              a.source_charset,
+              a.total_chunks,
+              a.chunk_number,
+              CASE
+                  WHEN a.content_kind = 'SHORT_TEXT' THEN a.short_text
+                  WHEN a.content_kind = 'LONG_TEXT' THEN DBMS_LOB.SUBSTR(a.long_text, 1000, (a.chunk_number - 1) * 1000 + 1)
+                  WHEN a.content_kind IN ('TEXT_FILE', 'HTML_FILE') AND a.char_next > a.char_start
+                      THEN UTL_I18N.RAW_TO_CHAR(DBMS_LOB.SUBSTR(a.file_data, a.char_next - a.char_start, a.char_start), a.source_charset)
+              END AS chunk_text
+          FROM aligned a
+      )
+      -- HTML chunks have tags removed (including a tag cut off at either end of the chunk)
+      -- and common entities decoded.
+      SELECT
+          document_id,
+          document_datatype,
+          document_title,
+          file_name,
+          url,
+          mime_type,
+          content_kind,
+          CASE WHEN content_kind IN ('TEXT_FILE', 'HTML_FILE') THEN source_charset END AS source_charset,
+          CASE WHEN content_kind = 'BINARY_FILE' THEN 0 ELSE total_chunks END AS total_chunks,
+          CASE WHEN content_kind = 'BINARY_FILE' THEN NULL ELSE chunk_number END AS chunk_number,
+          CASE WHEN content_kind IN ('SHORT_TEXT', 'LONG_TEXT', 'TEXT_FILE', 'HTML_FILE')
+               THEN CASE WHEN chunk_number < total_chunks THEN 'Y' ELSE 'N' END END AS more_chunks_follow,
+          CASE
+              WHEN content_kind = 'HTML_FILE' THEN
+                  REGEXP_REPLACE(
+                      REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+                          REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(chunk_text, '^[^<>]*>', ' '), '<[^>]*$', ' '), '<[^>]*>', ' '),
+                          '&nbsp;', ' '), '&lt;', '<'), '&gt;', '>'), '&quot;', '"'), '&#39;', ''''), '&amp;', '&'),
+                      '\s+', ' ')
+              ELSE chunk_text
+          END AS text,
+          CASE content_kind
+              WHEN 'BINARY_FILE' THEN 'Binary file (' || NVL(mime_type, 'unknown type') || '): its text cannot be extracted with SQL in this database. Fetch the file with ebs_get_document_attachment for an external extraction step.'
+              WHEN 'WEB_PAGE' THEN 'Web page attachment: the content is at the URL, not in EBS.'
+              WHEN 'FILE_MISSING' THEN 'The file record is missing from FND_LOBS.'
+              WHEN 'OTHER' THEN 'Attachment type ' || NVL(document_datatype, 'unknown') || ' has no text content in EBS.'
+          END AS extraction_note
+      FROM raw_text
+      ORDER BY chunk_number
+toolsets:
+  plain_language_notice_generator:
+  - ebs_get_constituent_notice_details
+  - ebs_get_document_attachment
+  redaction_and_foia_compliance:
+  - ebs_search_foia_records
+  - ebs_get_employee_personnel_file
+  policy_and_statute_assistant:
+  - ebs_get_agency_policy_rules
+  - ebs_search_policy_attachments
+  document_intake_cleanup_and_validation:
+  - ebs_get_intake_attachments
+  - ebs_verify_party_identity
+  rfp_vendor_evaluation_scorer:
+  - ebs_get_sourcing_rfp_details
+  - ebs_get_vendor_bids
+  expense_auditor:
+  - ebs_get_expense_reports
+  - ebs_get_po_invoice_match
+  - ebs_list_expense_reports
+  - ebs_find_duplicate_expense_lines
+  - ebs_get_award_terms
+  - ebs_get_award_expenditures
+  - ebs_get_expense_report_approval_and_payment
+  schema_discovery_and_lovs:
+  - ebs_list_operating_units
+  - ebs_list_attachment_entities
+  - ebs_list_lookup_values
+  - ebs_lookup_parties_and_vendors
+  - ebs_lookup_employees
+  - ebs_lookup_recent_transactions
+  - ebs_describe_table
+  - ebs_get_attachment_text

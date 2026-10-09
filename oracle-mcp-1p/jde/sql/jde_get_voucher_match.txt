@@ -1,0 +1,5 @@
+Retrieves A/P vouchers with their three-way match against JD Edwards purchase orders and receipts: ordered vs. received vs. vouchered quantities and amounts, match variance and status, and the grant/project business unit, GL account and subledger charged (2 CFR 200).
+Underlying Tables: F0411 (Supplier Ledger), F43121 (Purchase Order Receiver: receipts and voucher match records), F4311 (Purchase Order Detail), F0006 (Business Unit Master), F0101 (Address Book).
+JDE Applications: Voucher Match (P4314), PO Receipts (P4312), Supplier Ledger Inquiry (P042002).
+Data Notes: Requires voucher_number, po_number or supplier_invoice. Vouchers not created from a PO show NOT_PO_MATCHED. Amounts converted from implied decimals (2 places, unit cost 4).
+Security Context: Accounts Payable company and business unit security (F00950); enforced only with the PL/SQL security wrapper.
