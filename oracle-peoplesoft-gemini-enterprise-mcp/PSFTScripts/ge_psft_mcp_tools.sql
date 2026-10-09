@@ -286,6 +286,9 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     v_vchr_id   VARCHAR2(8);
     v_amt       NUMBER := TO_NUMBER(REGEXP_REPLACE(p_amount, '[^0-9.-]', ''));
     v_vendor    VARCHAR2(10) := LPAD(SUBSTR(NVL(TRIM(p_vendor_id), 'USA0000002'), 1, 10), 10, '0');
+    v_hdr       SYSADM.PS_VCHR_HDR_STG%ROWTYPE;
+    v_line      SYSADM.PS_VCHR_LINE_STG%ROWTYPE;
+    v_dist      SYSADM.PS_VCHR_DIST_STG%ROWTYPE;
     v_result    VARCHAR2(1000);
   BEGIN
     -- Generate unique concurrency-safe 8-char VOUCHER_ID ('GV' + 6 digits) via Oracle Sequence
@@ -295,97 +298,64 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
       v_vendor := SUBSTR(TRIM(p_vendor_id), 1, 10);
     END IF;
 
-    -- Stage voucher header in PeopleSoft Voucher Build staging table (PS_VCHR_HDR_STG)
-    -- with clean initial statuses so standard PeopleSoft Voucher Build (AP_VCHRBLD) validates and posts it
-    INSERT INTO SYSADM.PS_VCHR_HDR_STG (
-      BUSINESS_UNIT,
-      VCHR_BLD_KEY_C1,
-      VCHR_BLD_KEY_C2,
-      VCHR_BLD_KEY_N1,
-      VOUCHER_ID,
-      VOUCHER_STYLE,
-      INVOICE_ID,
-      INVOICE_DT,
-      VENDOR_SETID,
-      VENDOR_ID,
-      VNDR_LOC,
-      ADDRESS_SEQ_NUM,
-      GRP_AP_ID,
-      ORIGIN,
-      OPRID,
-      ACCOUNTING_DT,
-      POST_VOUCHER,
-      DST_CNTRL_ID,
-      VOUCHER_ID_RELATED,
-      GROSS_AMT,
-      DSCNT_AMT,
-      TAX_EXEMPT,
-      SALETX_AMT,
-      FREIGHT_AMT,
-      MISC_AMT,
-      PYMNT_TERMS_CD,
-      ENTERED_DT,
-      TXN_CURRENCY_CD,
-      RT_TYPE,
-      RATE_MULT,
-      RATE_DIV,
-      PROCESS_INSTANCE,
-      IN_PROCESS_FLG,
-      BUSINESS_UNIT_GL,
-      DESCR254_MIXED
-    ) VALUES (
-      v_bu,
-      v_vchr_id,
-      ' ',
-      0,
-      v_vchr_id,
-      'REG',
-      SUBSTR(TRIM(p_invoice_num), 1, 30),
-      TRUNC(SYSDATE),
-      'SHARE',
-      v_vendor,
-      '0000000001',
-      1,
-      ' ',
-      'ONL',
-      'VP1',
-      TRUNC(SYSDATE),
-      'U',
-      ' ',
-      ' ',
-      v_amt,
-      0,
-      'N',
-      0,
-      0,
-      0,
-      'NET30',
-      TRUNC(SYSDATE),
-      'USD',
-      'CRRNT',
-      1,
-      1,
-      0,
-      'N',
-      v_bu,
-      SUBSTR(NVL(p_description, 'Staged via Gemini Enterprise PeopleSoft MCP Tool create_ap_voucher'), 1, 254)
-    );
+    -- Stage voucher header, line, and distribution in PeopleSoft Voucher Build staging tables
+    -- (PS_VCHR_HDR_STG, PS_VCHR_LINE_STG, PS_VCHR_DIST_STG) using %ROWTYPE template initialization
+    -- so all PeopleSoft NOT NULL fields are populated cleanly for AP_VCHRBLD
+    SELECT * INTO v_hdr FROM SYSADM.PS_VCHR_HDR_STG WHERE ROWNUM = 1;
+    v_hdr.BUSINESS_UNIT   := v_bu;
+    v_hdr.VCHR_BLD_KEY_C1 := v_vchr_id;
+    v_hdr.VCHR_BLD_KEY_C2 := ' ';
+    v_hdr.VCHR_BLD_KEY_N1 := 0;
+    v_hdr.VCHR_BLD_KEY_N2 := 0;
+    v_hdr.VOUCHER_ID      := v_vchr_id;
+    v_hdr.VOUCHER_STYLE   := 'REG';
+    v_hdr.INVOICE_ID      := SUBSTR(TRIM(p_invoice_num), 1, 30);
+    v_hdr.INVOICE_DT      := TRUNC(SYSDATE);
+    v_hdr.VENDOR_SETID    := 'SHARE';
+    v_hdr.VENDOR_ID       := v_vendor;
+    v_hdr.VNDR_LOC        := '0000000001';
+    v_hdr.ADDRESS_SEQ_NUM := 1;
+    v_hdr.ORIGIN          := 'ONL';
+    v_hdr.OPRID           := 'VP1';
+    v_hdr.ACCOUNTING_DT   := TRUNC(SYSDATE);
+    v_hdr.GROSS_AMT       := v_amt;
+    v_hdr.PYMNT_TERMS_CD  := 'NET30';
+    v_hdr.ENTERED_DT      := TRUNC(SYSDATE);
+    v_hdr.TXN_CURRENCY_CD := 'USD';
+    v_hdr.VCHR_SRC        := 'ONL';
+    v_hdr.DESCR254_MIXED  := SUBSTR(NVL(p_description, 'Staged via Gemini Enterprise PeopleSoft MCP Tool create_ap_voucher'), 1, 254);
+    INSERT INTO SYSADM.PS_VCHR_HDR_STG VALUES v_hdr;
 
-    INSERT INTO SYSADM.PS_VCHR_LINE_STG (
-      BUSINESS_UNIT, VCHR_BLD_KEY_C1, VCHR_BLD_KEY_C2, VCHR_BLD_KEY_N1,
-      VOUCHER_LINE_NUM, LINE_AMT, DESCR254_MIXED
-    ) VALUES (
-      v_bu, v_vchr_id, ' ', 0,
-      1, v_amt, SUBSTR(NVL(p_description, 'Staged line'), 1, 254)
-    );
+    SELECT * INTO v_line FROM SYSADM.PS_VCHR_LINE_STG WHERE ROWNUM = 1;
+    v_line.BUSINESS_UNIT    := v_bu;
+    v_line.VCHR_BLD_KEY_C1  := v_vchr_id;
+    v_line.VCHR_BLD_KEY_C2  := ' ';
+    v_line.VCHR_BLD_KEY_N1  := 0;
+    v_line.VCHR_BLD_KEY_N2  := 0;
+    v_line.VOUCHER_ID       := v_vchr_id;
+    v_line.VOUCHER_LINE_NUM := 1;
+    v_line.MERCHANDISE_AMT  := v_amt;
+    v_line.QTY_VCHR         := 1;
+    v_line.UNIT_PRICE       := v_amt;
+    v_line.BUSINESS_UNIT_GL := v_bu;
+    v_line.DESCR            := SUBSTR(NVL(p_description, 'Staged line'), 1, 30);
+    v_line.DESCR254_MIXED   := SUBSTR(NVL(p_description, 'Staged line'), 1, 254);
+    INSERT INTO SYSADM.PS_VCHR_LINE_STG VALUES v_line;
 
-    INSERT INTO SYSADM.PS_VCHR_DIST_STG (
-      BUSINESS_UNIT, VCHR_BLD_KEY_C1, VCHR_BLD_KEY_C2, VCHR_BLD_KEY_N1,
-      VOUCHER_LINE_NUM, DISTRIB_LINE_NUM, MERCHANDISE_AMT
-    ) VALUES (
-      v_bu, v_vchr_id, ' ', 0,
-      1, 1, v_amt
-    );
+    SELECT * INTO v_dist FROM SYSADM.PS_VCHR_DIST_STG WHERE ROWNUM = 1;
+    v_dist.BUSINESS_UNIT    := v_bu;
+    v_dist.VCHR_BLD_KEY_C1  := v_vchr_id;
+    v_dist.VCHR_BLD_KEY_C2  := ' ';
+    v_dist.VCHR_BLD_KEY_N1  := 0;
+    v_dist.VCHR_BLD_KEY_N2  := 0;
+    v_dist.VOUCHER_ID       := v_vchr_id;
+    v_dist.VOUCHER_LINE_NUM := 1;
+    v_dist.DISTRIB_LINE_NUM := 1;
+    v_dist.BUSINESS_UNIT_GL := v_bu;
+    v_dist.ACCOUNT          := '600000';
+    v_dist.MERCHANDISE_AMT  := v_amt;
+    v_dist.QTY_VCHR         := 1;
+    INSERT INTO SYSADM.PS_VCHR_DIST_STG VALUES v_dist;
 
     COMMIT;
 
