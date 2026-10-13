@@ -110,7 +110,7 @@ BEGIN
         username,
         program_unit
     ) VALUES ( 'Google MCP Toolbox',
-               p_log_message,
+               SUBSTR(p_log_message, 1, 4000),
                p_log_level,
                p_username,
                p_program_unit );
