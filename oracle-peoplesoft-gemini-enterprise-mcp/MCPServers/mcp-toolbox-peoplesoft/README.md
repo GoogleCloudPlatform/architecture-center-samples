@@ -1,6 +1,6 @@
 # Oracle PeopleSoft MCP Server (`mcp-toolbox-peoplesoft`) — Artifact Registry & Cloud Run Deployment Guide
 
-This directory contains the containerized **Oracle PeopleSoft FSCM 9.2 Model Context Protocol (MCP) Server** built on Google's **GenAI Toolbox for Databases (`genai-toolbox`)** and pre-configured with **20 Oracle PeopleSoft ERP and Public Sector MCP tools** (`tools.yaml`).
+This directory contains the containerized **Oracle PeopleSoft FSCM 9.2 Model Context Protocol (MCP) Server** built on Google's **GenAI Toolbox for Databases (`genai-toolbox`)** and pre-configured with **20 Oracle PeopleSoft FSCM 9.2 MCP tools** (`tools.yaml`).
 
 ## Key Capabilities
 

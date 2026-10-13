@@ -1,8 +1,6 @@
 # Deploy Oracle PeopleSoft 9.2 MCP Server for Gemini Enterprise to Google Cloud
 
-Welcome to the interactive **Oracle PeopleSoft FSCM 9.2 Gemini Enterprise MCP Server** deployment walkthrough. This guide walks you through deploying the 20-tool Oracle PeopleSoft MCP server (`mcp-toolbox-peoplesoft`) to **Google Artifact Registry** and **Google Cloud Run** (with credentials secured in **Google Cloud Secret Manager**) so it can power the **6 Gemini Enterprise Public Sector Skills**.
-
----
+Welcome to the interactive **Oracle PeopleSoft FSCM 9.2 Gemini Enterprise MCP Server** deployment walkthrough. This guide walks you through deploying the 20-tool Oracle PeopleSoft MCP server (`mcp-toolbox-peoplesoft`) to **Google Artifact Registry** and **Google Cloud Run** (with credentials secured in **Google Cloud Secret Manager**) so you can connect it directly to **Gemini Enterprise**.
 
 ## Step 1: Select Your Google Cloud Project & Region
 
@@ -20,8 +18,6 @@ Verify your active project:
 echo "Deploying into Project: $PROJECT_ID (Region: $REGION)"
 ```
 
----
-
 ## Step 2: Enable Required Google Cloud APIs
 
 Enable Cloud Run, Artifact Registry, Cloud Build, Secret Manager, Compute Engine, and Vertex AI APIs:
@@ -37,8 +33,6 @@ gcloud services enable \
     --project="$PROJECT_ID"
 ```
 
----
-
 ## Step 3: Install Oracle PeopleSoft 9.2 Database Objects (DBA Step)
 
 Before starting the Cloud Run service, run the SQL and PL/SQL installation scripts in `PSFTScripts/` on your Oracle PeopleSoft FSCM 9.2 database tier (`EP92U055`):
@@ -47,11 +41,9 @@ Before starting the Cloud Run service, run the SQL and PL/SQL installation scrip
    - `PSFTScripts/create_psft_ai.sql`
 2. **Compile PL/SQL Wrapper Package & Audit Table** (as `SYSADM`):
    - `PSFTScripts/ge_psft_mcp_tools.sql`
-3. **Install Public Sector Read-Only Views & Seed Data** (as `SYSADM`, optional for Public Sector skills):
+3. **Install Read-Only Analytical Views & Seed Data** (as `SYSADM`):
    - `PSFTScripts/install_gov_psft_mcp_and_seed.sql`
    - `PSFTScripts/install_gov_public_sector_views.sql`
-
----
 
 ## Step 4: Configure & Deploy the Oracle PeopleSoft MCP Server to Artifact Registry & Cloud Run
 
@@ -83,8 +75,6 @@ Run the automated deployment script to:
 ./deploy.sh
 ```
 
----
-
 ## Step 5: Connect Your Cloud Run MCP Endpoint to Gemini Enterprise
 
 Once `./deploy.sh` finishes, it prints your **MCP Endpoint URL**:
@@ -94,6 +84,6 @@ https://mcp-toolbox-peoplesoft-<hash>-uc.a.run.app/mcp
 ```
 
 1. **Register the BYO-MCP Endpoint in Gemini Enterprise:** Register the `/mcp` endpoint directly in your Gemini Enterprise / Vertex AI Agent Builder console.
-2. **Invoke the 6 Gemini Enterprise Public Sector Skills:** In the Gemini Enterprise web app, open the **Skills** gallery or type `/` in chat (`/plain-language-notice-generator`, `/redaction-and-foia-compliance`, `/policy-and-statute-assistant`, `/document-intake-cleanup-and-validation`, `/rfp-vendor-evaluation-scorer`, `/expense-auditor`) to ground your workflows in live Oracle PeopleSoft FSCM 9.2 data.
+2. **Query & Act on Oracle PeopleSoft Data in Gemini Enterprise:** In the Gemini Enterprise web app, invoke your connected Oracle PeopleSoft MCP tools to query and act on live Oracle PeopleSoft FSCM 9.2 data.
 
 Congratulations! Your Oracle PeopleSoft 9.2 Gemini Enterprise MCP Server is now live.
