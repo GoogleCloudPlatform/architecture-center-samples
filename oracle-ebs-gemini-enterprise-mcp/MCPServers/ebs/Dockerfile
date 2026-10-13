@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:latest
+FROM us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:1.14.0
 
 # Bake the 21 parameterized Oracle EBS MCP tool definitions into the image.
 # Runtime credentials (${EBS_DB_CONNECTION_STRING}, ${EBS_DB_USER}, ${EBS_DB_PASSWORD})
