@@ -120,8 +120,7 @@ CREATE OR REPLACE PACKAGE BODY xx_ai_attachment_pkg AS
                 -- Only whitespace (typical of a scanned, image-only PDF) counts as no text.
                 g_status := CASE
                                 WHEN NVL(DBMS_LOB.GETLENGTH(g_text), 0) = 0 THEN 'NO_TEXT'
-                                WHEN DBMS_LOB.GETLENGTH(g_text) <= 32000
-                                     AND NOT REGEXP_LIKE(DBMS_LOB.SUBSTR(g_text, 32000, 1), '[^[:space:]]') THEN 'NO_TEXT'
+                                WHEN REGEXP_INSTR(g_text, '[^[:space:]]') = 0 THEN 'NO_TEXT'
                                 ELSE 'OK'
                             END;
             EXCEPTION
