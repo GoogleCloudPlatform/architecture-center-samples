@@ -187,11 +187,19 @@ CREATE OR REPLACE PACKAGE BODY xx_ai_attachment_pkg AS
         l_size NUMBER := FLOOR(LEAST(GREATEST(NVL(p_chunk_bytes, c_b64_def), 3), c_b64_max) / 3) * 3;
         l_raw  RAW(1998);
     BEGIN
-        IF p_file_id IS NULL OR NVL(p_chunk, 0) < 1 OR get_status(p_file_id) <> 'OK' THEN
+                IF p_file_id IS NULL OR NVL(p_chunk, 0) < 1 THEN
             RETURN NULL;
         END IF;
-        SELECT DBMS_LOB.SUBSTR(file_data, l_size, (p_chunk - 1) * l_size + 1) INTO l_raw
-          FROM fnd_lobs WHERE file_id = p_file_id;
+        BEGIN
+            SELECT DBMS_LOB.SUBSTR(file_data, l_size, (p_chunk - 1) * l_size + 1) INTO l_raw
+              FROM fnd_lobs 
+             WHERE file_id = p_file_id 
+               AND NVL(DBMS_LOB.GETLENGTH(file_data), 0) <= c_max_bytes;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                RETURN NULL;
+        END;
+        
         IF l_raw IS NULL THEN
             RETURN NULL;
         END IF;
