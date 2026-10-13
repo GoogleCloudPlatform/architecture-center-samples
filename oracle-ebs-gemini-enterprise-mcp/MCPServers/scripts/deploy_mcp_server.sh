@@ -281,7 +281,6 @@ trap 'rm -f "${TMP_PF}"' EXIT
 
 command -v gcloud >/dev/null 2>&1 || die "gcloud CLI not found in PATH."
 command -v python3 >/dev/null 2>&1 || die "python3 not found in PATH."
-command -v curl >/dev/null 2>&1 || die "curl not found in PATH."
 
 # --- Load settings: command line > .env > derived/default ---
 from_env() {  # from_env VAR_NAME ENV_KEY CLI_NAME
@@ -1213,7 +1212,9 @@ try:
             else:
                 d[k] = v
 except Exception as e:
-    print("FAIL the config folder is not valid YAML: %s" % str(e).splitlines()[0]); sys.exit(0)
+    except Exception as e:
+    lines = str(e).splitlines()
+    print("FAIL the config folder is not valid YAML: %s" % (lines[0] if lines else str(e))); sys.exit(0)
 if not d:
     print("FAIL the config folder is empty"); sys.exit(0)
 srcs, tools, auths = d.get("sources") or {}, d.get("tools") or {}, d.get("authServices") or {}

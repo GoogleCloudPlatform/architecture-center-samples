@@ -211,8 +211,7 @@ BEGIN
         AND fa.application_id = apps.fnd_global.resp_appl_id
         AND fsg.security_group_id = apps.fnd_global.security_group_id -- Join for Security Group
         AND hou.organization_id(+) = apps.fnd_global.org_id
-        --AND fr.application_id = 800 -- filters out HCM alone
-	;
+        AND fr.application_id = 800;
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
             mcp_toolbox_log('Session not initialised: '||l_email_address,'DEBUG',l_email_address,l_program_unit);
@@ -239,6 +238,7 @@ BEGIN
             l_user_name
           FROM apps.fnd_user u
           WHERE upper(u.email_address) = upper(l_email_address)
+                      AND ( u.start_date IS NULL OR u.start_date <= sysdate )
            AND ( u.end_date IS NULL OR u.end_date > sysdate );
           -- (u.email_address = l_email_address or to_char(u.user_id) = l_email_address or u.user_name = l_email_address)
     EXCEPTION
@@ -271,11 +271,11 @@ BEGIN
                         -- Filter for Inventory responsibility
             AND ( upper(r.responsibility_name) = upper(l_responsibility) OR l_responsibility IS NULL )
                         -- Ensure Responsibility assignment is active
-            AND ( urg.end_date IS NULL
-                  OR urg.end_date > sysdate )
+            AND ( urg.start_date IS NULL OR urg.start_date <= sysdate )
+            AND ( urg.end_date IS NULL OR urg.end_date > sysdate )
                         -- Ensure Responsibility definition is active
-            AND ( r.end_date IS NULL
-                  OR r.end_date > sysdate )
+            AND ( r.start_date IS NULL OR r.start_date <= sysdate )
+            AND ( r.end_date IS NULL OR r.end_date > sysdate )
             ORDER BY r.responsibility_id
             FETCH FIRST 1 ROW ONLY ;
     EXCEPTION
@@ -478,7 +478,8 @@ BEGIN
     -- Same rule as ebs_initialize_context: an active FND user (not end-dated) with that e-mail address
     SELECT COUNT(*), MIN(u.user_name) INTO l_count, l_user
       FROM apps.fnd_user u
-     WHERE (u.end_date IS NULL OR u.end_date > SYSDATE)
+     WHERE (u.start_date IS NULL OR u.start_date <= SYSDATE)
+       AND (u.end_date IS NULL OR u.end_date > SYSDATE)
        AND ( (INSTR(l_id, '@') > 0 AND UPPER(u.email_address) = UPPER(l_id))
           OR (INSTR(l_id, '@') = 0 AND u.user_name = UPPER(l_id)) );
     IF l_count = 0 THEN
@@ -536,7 +537,9 @@ PROCEDURE init_user_session(p_user_id IN VARCHAR2) IS
         END IF;
         g_applied_key := NULL;
         l_json := ebs_initialize_context(l_email, p_ou, p_resp, p_app, 'Y');   -- {"STATUS":"SUCCESS"|"ERROR","MESSAGE":...}
-        SELECT JSON_VALUE(l_json, '$.STATUS'), JSON_VALUE(l_json, '$.MESSAGE') INTO l_status, l_message FROM dual;
+        
+        l_status := JSON_VALUE(l_json, '$.STATUS');
+        l_message := JSON_VALUE(l_json, '$.MESSAGE');
         IF UPPER(NVL(l_status, 'NONE')) = 'SUCCESS' THEN
             g_applied_key := l_key;
         END IF;
