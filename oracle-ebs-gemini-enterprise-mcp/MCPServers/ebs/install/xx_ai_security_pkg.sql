@@ -34,6 +34,17 @@ BEGIN
             updated_at             DATE DEFAULT SYSDATE NOT NULL,
             CONSTRAINT xx_ai_user_context_pk PRIMARY KEY (email))';
     END IF;
+
+    SELECT COUNT(*) INTO l_n FROM all_tables WHERE owner = 'APPS' AND table_name = 'XX_GGLTOOLBOX$MCP_LOG';
+    IF l_n = 0 THEN
+        EXECUTE IMMEDIATE 'CREATE TABLE apps.xx_ggltoolbox$mcp_log (
+            log_date     DATE DEFAULT SYSDATE NOT NULL,
+            mcp_client   VARCHAR2(100),
+            log_message  VARCHAR2(4000),
+            log_level    VARCHAR2(20),
+            username     VARCHAR2(240),
+            program_unit VARCHAR2(100))';
+    END IF;
 END;
 /
 
@@ -106,7 +117,9 @@ BEGIN
 
     COMMIT;
 
---exception when others then null; -- we gobble the error to make sure we don't crash the caller
+    EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
 
 END mcp_toolbox_log;
 

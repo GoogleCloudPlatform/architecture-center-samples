@@ -39,6 +39,8 @@ set -euo pipefail
 SCRIPT_VERSION="1.0.0"
 echo "deploy_mcp_server.sh v${SCRIPT_VERSION}" >&2
 
+TOOLBOX_VERSION=1.14.0
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${REPO_ROOT}"
@@ -50,7 +52,7 @@ source "${SCRIPT_DIR}/lib.sh"          # ENV_FILE, env_value, info/warn/die
 DEFAULT_SERVICE_NAME=""
 SYSTEM=""; SYSTEM_SHORT=""; VARIANT=""
 VALID_SYSTEMS="ebs, peoplesoft (ps), jde"
-DEFAULT_IMAGE="us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:latest"
+DEFAULT_IMAGE="us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:${TOOLBOX_VERSION}"
 DEFAULT_TOOLS_DIR=""
 DEFAULT_REGION="us-central1"
 DEFAULT_SA_NAME=""   # <ebs|ps|jde>-service-account, set once --system is known; full email is derived: <name>@<project>.iam.gserviceaccount.com
