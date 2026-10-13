@@ -1,6 +1,6 @@
 # Deploy Oracle JD Edwards 9.2 Hybrid MCP Server & Discrete Manufacturing AI Agent to Google Cloud
 
-Welcome to the interactive **Oracle JD Edwards EnterpriseOne (JDE) 9.2 Gemini Enterprise MCP Server & Discrete Manufacturing AI Agent** deployment walkthrough. This guide walks you through deploying the 18-tool Hybrid JDE Orchestrator v3 + Oracle 19c SQL MCP server (`mcp-jde-orchestrator`) to **Google Artifact Registry** and **Google Cloud Run**, and deploying the **`JDE_Master`** Discrete Manufacturing AI Agent to **Vertex AI Reasoning Engine**.
+Welcome to the interactive **Oracle JD Edwards EnterpriseOne (JDE) 9.2 Gemini Enterprise MCP Server & Discrete Manufacturing AI Agent** deployment walkthrough. This guide walks you through deploying the 18-tool Hybrid JDE Orchestrator v3 + Oracle 19c SQL MCP server (`mcp-jde-orchestrator`) to **Google Artifact Registry** and **Google Cloud Run**, and deploying the **`JDE_Master`** Discrete Manufacturing AI Agent to **Agent Engine**.
 
 ## Step 1: Select Your Google Cloud Project & Region
 
@@ -48,7 +48,7 @@ Update `.env` with your VPC, Subnet, Service Account, JDE AIS/Orchestrator URL (
 cd ../..
 ```
 
-## Step 5: Deploy the `JDE_Master` Discrete Manufacturing AI Agent to Vertex AI Reasoning Engine
+## Step 5: Deploy the `JDE_Master` Discrete Manufacturing AI Agent to Agent Engine
 
 ```bash
 make deploy_jde_agents PROJECT_ID="$PROJECT_ID" REGION="$REGION"

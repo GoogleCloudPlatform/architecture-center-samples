@@ -1,6 +1,6 @@
 # Oracle JD Edwards EnterpriseOne (JDE) 9.2 Discrete Manufacturing AI Agent (`Agents/JDE_Master/`)
 
-This directory contains the Google Agent Development Kit (ADK) multi-agent system (**`JDE_Master`**) deployed to **Vertex AI Reasoning Engine** and registered in **Gemini Enterprise** for **Oracle JD Edwards EnterpriseOne 9.2 Discrete Manufacturing (`Branch/Plant M30`)**.
+This directory contains the Google Agent Development Kit (ADK) multi-agent system (**`JDE_Master`**) deployed to **Agent Engine** and registered in **Gemini Enterprise** for **Oracle JD Edwards EnterpriseOne 9.2 Discrete Manufacturing (`Branch/Plant M30`)**.
 
 ## Multi-Agent Hierarchy
 

@@ -22,7 +22,7 @@ Designed specifically for **Discrete Manufacturing operations (`Branch/Plant M30
    - **DMAAI (`P4095`) Policy-Gated Auto-Remediation:** Diagnoses missing GL account mappings in `PRODDTA.F4095` that block `R31802A` Manufacturing Accounting (`DMAAI 3120` Work-in-Process `< $5,000` auto-remediated immediately via `ORCH_ResolveDMAAIException`; `DMAAI 3240` Manufacturing Variance `>= $5,000` gated via an interactive Google A2UI `v0.9` card).
    - **Operational Precedent Ledger (`PRODDTA.F48019`):** Matches live shop-floor bottlenecks and accounting exceptions against historical resolution precedents (`PREC-DMAAI-3120`, `PREC-DMAAI-3240`, `PREC-SHORT-ENC`, `PREC-SHORT-PCBA`, `PREC-CAP-200101`).
 4. **`JDE_Master` Multi-Agent Framework & 180 DPI Executive Charting (`Agents/JDE_Master/`):**
-   - Deploys `JDE_Master` (`JDE_Mfg_Agent` + `JDE_Graphs_Agent` + `MrGoogle`) to **Vertex AI Reasoning Engine** with publication-grade `180 DPI` (`12.0" x 6.6"` widescreen) charts rendered inline in Gemini Enterprise.
+   - Deploys `JDE_Master` (`JDE_Mfg_Agent` + `JDE_Graphs_Agent` + `MrGoogle`) to **Agent Engine** with publication-grade `180 DPI` (`12.0" x 6.6"` widescreen) charts rendered inline in Gemini Enterprise.
 
 ## 2. End-to-End 4-Tier Architecture Overview
 
@@ -36,7 +36,7 @@ Designed specifically for **Discrete Manufacturing operations (`Branch/Plant M30
 |       |                                                                                                  |
 |       | 1. OAuth 2.0 / Signed-In User Identity (session.user_email)                                      |
 |       v                                                                                                  |
-|  [ Tier 2: Vertex AI Reasoning Engine — JDE_Master Multi-Agent System ]                                  |
+|  [ Tier 2: Agent Engine — JDE_Master Multi-Agent System ]                                                |
 |       |  * JDE_Mfg_Agent (18 MCP Tools + jde_discrete_mfg_semantic_map.json)                             |
 |       |  * JDE_Graphs_Agent (180 DPI Widescreen Bar, Stacked Bar, Donut & Line Charts)                   |
 |       |  * MrGoogle (External Supplier & Market Intelligence)                                            |
@@ -157,6 +157,6 @@ make set_config_mcp_servers
 # 3. Deploy the Hybrid JDE MCP Server to Artifact Registry & Cloud Run
 make deploy_mcp_server PROJECT_ID=your-gcp-project-id REGION=us-central1
 
-# 4. Deploy the JDE_Master Discrete Manufacturing AI Agent to Vertex AI Reasoning Engine
+# 4. Deploy the JDE_Master Discrete Manufacturing AI Agent to Agent Engine
 make deploy_jde_agents PROJECT_ID=your-gcp-project-id REGION=us-central1
 ```
