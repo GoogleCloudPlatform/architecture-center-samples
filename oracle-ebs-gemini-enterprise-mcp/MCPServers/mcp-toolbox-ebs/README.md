@@ -1,6 +1,6 @@
 # Oracle EBS MCP Server (`mcp-toolbox-ebs`) — Artifact Registry & Cloud Run Deployment Guide
 
-This directory contains the containerized **Oracle E-Business Suite (EBS) Model Context Protocol (MCP) Server** built on Google's **GenAI Toolbox for Databases (`genai-toolbox`)** and pre-configured with **21 Oracle EBS ERP and Public Sector MCP tools** (`tools.yaml`).
+This directory contains the containerized **Oracle E-Business Suite (EBS) Model Context Protocol (MCP) Server** built on Google's **GenAI Toolbox for Databases (`genai-toolbox`)** and pre-configured with **21 Oracle E-Business Suite (EBS) MCP tools** (`tools.yaml`).
 
 ## Key Capabilities
 
