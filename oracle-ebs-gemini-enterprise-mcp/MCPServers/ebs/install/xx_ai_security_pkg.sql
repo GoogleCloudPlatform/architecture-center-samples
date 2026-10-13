@@ -211,7 +211,8 @@ BEGIN
         AND fa.application_id = apps.fnd_global.resp_appl_id
         AND fsg.security_group_id = apps.fnd_global.security_group_id -- Join for Security Group
         AND hou.organization_id(+) = apps.fnd_global.org_id
-        AND fr.application_id = 800;
+        --AND fr.application_id = 800 -- filters out HCM alone
+	;
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
             mcp_toolbox_log('Session not initialised: '||l_email_address,'DEBUG',l_email_address,l_program_unit);
