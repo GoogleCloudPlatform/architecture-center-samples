@@ -279,6 +279,7 @@ trap 'rm -f "${TMP_PF}"' EXIT
 
 command -v gcloud >/dev/null 2>&1 || die "gcloud CLI not found in PATH."
 command -v python3 >/dev/null 2>&1 || die "python3 not found in PATH."
+command -v curl >/dev/null 2>&1 || die "curl not found in PATH."
 
 # --- Load settings: command line > .env > derived/default ---
 from_env() {  # from_env VAR_NAME ENV_KEY CLI_NAME
