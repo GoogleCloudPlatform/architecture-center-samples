@@ -20,7 +20,7 @@ echo "Deploying into Project: $PROJECT_ID (Region: $REGION)"
 
 ## Step 2: Enable Required Google Cloud APIs
 
-Enable Cloud Run, Artifact Registry, Cloud Build, Secret Manager, Compute Engine, and Vertex AI APIs:
+Enable Cloud Run, Artifact Registry, Cloud Build, Secret Manager, and Compute Engine APIs:
 
 ```bash
 gcloud services enable \
@@ -29,7 +29,6 @@ gcloud services enable \
     cloudbuild.googleapis.com \
     secretmanager.googleapis.com \
     compute.googleapis.com \
-    aiplatform.googleapis.com \
     --project="$PROJECT_ID"
 ```
 
@@ -85,7 +84,7 @@ Once `./deploy.sh` finishes, it prints your **MCP Endpoint URL**:
 https://mcp-toolbox-ebs-<hash>-uc.a.run.app/mcp
 ```
 
-1. **Register the BYO-MCP Endpoint in Gemini Enterprise:** Register the `/mcp` endpoint directly in your Gemini Enterprise / Vertex AI Agent Builder console.
+1. **Register the BYO-MCP Endpoint in Gemini Enterprise:** Register the `/mcp` endpoint directly in your Gemini Enterprise console.
 2. **Query & Act on Oracle EBS Data in Gemini Enterprise:** In the Gemini Enterprise web app, invoke your connected Oracle EBS MCP tools to query and act on live Oracle E-Business Suite R12.2 data.
 
 Congratulations! Your Oracle EBS Gemini Enterprise MCP Server is now live.

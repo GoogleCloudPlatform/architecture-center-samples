@@ -1,6 +1,6 @@
 # EBS Master Agent (`Agents/EBS_Master/`)
 
-The **EBS Master Agent (`EBS_Master`)** is the top-level Vertex AI ADK orchestrator for the Oracle E-Business Suite (EBS) multi-agent system. It receives natural language prompts from Gemini Enterprise, resolves user identity, routes database queries and transactional operations to `EBS_SQL_Agent`, and delegates high-resolution chart generation to `EBS_Graphs_Agent`.
+The **EBS Master Agent (`EBS_Master`)** is the top-level Agent Development Kit (ADK) orchestrator for the Oracle E-Business Suite (EBS) multi-agent system. It receives natural language prompts from Gemini Enterprise, resolves user identity, routes database queries and transactional operations to `EBS_SQL_Agent`, and delegates high-resolution chart generation to `EBS_Graphs_Agent`.
 
 ## 1. Multi-Agent Architecture
 
@@ -41,7 +41,7 @@ Sub-agents are loaded dynamically via `AgentTool` according to the `enabled_agen
 | Variable | Description | Default |
 | :--- | :--- | :--- |
 | `GOOGLE_CLOUD_PROJECT` | GCP Project ID | required |
-| `GOOGLE_CLOUD_LOCATION` | Vertex AI region | `us-central1` |
+| `GOOGLE_CLOUD_LOCATION` | Google Cloud region | `us-central1` |
 | `GOOGLE_CLOUD_BUCKET_NAME` | Staging GCS bucket for Agent Engine deployment | required |
 | `MCP_SERVER_SQL_URL` | Cloud Run MCP Toolbox `/mcp` endpoint URL | `http://localhost:8082/mcp/` |
 | `DEFAULT_EBS_USER_EMAIL` | Fallback Oracle EBS `FND_USER` email when running outside OAuth2 UI | `operations@example.com` |

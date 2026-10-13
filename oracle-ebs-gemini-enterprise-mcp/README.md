@@ -18,7 +18,7 @@ It supports end-to-end read and write operations across core Oracle E-Business S
 3. **Database Tier Integration & Read-Only Analytical Views (`EBSScripts/`):**
    - Custom PL/SQL wrapper package (`APPS.GE_EBS_MCP_TOOLS` in `ge_ebs_mcp_tools.pls` / `.plb`) encapsulating Oracle EBS public APIs (including `create_expense_report` across 7 official Oracle Internet Expenses, AOL Attachment, Workflow, and Audit PL/SQL APIs) and autonomous audit logging (`APPS.GGLTOOLBOX$MCP_LOG`).
    - Least-privilege database user provisioning (`APPS_AI` via `create_apps_ai.sql`, `GrantToApps_AI.sql`, and `GrantToApps_AIRESTRICTED.sql`).
-   - 7 read-only analytical views across 15 core Oracle EBS tables (`install_gov_public_sector_views.sql` and `create_v2_reports_via_oracle_apis.sql`) with an isolated synthetic test dataset (`IDs 990001–990999`) that preserves 100% of baseline Vision data.
+   - 7 read-only analytical views across 15 core Oracle EBS tables (created via `install_gov_public_sector_views.sql`) with an isolated synthetic test dataset (seeded via `create_v2_reports_via_oracle_apis.sql` using `IDs 990001–990999`) that preserves 100% of baseline Vision data.
 4. **Multi-Agent ADK Orchestration, Semantic Maps & 180 DPI Charting (`Agents/`):**
    - Curated JSON schema definitions (`semantic_maps/`) covering Accounts Payable, Accounts Receivable, General Ledger, Human Resources, Inventory, Order Management, Purchasing, Sourcing, Grants, and Security, paired with `180 DPI` (`12.0" x 6.6"` widescreen) chart generation (`EBS_Graphs_Agent`).
 
