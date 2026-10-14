@@ -247,7 +247,7 @@ class JDEOrchestratorClient:
     email = str(ctx.get("email_or_user", self.user_email))
     env = str(ctx.get("environment", self.environment))
     role = str(ctx.get("role_name", self.role))
-    cache_key = f"{self.username}:{env}:{role}"
+    cache_key = f"{self.username}:{usr}:{email}:{env}:{role}"
     if cache_key in self._tokens and not force_refresh:
       return self._tokens[cache_key]
     url = f"{self.base_url}/jderest/v2/tokenrequest"

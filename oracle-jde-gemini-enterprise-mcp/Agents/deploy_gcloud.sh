@@ -78,7 +78,7 @@ if [ ! -f "$ENV_FILE" ]; then
 GOOGLE_CLOUD_PROJECT="your-project-id"
 # Google Cloud location
 GOOGLE_CLOUD_LOCATION="your-location"
-# GOOGLE_CLOUD_PROJECT_NUMBER=\$(gcloud projects describe \$GOOGLE_CLOUD_PROJECT --format="value(projectNumber)")
+GOOGLE_CLOUD_PROJECT_NUMBER=\$(gcloud projects describe \$GOOGLE_CLOUD_PROJECT --format="value(projectNumber)")
 MCP_SERVER_JDE_URL="https://mcp-jde-orchestrator-\${GOOGLE_CLOUD_PROJECT_NUMBER}.\${GOOGLE_CLOUD_LOCATION}.run.app/mcp"
 EOL
 printf ".env file created with default values. Please update it with your Google Cloud configuration.\n" | tee logs/create_env.log

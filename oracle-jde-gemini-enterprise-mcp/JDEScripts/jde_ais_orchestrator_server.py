@@ -144,7 +144,9 @@ def resolve_jde_user(cur, payload: Optional[Dict[str, Any]] = None, headers: Opt
     return jde_usr
 
 
-def check_f00950_security(cur, jde_user: str, app_id: str, branch_plant: str) -> None:
+def check_f00950_security(
+    cur, jde_user: str, app_id: str, branch_plant: str, require_write: bool = True
+) -> None:
     try:
         u_padded = jde_user.strip().upper().ljust(15)
         app_padded = app_id.strip().upper().ljust(10)
@@ -162,7 +164,7 @@ def check_f00950_security(cur, jde_user: str, app_id: str, branch_plant: str) ->
             {"u": u_padded, "app": app_padded, "mcu": mcu_padded},
         )
         row = cur.fetchone()
-        if not row or (row[0] != "Y" or row[1] != "Y"):
+        if not row or row[0] != "Y" or (require_write and row[1] != "Y"):
             raise HTTPException(
                 status_code=403,
                 detail=f"JDE Security Workbench (F00950) denied action on {app_id} for user {jde_user} in Branch/Plant {branch_plant}",
@@ -241,6 +243,12 @@ def default_config():
 @app.post("/jderest/v2/tokenrequest")
 @app.post("/jderest/tokenrequest")
 def token_request(body: dict, request: Request):
+    expected_pw = os.environ.get("JDE_AIS_PASSWORD", "").strip()
+    provided_pw = str(body.get("password") or "").strip()
+    if expected_pw and not secrets.compare_digest(provided_pw, expected_pw):
+        raise HTTPException(status_code=401, detail="Invalid JDE AIS service credentials")
+    if not provided_pw:
+        raise HTTPException(status_code=401, detail="Password is required for JDE AIS tokenrequest")
     username = body.get("username", "NGONZAL")
     env = body.get("environment", "JPD920")
     role = body.get("role", "MFG_MGR")
@@ -1141,7 +1149,7 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
         with pool.acquire() as conn:
             with conn.cursor() as cur:
                 jde_user = resolve_jde_user(cur, payload, request.headers)
-                check_f00950_security(cur, jde_user, "P980051", bp)
+                check_f00950_security(cur, jde_user, "P980051", bp, require_write=False)
                 cur.execute(
                     """
                     SELECT watchlist_id, watchlist_name, jde_program_id, detection_mode,
