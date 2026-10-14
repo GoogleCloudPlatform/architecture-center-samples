@@ -38,7 +38,7 @@ resource "null_resource" "oracle_peoplesoft_gemini_enterprise_mcp_server" {
   triggers = {
     deploy_script_hash = filemd5("${path.module}/MCPServers/mcp-toolbox-peoplesoft/deploy.sh")
     env_content_hash   = md5(local_file.mcp_toolbox_peoplesoft_env.content)
-    tools_yaml_hash    = filemd5("${path.module}/MCPServers/mcp-toolbox-peoplesoft/tools.yaml.example")
+    tools_yaml_hash    = try(filemd5("${path.module}/MCPServers/mcp-toolbox-peoplesoft/tools.yaml"), filemd5("${path.module}/MCPServers/mcp-toolbox-peoplesoft/tools.yaml.example"))
     dockerfile_hash    = filemd5("${path.module}/MCPServers/mcp-toolbox-peoplesoft/Dockerfile")
   }
 

@@ -26,7 +26,7 @@ from contextlib import contextmanager
 
 # gemini 3 endpoints are currently only accessible in global, so we need to overwrite this env var 
 # for the agent to work properly.
-os.environ.setdefault('GOOGLE_CLOUD_LOCATION', 'us-central1')
+os.environ['GOOGLE_CLOUD_LOCATION'] = 'us-central1'
 
 try:
     from google.cloud import aiplatform
@@ -410,7 +410,7 @@ def get_user_id(tool_context: ToolContext):
             if access_token:
                 with _telemetry_span("tokeninfo_lookup", {"endpoint": "googleapis_tokeninfo", "trace_id": trace_id}):
                     try:
-                        param_name = "id_token" if access_token.startswith("eyJ") else "access_token"
+                        param_name = "id_token" if isinstance(access_token, str) and access_token.startswith("eyJ") else "access_token"
                         response = httpx.post(
                             "https://oauth2.googleapis.com/tokeninfo",
                             data={param_name: access_token},

@@ -23,13 +23,10 @@ resource "null_resource" "oracle_peoplesoft_gemini_enterprise_framework" {
     command = <<EOT
       set -e
 
-      if [ ! -d ".venv" ]; then
-        python3 -m venv .venv
+      # Activate the pre-configured Python virtual environment created during 'make setup'
+      if [ -f ".venv/bin/activate" ]; then
+        . .venv/bin/activate
       fi
-      . .venv/bin/activate
-      
-      pip install -r requirements.txt
-      pip install -r Agents/requirements.txt
 
       ACTUAL_PROJECT_NUMBER=$(gcloud projects describe ${var.project_id} --format="value(projectNumber)")
 

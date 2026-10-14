@@ -141,6 +141,20 @@ else
   install_terraform_docs
 fi
 
+  # Initialize Python virtual environment and install pinned requirements
+  if command -v python3 &>/dev/null; then
+    if [ ! -d ".venv" ]; then
+      python3 -m venv .venv
+    fi
+    # shellcheck disable=SC1091
+    . .venv/bin/activate
+    if [ -f "requirements.txt" ]; then
+      pip install -r requirements.txt
+    fi
+    if [ -f "Agents/requirements.txt" ]; then
+      pip install -r Agents/requirements.txt
+    fi
+  fi
 
   echo "All tools installed and configured."
 }
