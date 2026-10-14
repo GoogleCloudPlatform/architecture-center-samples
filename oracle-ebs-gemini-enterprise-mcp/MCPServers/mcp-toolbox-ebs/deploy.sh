@@ -114,11 +114,13 @@ if [ -n "$SECRET_ENV_BINDINGS" ]; then
     ACTIVE_SECRETS+=("${MCP_TOOLBOX_SERVICE_NAME}-db-conn" "${MCP_TOOLBOX_SERVICE_NAME}-db-user" "${MCP_TOOLBOX_SERVICE_NAME}-db-pass")
 fi
 for SECRET_ID in "${ACTIVE_SECRETS[@]}"; do
-    gcloud secrets add-iam-policy-binding "$SECRET_ID" \
+    if ! gcloud secrets add-iam-policy-binding "$SECRET_ID" \
         --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
         --role="roles/secretmanager.secretAccessor" \
         --project="$PROJECT_ID" \
-        --quiet >/dev/null 2>&1 || true
+        --quiet >/dev/null 2>&1; then
+        echo "Warning: Failed to bind Secret Manager Secret Accessor role to $SERVICE_ACCOUNT_EMAIL for secret $SECRET_ID. Please ensure the service account has access."
+    fi
 done
 
 # 3. Build & Push Pre-Configured EBS MCP Image to Customer's Artifact Registry (Phase 1)
