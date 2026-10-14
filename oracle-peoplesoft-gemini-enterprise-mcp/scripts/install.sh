@@ -115,7 +115,7 @@ function verify_and_install() {
 
 # Check Terraform
 if command -v terraform &>/dev/null; then
-  INSTALLED_VERSION=$(terraform version -json 2>/dev/null | jq -r '.terraform_version' 2>/dev/null || terraform version | head -n1 | awk '{print $2}' | sed 's/v//')
+  INSTALLED_VERSION=$(terraform version | head -n1 | awk '{print $2}' | sed 's/v//')
   if [[ -z "$INSTALLED_VERSION" ]] || ! version_ge "$INSTALLED_VERSION" "$PINNED_TERRAFORM_VERSION"; then
     echo "Installing/Updating Terraform..."
     install_terraform

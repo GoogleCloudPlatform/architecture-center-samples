@@ -208,8 +208,10 @@ def _make_oidc_header_provider(audience: str):
         user_context = _extract_request_user_context(context)
         user_id = user_context.get("user_id")
         if user_id:
-            headers["X-User-Id"] = user_id
-            headers["X-User-Email"] = user_context.get("email", user_id)
+            clean_user_id = str(user_id).replace("\r", "").replace("\n", "")
+            clean_email = str(user_context.get("email", user_id)).replace("\r", "").replace("\n", "")
+            headers["X-User-Id"] = clean_user_id
+            headers["X-User-Email"] = clean_email
 
         return headers
     return provider
