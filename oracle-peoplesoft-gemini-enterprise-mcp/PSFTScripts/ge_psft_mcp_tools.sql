@@ -111,10 +111,7 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
        FETCH FIRST 1 ROWS ONLY;
     EXCEPTION
       WHEN NO_DATA_FOUND THEN
-        SELECT OPRID, OPRDEFNDESC, EMPLID, EMAILID
-          INTO v_oprid, v_oprdesc, v_emplid, v_email
-          FROM SYSADM.PSOPRDEFN
-         WHERE OPRID = 'VP1';
+        RAISE_APPLICATION_ERROR(-20006, 'Unauthorized or unmapped PeopleSoft operator: ' || p_email_or_oprid);
     END;
 
     FOR r_key IN (

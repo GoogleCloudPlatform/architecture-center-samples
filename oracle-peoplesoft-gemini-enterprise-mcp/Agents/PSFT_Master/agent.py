@@ -321,20 +321,12 @@ def get_session_user_context(tool_context: ToolContext):
 
         if _TELEMETRY_CLIENT:
             _TELEMETRY_CLIENT.log_event("session_context_cache_miss", {})
-        email = ""
-        if os.environ.get("DEBUG", "false").lower() == "true":
-            email = os.environ.get("DEFAULT_PSFT_USER_EMAIL", "").strip()
-        if not email:
-            return {
-                "ok": False,
-                "source_agent": "PSFT_Master",
-                "error_code": "AUTH_FAILED",
-                "message": "Unable to resolve authenticated user email from session state.",
-            }
-        safe_context = _build_safe_user_context(email)
-        _set_state_value(tool_context, _USER_ID_STATE_KEY, email)
-        _set_state_value(tool_context, _USER_CONTEXT_STATE_KEY, safe_context)
-        return safe_context
+        return {
+            "ok": False,
+            "source_agent": "PSFT_Master",
+            "error_code": "AUTH_FAILED",
+            "message": "Unable to resolve authenticated user email from session state.",
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -457,15 +449,12 @@ def get_user_id(tool_context: ToolContext):
                 _TELEMETRY_CLIENT.log_event("user_context_resolution_failed", {
                     "trace_id": trace_id
                 })
-            if os.environ.get("DEBUG", "false").lower() == "true":
-                email = os.environ.get("DEFAULT_PSFT_USER_EMAIL", "").strip()
-            if not email:
-                return {
-                    "ok": False,
-                    "source_agent": "PSFT_Master",
-                    "error_code": "AUTH_FAILED",
-                    "message": "Authentication failed: Unable to resolve authenticated user email from session or OAuth token.",
-                }
+            return {
+                "ok": False,
+                "source_agent": "PSFT_Master",
+                "error_code": "AUTH_FAILED",
+                "message": "Authentication failed: Unable to resolve authenticated user email from session or OAuth token.",
+            }
         else:
             if _TELEMETRY_CLIENT:
                 _TELEMETRY_CLIENT.log_event("user_context_resolved", {

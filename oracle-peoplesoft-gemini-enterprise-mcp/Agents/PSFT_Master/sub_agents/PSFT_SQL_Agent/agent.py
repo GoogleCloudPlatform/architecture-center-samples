@@ -344,20 +344,11 @@ def get_session_user_context(tool_context: ToolContext) -> dict:
             _TELEMETRY_CLIENT.log_event("session_context_cache_miss", {
                 "trace_id": trace_id
             })
-        default_email = ""
-        if os.environ.get("DEBUG", "false").lower() == "true":
-            default_email = os.environ.get("DEFAULT_PSFT_USER_EMAIL", "").strip()
-        if not default_email:
-            return _error_envelope(
-                error_code="AUTH_FAILED",
-                message="User session context is missing. Ensure get_user_id is called before invoking PSFT_SQL_Agent.",
-                retryable=False,
-            )
-        return {
-            "user_id": default_email,
-            "email": default_email,
-            "source": "configured_env_fallback",
-        }
+        return _error_envelope(
+            error_code="AUTH_FAILED",
+            message="User session context is missing. Ensure get_user_id is called before invoking PSFT_SQL_Agent.",
+            retryable=False,
+        )
 
 # Try relative import first (works when deployed as a package via ADK);
 # fall back to absolute import for direct script execution locally.
