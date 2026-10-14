@@ -1232,7 +1232,9 @@ async def mcp_jsonrpc(request: Request):
   elif method.startswith("notifications/") or "id" not in body:
     return Response(status_code=204)
   elif method == "tools/list":
-    tools_meta = await mcp.list_tools()
+    tools_meta = mcp.list_tools()
+    if inspect.isawaitable(tools_meta):
+      tools_meta = await tools_meta
     return {
         "jsonrpc": "2.0",
         "id": req_id,

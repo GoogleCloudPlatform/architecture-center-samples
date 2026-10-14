@@ -571,7 +571,7 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
                             """
                             UPDATE PRODDTA.F41021
                             SET LIHCOM = NVL(LIHCOM, 0) + :req_qty
-                            WHERE LIITM = :itm AND TRIM(LIMCU) = :mcu AND LILOCN = :locn
+                            WHERE LIITM = :itm AND TRIM(LIMCU) = :mcu AND LILOCN = :locn AND LILOTN = '                              '
                             """,
                             {"req_qty": req_comp_scaled, "itm": c_itm, "mcu": bp.strip(), "locn": locn},
                         )
@@ -984,7 +984,7 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
                     """
                     UPDATE PRODDTA.F41021
                     SET LIPQOH = NVL(LIPQOH, 0) + :qty
-                    WHERE LIITM = :itm AND TRIM(LIMCU) = :mcu AND LILOCN = :locn
+                    WHERE LIITM = :itm AND TRIM(LIMCU) = :mcu AND LILOCN = :locn AND LILOTN = '                              '
                     """,
                     {"qty": comp_scaled, "itm": itm, "mcu": bp, "locn": to_loc},
                 )
