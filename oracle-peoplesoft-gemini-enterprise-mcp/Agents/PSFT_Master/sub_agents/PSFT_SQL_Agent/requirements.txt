@@ -1,4 +1,6 @@
 mcp
 google-cloud-aiplatform
 google-adk
+google-auth
+google-genai
 opentelemetry-instrumentation-google-genai

@@ -399,38 +399,47 @@ def get_user_id(tool_context: ToolContext):
         token_info = None
         email = None
         if user_token:
-            with _telemetry_span("tokeninfo_lookup", {"endpoint": "googleapis_tokeninfo", "trace_id": trace_id}):
-                try:
-                    response = httpx.post(
-                        "https://oauth2.googleapis.com/tokeninfo",
-                        data={"access_token": user_token},
-                        timeout=10.0,
-                    )
-                    response.raise_for_status()
-                    token_info = response.json()
-                    logger.debug("Token info retrieved for user identity resolution.")
-                    if _TELEMETRY_CLIENT:
-                        _TELEMETRY_CLIENT.log_event("tokeninfo_lookup_success", {
-                            "trace_id": trace_id
-                        })
-                except httpx.HTTPStatusError as e:
-                    token_info = {"error": f"HTTP {e.response.status_code}: {e.response.reason_phrase}", "body": e.response.text}
-                    logger.warning(f"tokeninfo lookup failed: {token_info}")
-                    if _TELEMETRY_CLIENT:
-                        _TELEMETRY_CLIENT.log_event("tokeninfo_lookup_failed", {
-                            "error_type": "http_error",
-                            "http_code": e.response.status_code,
-                            "trace_id": trace_id
-                        })
-                except Exception as e:
-                    token_info = {"error": str(e)}
-                    logger.error(f"Unexpected error during tokeninfo lookup: {e}", exc_info=True)
-                    if _TELEMETRY_CLIENT:
-                        _TELEMETRY_CLIENT.log_event("tokeninfo_lookup_failed", {
-                            "error_type": type(e).__name__,
-                            "error": str(e),
-                            "trace_id": trace_id
-                        })
+            access_token = None
+            if isinstance(user_token, str):
+                access_token = user_token
+            elif isinstance(user_token, dict):
+                access_token = user_token.get("access_token") or user_token.get("token")
+            elif hasattr(user_token, "token"):
+                access_token = user_token.token
+
+            if access_token:
+                with _telemetry_span("tokeninfo_lookup", {"endpoint": "googleapis_tokeninfo", "trace_id": trace_id}):
+                    try:
+                        response = httpx.post(
+                            "https://oauth2.googleapis.com/tokeninfo",
+                            data={"access_token": access_token},
+                            timeout=10.0,
+                        )
+                        response.raise_for_status()
+                        token_info = response.json()
+                        logger.debug("Token info retrieved for user identity resolution.")
+                        if _TELEMETRY_CLIENT:
+                            _TELEMETRY_CLIENT.log_event("tokeninfo_lookup_success", {
+                                "trace_id": trace_id
+                            })
+                    except httpx.HTTPStatusError as e:
+                        token_info = {"error": f"HTTP {e.response.status_code}: {e.response.reason_phrase}", "body": e.response.text}
+                        logger.warning(f"tokeninfo lookup failed: {token_info}")
+                        if _TELEMETRY_CLIENT:
+                            _TELEMETRY_CLIENT.log_event("tokeninfo_lookup_failed", {
+                                "error_type": "http_error",
+                                "http_code": e.response.status_code,
+                                "trace_id": trace_id
+                            })
+                    except Exception as e:
+                        token_info = {"error": str(e)}
+                        logger.error(f"Unexpected error during tokeninfo lookup: {e}", exc_info=True)
+                        if _TELEMETRY_CLIENT:
+                            _TELEMETRY_CLIENT.log_event("tokeninfo_lookup_failed", {
+                                "error_type": type(e).__name__,
+                                "error": str(e),
+                                "trace_id": trace_id
+                            })
 
         if isinstance(token_info, dict):
             email = token_info.get("email")

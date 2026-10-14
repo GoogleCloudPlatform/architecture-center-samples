@@ -1,4 +1,5 @@
 google-adk
 google-cloud-aiplatform
+google-genai
 matplotlib
 opentelemetry-instrumentation-google-genai

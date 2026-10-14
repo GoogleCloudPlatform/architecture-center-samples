@@ -119,13 +119,13 @@ reset_config: ## Clear local configs to force re-prompting
 	@echo "Done. You can now run 'make set_config_mcp_servers' to enter new values."
 
 plan_mcp_server: ## Plan Terraform for MCP Server
-	terraform -chdir=$(TF_DIR) plan -target="null_resource.oracle_peoplesoft_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) plan -target="null_resource.oracle_peoplesoft_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_email=$(PROJECT_SA_EMAIL)"
 
 deploy_mcp_server: ## Deploy MCP Server
-	terraform -chdir=$(TF_DIR) apply -auto-approve -target="null_resource.oracle_peoplesoft_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) apply -auto-approve -target="null_resource.oracle_peoplesoft_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_email=$(PROJECT_SA_EMAIL)"
 
 destroy_mcp_server: ## Destroy MCP Server
-	terraform -chdir=$(TF_DIR) destroy -auto-approve -target="null_resource.oracle_peoplesoft_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) destroy -auto-approve -target="null_resource.oracle_peoplesoft_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_email=$(PROJECT_SA_EMAIL)"
 
 plan_psft_agents: ## Plan Terraform for PeopleSoft agents
 	@touch infra.auto.tfvars
@@ -140,10 +140,10 @@ plan_psft_agents: ## Plan Terraform for PeopleSoft agents
 	else \
 		echo "mcp_server_psft_url = \"$$MCP_URL/mcp\"" >> infra.auto.tfvars; \
 	fi
-	terraform -chdir=$(TF_DIR) plan -target="null_resource.oracle_peoplesoft_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) plan -target="null_resource.oracle_peoplesoft_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_email=$(PROJECT_SA_EMAIL)"
 
 deploy_psft_agents: ## Deploy PeopleSoft Agent
-	terraform -chdir=$(TF_DIR) apply -auto-approve -target="null_resource.oracle_peoplesoft_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) apply -auto-approve -target="null_resource.oracle_peoplesoft_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_email=$(PROJECT_SA_EMAIL)"
 
 destroy_psft_agents: ## Destroy PeopleSoft Agent deployment
-	terraform -chdir=$(TF_DIR) destroy -auto-approve -target="null_resource.oracle_peoplesoft_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) destroy -auto-approve -target="null_resource.oracle_peoplesoft_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_email=$(PROJECT_SA_EMAIL)"

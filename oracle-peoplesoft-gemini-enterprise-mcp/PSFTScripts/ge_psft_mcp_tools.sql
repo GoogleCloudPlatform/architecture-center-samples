@@ -12,6 +12,7 @@ WHENEVER SQLERROR CONTINUE
 DECLARE
   v_seq_exists NUMBER;
   v_default_expr VARCHAR2(100);
+  v_default LONG;
 BEGIN
   SELECT COUNT(*) INTO v_seq_exists
     FROM ALL_SEQUENCES
@@ -26,30 +27,32 @@ BEGIN
   -- 0 for NUMBER, SYSDATE for DATE/TIMESTAMP) so direct SQL staging inserts
   -- never fail with ORA-01400 on columns omitted from the column list.
   FOR r_col IN (
-    SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE
+    SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, DATA_DEFAULT
       FROM ALL_TAB_COLUMNS
      WHERE OWNER = 'SYSADM'
        AND TABLE_NAME IN ('PS_VCHR_HDR_STG', 'PS_VCHR_LINE_STG', 'PS_VCHR_DIST_STG')
        AND NULLABLE = 'N'
-       AND DATA_DEFAULT IS NULL
   ) LOOP
-    IF r_col.DATA_TYPE IN ('VARCHAR2', 'CHAR', 'NVARCHAR2', 'NCHAR') THEN
-      v_default_expr := ''' ''';
-    ELSIF r_col.DATA_TYPE IN ('NUMBER', 'FLOAT', 'BINARY_FLOAT', 'BINARY_DOUBLE') THEN
-      v_default_expr := '0';
-    ELSIF r_col.DATA_TYPE = 'DATE' OR r_col.DATA_TYPE LIKE 'TIMESTAMP%' THEN
-      v_default_expr := 'SYSDATE';
-    ELSE
-      v_default_expr := NULL;
-    END IF;
+    v_default := r_col.DATA_DEFAULT;
+    IF v_default IS NULL THEN
+      IF r_col.DATA_TYPE IN ('VARCHAR2', 'CHAR', 'NVARCHAR2', 'NCHAR') THEN
+        v_default_expr := ''' ''';
+      ELSIF r_col.DATA_TYPE IN ('NUMBER', 'FLOAT', 'BINARY_FLOAT', 'BINARY_DOUBLE') THEN
+        v_default_expr := '0';
+      ELSIF r_col.DATA_TYPE = 'DATE' OR r_col.DATA_TYPE LIKE 'TIMESTAMP%' THEN
+        v_default_expr := 'SYSDATE';
+      ELSE
+        v_default_expr := NULL;
+      END IF;
 
-    IF v_default_expr IS NOT NULL THEN
-      BEGIN
-        EXECUTE IMMEDIATE 'ALTER TABLE SYSADM.' || r_col.TABLE_NAME ||
-                          ' MODIFY (' || r_col.COLUMN_NAME || ' DEFAULT ' || v_default_expr || ')';
-      EXCEPTION
-        WHEN OTHERS THEN NULL;
-      END;
+      IF v_default_expr IS NOT NULL THEN
+        BEGIN
+          EXECUTE IMMEDIATE 'ALTER TABLE SYSADM.' || r_col.TABLE_NAME ||
+                            ' MODIFY (' || r_col.COLUMN_NAME || ' DEFAULT ' || v_default_expr || ')';
+        EXCEPTION
+          WHEN OTHERS THEN NULL;
+        END;
+      END IF;
     END IF;
   END LOOP;
 END;
@@ -208,11 +211,11 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     ) RETURNING RESERVATION_ID INTO v_res_id;
 
     UPDATE SYSADM.PS_PHYSICAL_INV
-      SET QTY_RESERVED = QTY_RESERVED + NVL(p_quantity, 1),
-          QTY_AVAILABLE = QTY_AVAILABLE - NVL(p_quantity, 1)
+      SET QTY_RESERVED = NVL(QTY_RESERVED, 0) + NVL(p_quantity, 1),
+          QTY_AVAILABLE = NVL(QTY_AVAILABLE, 0) - NVL(p_quantity, 1)
      WHERE BUSINESS_UNIT = v_bu
        AND INV_ITEM_ID = TRIM(p_item)
-       AND QTY_AVAILABLE >= NVL(p_quantity, 1);
+       AND NVL(QTY_AVAILABLE, 0) >= NVL(p_quantity, 1);
 
     IF SQL%ROWCOUNT = 0 THEN
       RAISE_APPLICATION_ERROR(-20001, 'Insufficient stock or item ' || TRIM(p_item) || ' not found in PS_PHYSICAL_INV for Business Unit ' || v_bu);
@@ -254,8 +257,8 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
        AND STATUS = 'ACTIVE';
 
     UPDATE SYSADM.PS_PHYSICAL_INV
-       SET QTY_RESERVED = GREATEST(0, QTY_RESERVED - v_qty),
-           QTY_AVAILABLE = QTY_AVAILABLE + v_qty
+       SET QTY_RESERVED = GREATEST(0, NVL(QTY_RESERVED, 0) - NVL(v_qty, 0)),
+           QTY_AVAILABLE = NVL(QTY_AVAILABLE, 0) + NVL(v_qty, 0)
      WHERE BUSINESS_UNIT = v_bu
        AND INV_ITEM_ID = v_item;
 
@@ -288,8 +291,8 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     v_result VARCHAR2(1000);
   BEGIN
     UPDATE SYSADM.PS_PHYSICAL_INV
-       SET QTY_ONHAND = QTY_ONHAND + NVL(p_quantity, 1),
-           QTY_AVAILABLE = QTY_AVAILABLE + NVL(p_quantity, 1)
+       SET QTY_ONHAND = NVL(QTY_ONHAND, 0) + NVL(p_quantity, 1),
+           QTY_AVAILABLE = NVL(QTY_AVAILABLE, 0) + NVL(p_quantity, 1)
      WHERE BUSINESS_UNIT = v_bu
        AND INV_ITEM_ID = TRIM(p_item);
     v_cnt := SQL%ROWCOUNT;

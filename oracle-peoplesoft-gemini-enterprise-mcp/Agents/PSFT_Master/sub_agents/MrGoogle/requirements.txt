@@ -1,1 +1,5 @@
-# No extra dependencies beyond the shared `Agents/PSFT_Master/requirements.txt` set.
+# Dependencies for standalone or sub-agent deployment of MrGoogle.
+google-adk
+google-cloud-aiplatform
+google-genai
+opentelemetry-instrumentation-google-genai

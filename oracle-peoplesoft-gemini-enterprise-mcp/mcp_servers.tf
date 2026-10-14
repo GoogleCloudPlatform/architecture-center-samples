@@ -13,7 +13,7 @@
 # limitations under the License.
 
 locals {
-  psft_sa_name = split("@", var.service_account_key)[0]
+  psft_sa_name = split("@", var.service_account_email)[0]
 }
 
 resource "local_file" "mcp_toolbox_peoplesoft_env" {
@@ -21,7 +21,7 @@ resource "local_file" "mcp_toolbox_peoplesoft_env" {
   file_permission = "0600"
   content         = <<-EOT
     PROJECT_ID=${var.project_id}
-    SERVICE_ACCOUNT_EMAIL=${var.service_account_key}
+    SERVICE_ACCOUNT_EMAIL=${var.service_account_email}
     SERVICE_ACCOUNT_NAME=${local.psft_sa_name}
     REGION=${var.region}
     VPC_NAME=${var.vpc_name}
