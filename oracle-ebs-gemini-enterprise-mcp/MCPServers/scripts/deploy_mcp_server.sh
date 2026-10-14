@@ -1212,7 +1212,6 @@ try:
             else:
                 d[k] = v
 except Exception as e:
-    except Exception as e:
     lines = str(e).splitlines()
     print("FAIL the config folder is not valid YAML: %s" % (lines[0] if lines else str(e))); sys.exit(0)
 if not d:
