@@ -51,6 +51,7 @@ _emit_secret_data() {
 }
 
 _upsert_secret() {
+    set -o pipefail
     local secret_name="$1"
     local mode="$2"
     local payload="$3"
