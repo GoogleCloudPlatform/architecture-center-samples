@@ -9,6 +9,7 @@ from google.adk.tools.mcp_tool.mcp_toolset import McpToolset, StreamableHTTPConn
 import sys
 import os
 import logging
+import threading
 import time
 import uuid
 from contextlib import contextmanager
@@ -174,6 +175,7 @@ def _make_oidc_header_provider(audience: str):
     """
     _cached_token = None
     _cached_token_expiry = 0.0
+    _token_lock = threading.Lock()
 
     def provider(context) -> dict:
         nonlocal _cached_token, _cached_token_expiry
@@ -182,19 +184,20 @@ def _make_oidc_header_provider(audience: str):
         if env_token:
             headers["Authorization"] = f"Bearer {env_token}"
         else:
-            now = time.time()
-            if _cached_token and now < _cached_token_expiry:
-                token = _cached_token
-            else:
-                try:
-                    token = _google_id_token.fetch_id_token(_auth_request, audience)
-                    _cached_token = token
-                    _cached_token_expiry = now + 3000  # Cache for 50 minutes
-                except Exception as exc:
-                    logger.warning(
-                        "Could not fetch OIDC token for MCP auth (running locally?): %s", exc
-                    )
-                    token = None
+            with _token_lock:
+                now = time.time()
+                if _cached_token and now < _cached_token_expiry:
+                    token = _cached_token
+                else:
+                    try:
+                        token = _google_id_token.fetch_id_token(_auth_request, audience)
+                        _cached_token = token
+                        _cached_token_expiry = now + 3000  # Cache for 50 minutes
+                    except Exception as exc:
+                        logger.warning(
+                            "Could not fetch OIDC token for MCP auth (running locally?): %s", exc
+                        )
+                        token = None
             if token:
                 headers["Authorization"] = f"Bearer {token}"
 
@@ -214,32 +217,39 @@ def _make_oidc_header_provider(audience: str):
 # pattern, which gave Gemini no argument schemas and required an extra round-trip
 # per agent turn just to discover what tools exist.
 _mcp_sql_init_error = None
-try:
-    with _telemetry_span("mcp_sql_toolset_init", {"url": MCP_SERVER_SQL_URL}):
-        if not MCP_SERVER_SQL_URL:
-            raise ValueError("MCP_SERVER_SQL_URL environment variable is required but not set.")
-        mcp_sql_toolset = McpToolset(
-            connection_params=StreamableHTTPConnectionParams(
-                url=MCP_SERVER_SQL_URL,
-                timeout=30.0,
-                
-            ),
-            header_provider=_make_oidc_header_provider(MCP_SERVER_SQL_URL),
-        )
-        logger.info(f"Initialized Mcp SQL Toolset with URL: {MCP_SERVER_SQL_URL}")
-        if _TELEMETRY_CLIENT:
-            _TELEMETRY_CLIENT.log_event("mcp_sql_toolset_initialized", {
-                "url": MCP_SERVER_SQL_URL
-            })
-except Exception as e:
-    logger.error(f"Failed to initialize SQL MCP toolset: {e}", exc_info=True)
-    mcp_sql_toolset = None
-    _mcp_sql_init_error = str(e)
+mcp_sql_toolset = None
+_max_retries = 3
+_retry_delay = 2
+for _attempt in range(_max_retries):
+    try:
+        with _telemetry_span("mcp_sql_toolset_init", {"url": MCP_SERVER_SQL_URL, "attempt": _attempt}):
+            if not MCP_SERVER_SQL_URL:
+                raise ValueError("MCP_SERVER_SQL_URL environment variable is required but not set.")
+            mcp_sql_toolset = McpToolset(
+                connection_params=StreamableHTTPConnectionParams(
+                    url=MCP_SERVER_SQL_URL,
+                    timeout=30.0,
+                ),
+                header_provider=_make_oidc_header_provider(MCP_SERVER_SQL_URL),
+            )
+            logger.info(f"Initialized Mcp SQL Toolset with URL: {MCP_SERVER_SQL_URL}")
+            if _TELEMETRY_CLIENT:
+                _TELEMETRY_CLIENT.log_event("mcp_sql_toolset_initialized", {
+                    "url": MCP_SERVER_SQL_URL
+                })
+            _mcp_sql_init_error = None
+            break
+    except Exception as e:
+        _mcp_sql_init_error = str(e)
+        logger.warning(f"Attempt {_attempt + 1} to initialize SQL MCP toolset failed: {e}")
+        if _attempt < _max_retries - 1:
+            time.sleep(_retry_delay * (2 ** _attempt))
+if mcp_sql_toolset is None:
+    logger.error(f"Failed to initialize SQL MCP toolset after {_max_retries} attempts: {_mcp_sql_init_error}")
     if _TELEMETRY_CLIENT:
         _TELEMETRY_CLIENT.log_event("mcp_sql_toolset_init_failed", {
             "url": MCP_SERVER_SQL_URL,
-            "error": str(e),
-            "error_type": type(e).__name__
+            "error": _mcp_sql_init_error or "unknown",
         })
 
 

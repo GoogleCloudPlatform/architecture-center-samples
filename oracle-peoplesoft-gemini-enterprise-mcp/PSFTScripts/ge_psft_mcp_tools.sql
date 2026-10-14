@@ -288,6 +288,9 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     v_vendor    VARCHAR2(10) := LPAD(SUBSTR(NVL(TRIM(p_vendor_id), 'USA0000002'), 1, 10), 10, '0');
     v_result    VARCHAR2(1000);
   BEGIN
+    IF v_amt IS NULL OR v_amt <= 0 THEN
+      RAISE_APPLICATION_ERROR(-20002, 'Invalid voucher amount: ' || p_amount);
+    END IF;
     -- Generate unique concurrency-safe 8-char VOUCHER_ID ('GV' + 6 digits) via Oracle Sequence
     v_vchr_id := 'GV' || LPAD(TO_CHAR(MOD(SYSADM.PS_GOV_VCHR_SEQ.NEXTVAL, 1000000)), 6, '0');
 

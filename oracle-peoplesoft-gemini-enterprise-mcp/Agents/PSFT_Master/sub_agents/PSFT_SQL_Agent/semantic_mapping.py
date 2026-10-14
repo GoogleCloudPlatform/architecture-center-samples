@@ -67,13 +67,15 @@ def build_semantic_context(semantic_maps: list) -> str:
             context += f"Description: {smap.get('description', '')}\n"
             context += "Tables:\n"
             for table in smap.get("tables", []):
+                table_name = table.get("table_name", "Unknown Table")
                 context += (
-                    f"  - {table['table_name']} ({table.get('business_name', '')}): "
+                    f"  - {table_name} ({table.get('business_name', '')}): "
                     f"{table.get('description', '')}\n"
                 )
                 context += "    Columns:\n"
                 for col in table.get("columns", []):
-                    context += f"      * {col['name']}: {col.get('description', '')}\n"
+                    col_name = col.get("name", "Unknown Column")
+                    context += f"      * {col_name}: {col.get('description', '')}\n"
             context += "Common Joins:\n"
             for join in smap.get("common_joins", []):
                 context += (
