@@ -68,6 +68,14 @@ function install_terraform() {
     fi
     curl -sSLo terraform.zip \
       "https://releases.hashicorp.com/terraform/${PINNED_TERRAFORM_VERSION}/terraform_${PINNED_TERRAFORM_VERSION}_linux_${tf_arch}.zip"
+    if ! command -v unzip &>/dev/null; then
+      if command -v apt-get &>/dev/null; then
+        sudo apt-get update -y && sudo apt-get install -y unzip
+      else
+        echo "Error: 'unzip' is required but not installed." >&2
+        exit 1
+      fi
+    fi
     unzip -o terraform.zip
     sudo mv terraform /usr/local/bin/
     rm -f terraform.zip

@@ -66,24 +66,24 @@ def build_semantic_context(semantic_maps: list) -> str:
             parts.append(f"Module: {module_name}\n")
             parts.append(f"Description: {smap.get('description', '')}\n")
             parts.append("Tables:\n")
-            for table in smap.get("tables", []):
+            for table in smap.get("tables") or []:
                 table_name = table.get("table_name", "Unknown Table")
                 parts.append(
                     f"  - {table_name} ({table.get('business_name', '')}): "
                     f"{table.get('description', '')}\n"
                 )
                 parts.append("    Columns:\n")
-                for col in table.get("columns", []):
+                for col in table.get("columns") or []:
                     col_name = col.get("name", "Unknown Column")
                     parts.append(f"      * {col_name}: {col.get('description', '')}\n")
             parts.append("Common Joins:\n")
-            for join in smap.get("common_joins", []):
+            for join in smap.get("common_joins") or []:
                 parts.append(
                     f"  - {join.get('description', '')}: {join.get('join_condition', '')}\n"
                 )
             if smap.get("example_queries"):
                 parts.append("Example Queries:\n")
-                for eq in smap.get("example_queries", []):
+                for eq in smap.get("example_queries") or []:
                     parts.append(f"  - {eq.get('description', '')}: {eq.get('sql', '')}\n")
             parts.append("\n")
         except Exception as e:

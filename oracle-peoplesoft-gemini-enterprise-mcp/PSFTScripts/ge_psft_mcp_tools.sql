@@ -317,10 +317,23 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     PRAGMA AUTONOMOUS_TRANSACTION;
     v_bu        VARCHAR2(5) := CASE WHEN TRIM(p_business_unit) IS NULL OR UPPER(TRIM(p_business_unit)) IN ('', 'NULL') THEN 'US001' ELSE SUBSTR(TRIM(p_business_unit), 1, 5) END;
     v_vchr_id   VARCHAR2(8);
-    v_amt       NUMBER := TO_NUMBER(REGEXP_REPLACE(p_amount, '[^0-9.-]', ''));
+    v_amt_str   VARCHAR2(100) := TRIM(p_amount);
+    v_is_neg    BOOLEAN := FALSE;
+    v_amt       NUMBER;
     v_vendor    VARCHAR2(10) := LPAD(SUBSTR(NVL(TRIM(p_vendor_id), 'USA0000002'), 1, 10), 10, '0');
     v_result    VARCHAR2(1000);
   BEGIN
+    IF v_amt_str LIKE '(%)' THEN
+      v_is_neg := TRUE;
+      v_amt_str := SUBSTR(v_amt_str, 2, LENGTH(v_amt_str) - 2);
+    ELSIF v_amt_str LIKE '%-' THEN
+      v_is_neg := TRUE;
+      v_amt_str := SUBSTR(v_amt_str, 1, LENGTH(v_amt_str) - 1);
+    END IF;
+    v_amt := TO_NUMBER(REGEXP_REPLACE(v_amt_str, '[^0-9.-]', ''));
+    IF v_is_neg THEN
+      v_amt := -v_amt;
+    END IF;
     IF TRIM(p_invoice_num) IS NULL THEN
       RAISE_APPLICATION_ERROR(-20003, 'Invoice number cannot be empty.');
     END IF;

@@ -89,9 +89,21 @@ def _parse_numeric(val) -> float:
     s = str(val).strip()
     if not s or s.lower() in ("none", "null", "n/a", "-", "nan", "inf", "-inf"):
         return 0.0
+
+    # Handle accounting negative numbers in parentheses or trailing minus signs
+    is_negative = False
+    if s.startswith("(") and s.endswith(")"):
+        is_negative = True
+        s = s[1:-1].strip()
+    elif s.endswith("-"):
+        is_negative = True
+        s = s[:-1].strip()
+
     s = re.sub(r"[$,%\s]", "", s)
     try:
         parsed = float(s)
+        if is_negative:
+            parsed = -parsed
         return 0.0 if (math.isnan(parsed) or math.isinf(parsed)) else parsed
     except ValueError:
         return 0.0
@@ -190,10 +202,20 @@ def _sort_data(rows: list[dict], sort_column: str, sort_order: str) -> list[dict
             fval = float(val)
             if not (math.isnan(fval) or math.isinf(fval)):
                 return (0, fval)
-        s = re.sub(r"[$,%\s]", "", str(val or "").strip())
+        s = str(val or "").strip()
+        is_neg = False
+        if s.startswith("(") and s.endswith(")"):
+            is_neg = True
+            s = s[1:-1].strip()
+        elif s.endswith("-"):
+            is_neg = True
+            s = s[:-1].strip()
+        s = re.sub(r"[$,%\s]", "", s)
         if s and s.lower() not in ("none", "null", "n/a", "-", "nan", "inf", "-inf"):
             try:
                 num = float(s)
+                if is_neg:
+                    num = -num
                 if not (math.isnan(num) or math.isinf(num)):
                     return (0, num)
             except (TypeError, ValueError):
