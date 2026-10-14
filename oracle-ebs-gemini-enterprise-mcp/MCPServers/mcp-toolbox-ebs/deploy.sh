@@ -172,7 +172,12 @@ if [ "$BUILD_AR_IMAGE" = "true" ] && [ -f Dockerfile ]; then
     fi
     # Ensure sensitive .env file is not uploaded to Cloud Build
     if [ ! -f .gcloudignore ]; then
-        printf "%s\n" ".env" ".gcloudignore" > .gcloudignore
+        if [ -f .gitignore ]; then
+            cp .gitignore .gcloudignore
+        else
+            printf "%s\n" ".git" ".gcloudignore" > .gcloudignore
+        fi
+        printf "\n%s\n" ".env" >> .gcloudignore
     elif ! grep -Fxq ".env" .gcloudignore; then
         printf "\n%s\n" ".env" >> .gcloudignore
     fi
