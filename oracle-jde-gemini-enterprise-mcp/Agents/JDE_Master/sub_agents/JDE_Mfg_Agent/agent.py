@@ -99,7 +99,8 @@ def _make_oidc_header_provider(audience: str):
                     token = _cached_token
                 else:
                     try:
-                        token = _google_id_token.fetch_id_token(_auth_request, audience)
+                        audience_base = audience.split("/mcp")[0] if "/mcp" in audience else audience
+                        token = _google_id_token.fetch_id_token(_auth_request, audience_base)
                         _cached_token = token
                         _cached_token_expiry = now + 3000  # Cache for 50 minutes
                     except Exception as exc:

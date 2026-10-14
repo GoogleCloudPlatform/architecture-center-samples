@@ -1004,7 +1004,7 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
                     {"itm": itm, "mcu": bp},
                 )
                 c_row = cur.fetchone()
-                unit_cost_s = int(c_row[0]) if c_row else 24500000
+                unit_cost_s = int(c_row[0]) if c_row and c_row[0] is not None else 24500000
                 receipt_val_cents = int(round((unit_cost_s / 10000.0) * comp_qty * 100))
 
                 ic_doc = next_number(cur, "41")

@@ -63,6 +63,14 @@ _pool_lock = threading.Lock()
 oracledb.defaults.fetch_lobs = False
 
 
+def _reset_session_identifier(conn, requested_tag):
+  try:
+    with conn.cursor() as cur:
+      cur.execute("BEGIN DBMS_SESSION.CLEAR_IDENTIFIER; END;")
+  except Exception:
+    pass
+
+
 def get_db_pool() -> oracledb.ConnectionPool:
   """Returns a lazy-initialized Oracle DB connection pool."""
   global _db_pool
@@ -76,6 +84,7 @@ def get_db_pool() -> oracledb.ConnectionPool:
             min=1,
             max=4,
             increment=1,
+            session_callback=_reset_session_identifier,
         )
   return _db_pool
 
