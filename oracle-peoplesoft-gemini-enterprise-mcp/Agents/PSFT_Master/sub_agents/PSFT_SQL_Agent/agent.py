@@ -211,49 +211,38 @@ def _make_oidc_header_provider(audience: str):
     return provider
 
 
-# McpToolset connects to the running MCP server at startup, fetches every tool's
-# full JSON Schema, and registers each one as a properly-typed ADK tool.
-# This replaces the manual MCPSessionManager + list_mcp_capabilities + call_mcp_tool
-# pattern, which gave Gemini no argument schemas and required an extra round-trip
-# per agent turn just to discover what tools exist.
+# McpToolset is a declarative ADK toolset descriptor that stores connection_params
+# without opening a network connection at constructor/serialization time; the actual
+# HTTP stream and tool discovery happen lazily at runtime inside the cloud container
+# when the ADK runner resolves tools via get_tools().
 _mcp_sql_init_error = None
-mcp_sql_toolset = None
-_max_retries = 3
-_retry_delay = 2
 
-if not MCP_SERVER_SQL_URL:
-    _mcp_sql_init_error = "MCP_SERVER_SQL_URL environment variable is required but not set."
-    logger.error(_mcp_sql_init_error)
-else:
-    for _attempt in range(_max_retries):
-        try:
-            with _telemetry_span("mcp_sql_toolset_init", {"url": MCP_SERVER_SQL_URL, "attempt": _attempt}):
-                mcp_sql_toolset = McpToolset(
-                    connection_params=StreamableHTTPConnectionParams(
-                        url=MCP_SERVER_SQL_URL,
-                        timeout=30.0,
-                    ),
-                    header_provider=_make_oidc_header_provider(MCP_SERVER_SQL_URL),
-                )
-                logger.info(f"Initialized Mcp SQL Toolset with URL: {MCP_SERVER_SQL_URL}")
-                if _TELEMETRY_CLIENT:
-                    _TELEMETRY_CLIENT.log_event("mcp_sql_toolset_initialized", {
-                        "url": MCP_SERVER_SQL_URL
-                    })
-                _mcp_sql_init_error = None
-                break
-        except Exception as e:
-            _mcp_sql_init_error = str(e)
-            logger.warning(f"Attempt {_attempt + 1} to initialize SQL MCP toolset failed: {e}")
-            if _attempt < _max_retries - 1:
-                time.sleep(_retry_delay * (2 ** _attempt))
-if mcp_sql_toolset is None:
-    logger.error(f"Failed to initialize SQL MCP toolset: {_mcp_sql_init_error}")
-    if _TELEMETRY_CLIENT:
-        _TELEMETRY_CLIENT.log_event("mcp_sql_toolset_init_failed", {
-            "url": MCP_SERVER_SQL_URL,
-            "error": _mcp_sql_init_error or "unknown",
-        })
+
+def _create_mcp_sql_toolset():
+    """Create the declarative McpToolset descriptor without network I/O at import time."""
+    global _mcp_sql_init_error
+    if not MCP_SERVER_SQL_URL:
+        _mcp_sql_init_error = "MCP_SERVER_SQL_URL environment variable is required but not set."
+        logger.error(_mcp_sql_init_error)
+        return None
+    try:
+        toolset = McpToolset(
+            connection_params=StreamableHTTPConnectionParams(
+                url=MCP_SERVER_SQL_URL,
+                timeout=30.0,
+            ),
+            header_provider=_make_oidc_header_provider(MCP_SERVER_SQL_URL),
+        )
+        logger.info(f"Configured lazy Mcp SQL Toolset descriptor for URL: {MCP_SERVER_SQL_URL}")
+        _mcp_sql_init_error = None
+        return toolset
+    except Exception as e:
+        _mcp_sql_init_error = str(e)
+        logger.error(f"Failed to configure SQL MCP toolset descriptor: {_mcp_sql_init_error}")
+        return None
+
+
+mcp_sql_toolset = _create_mcp_sql_toolset()
 
 
 def sql_backend_unavailable() -> dict:
@@ -355,8 +344,10 @@ def get_session_user_context(tool_context: ToolContext) -> dict:
         if os.environ.get("DEBUG", "false").lower() == "true":
             default_email = os.environ.get("DEFAULT_PSFT_USER_EMAIL", "").strip()
         if not default_email:
-            raise RuntimeError(
-                "User session context is missing. Ensure get_user_id is called before invoking PSFT_SQL_Agent."
+            return _error_envelope(
+                error_code="AUTH_FAILED",
+                message="User session context is missing. Ensure get_user_id is called before invoking PSFT_SQL_Agent.",
+                retryable=False,
             )
         return {
             "user_id": default_email,
