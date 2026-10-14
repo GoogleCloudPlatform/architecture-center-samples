@@ -17,7 +17,10 @@ from contextlib import contextmanager
 import google.auth.transport.requests as _google_auth_requests
 import google.oauth2.id_token as _google_id_token
 
-from . import agent_config
+try:
+    from . import agent_config
+except ImportError:
+    import agent_config
 
 # gemini 3 endpoints are currently only accessible in global, so we need to set this env var for the agent to work properly.
 os.environ.setdefault('GOOGLE_CLOUD_LOCATION', 'us-central1')

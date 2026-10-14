@@ -24,9 +24,8 @@ import uuid
 from datetime import datetime, timezone
 from contextlib import contextmanager
 
-# gemini 3 endpoints are currently only accessible in global, so we need to overwrite this env var 
-# for the agent to work properly.
-os.environ['GOOGLE_CLOUD_LOCATION'] = 'us-central1'
+# Default GOOGLE_CLOUD_LOCATION to us-central1 if not already configured in the environment.
+os.environ.setdefault('GOOGLE_CLOUD_LOCATION', 'us-central1')
 
 try:
     from google.cloud import aiplatform
@@ -107,7 +106,10 @@ logger.debug(f"Initialised PSFT_Master agent with base directory: {_BASE_DIR}")
 # 3. Agent config
 # ---------------------------------------------------------------------------
 
-from . import agent_config
+try:
+    from . import agent_config
+except ImportError:
+    import agent_config
 
 
 # ---------------------------------------------------------------------------
@@ -379,16 +381,17 @@ def get_user_id(tool_context: ToolContext):
                 })
             return safe_context
 
-        try:
-            state_dict = state.to_dict() if state is not None else {}
-        except Exception:
-            try:
-                state_dict = dict(state) if state is not None else {}
-            except Exception:
-                state_dict = {}
-
         auth_id = os.environ.get("GOOGLE_CLOUD_AUTH_ID", "psft-fscm-master-auth").strip()
-        auth_key = next((k for k in state_dict.keys() if auth_id and k.startswith(auth_id)), None) if auth_id else None
+        auth_key = None
+        if state is not None and auth_id:
+            try:
+                keys_iterable = state.keys()
+            except AttributeError:
+                keys_iterable = state
+            try:
+                auth_key = next((k for k in keys_iterable if k.startswith(auth_id)), None)
+            except Exception:
+                pass
         
         # google.adk.sessions.state.State object has a get() method 
         # that can be used to retrieve the value of a specific key from the state.
