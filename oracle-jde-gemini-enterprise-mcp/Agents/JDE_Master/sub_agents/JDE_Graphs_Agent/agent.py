@@ -348,6 +348,12 @@ def render_table(
     logger.info(f"render_table called: title={title!r}, sort_column={sort_column!r}, sort_order={sort_order!r}")
     try:
         rows = _sort_data(_parse_data(data), sort_column, sort_order)
+        if not rows:
+            return {
+                "status": "success",
+                "result": "No data available.",
+                **_success_envelope({"result": "No data available."}),
+            }
         columns = list(rows[0].keys())
 
         header = "| " + " | ".join(str(c) for c in columns) + " |"

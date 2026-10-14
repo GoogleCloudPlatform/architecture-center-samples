@@ -130,13 +130,18 @@ WHERE w.WADCTO = 'WO';
 CREATE OR REPLACE VIEW PRODDTA.VW_JDE_MFG_PARTS_SHORTAGES AS
 WITH inv_summary AS (
   SELECT
-      LIITM AS short_item,
-      LIMCU AS branch_plant,
-      ROUND(SUM(NVL(LIPQOH, 0)) / 10000, 2) AS qty_on_hand,
-      ROUND(SUM(NVL(LIHCOM, 0) + NVL(LIPCOM, 0)) / 10000, 2) AS qty_committed,
-      ROUND(SUM(NVL(LIPQOH, 0) - NVL(LIHCOM, 0) - NVL(LIPCOM, 0)) / 10000, 2) AS qty_available_net
-  FROM PRODDTA.F41021
-  GROUP BY LIITM, LIMCU
+      l.LIITM AS short_item,
+      l.LIMCU AS branch_plant,
+      ROUND(SUM(NVL(l.LIPQOH, 0)) / 10000, 2) AS qty_on_hand,
+      ROUND(SUM(NVL(l.LIHCOM, 0) + NVL(l.LIPCOM, 0)) / 10000, 2) AS qty_committed,
+      ROUND(SUM(NVL(l.LIPQOH, 0) - NVL(l.LIHCOM, 0) - NVL(l.LIPCOM, 0)) / 10000, 2) AS qty_available_net
+  FROM PRODDTA.F41021 l
+  WHERE EXISTS (
+    SELECT 1 FROM PRODDTA.F3111 p
+    WHERE p.WMITM = l.LIITM
+      AND p.WMCMCU = l.LIMCU
+  )
+  GROUP BY l.LIITM, l.LIMCU
 ),
 po_next AS (
   SELECT

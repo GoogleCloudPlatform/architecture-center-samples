@@ -548,9 +548,9 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
                         cur.execute(
                             """
                             SELECT LILOCN FROM PRODDTA.F41021
-                            WHERE LIITM = :itm AND TRIM(LIMCU) = :mcu AND ROWNUM = 1
+                            WHERE LIITM = :itm AND LIMCU = :mcu AND ROWNUM = 1
                             """,
-                            {"itm": c_itm, "mcu": bp.strip()},
+                            {"itm": c_itm, "mcu": bp},
                         )
                         loc_row = cur.fetchone()
                         locn = loc_row[0] if loc_row else "RM-B01              "
