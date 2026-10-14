@@ -209,18 +209,17 @@ def _sort_data(rows: list[dict], sort_column: str, sort_order: str) -> list[dict
 def _fig_to_png_bytes(fig: Figure) -> bytes:
     """Render a matplotlib Figure to high-DPI PNG bytes with generous padding."""
     FigureCanvasAgg(fig)
-    buf = io.BytesIO()
-    fig.savefig(
-        buf,
-        format="png",
-        dpi=180,
-        bbox_inches="tight",
-        pad_inches=0.38,
-        facecolor=fig.get_facecolor(),
-        edgecolor="none",
-    )
-    buf.seek(0)
-    png_bytes = buf.read()
+    with io.BytesIO() as buf:
+        fig.savefig(
+            buf,
+            format="png",
+            dpi=180,
+            bbox_inches="tight",
+            pad_inches=0.38,
+            facecolor=fig.get_facecolor(),
+            edgecolor="none",
+        )
+        png_bytes = buf.getvalue()
     logger.debug(f"PNG rendered: {len(png_bytes)} bytes")
     return png_bytes
 

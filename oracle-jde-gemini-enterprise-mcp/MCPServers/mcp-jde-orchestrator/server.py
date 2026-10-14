@@ -216,7 +216,14 @@ class JDEOrchestratorClient:
     self.user_email = DEFAULT_USER_EMAIL
     self.ssl_verify = JDE_AIS_SSL_VERIFY
     self._tokens: Dict[str, str] = {}
-    self.client = httpx.AsyncClient(verify=self.ssl_verify, timeout=60.0)
+    self._client: Optional[httpx.AsyncClient] = None
+
+  @property
+  def client(self) -> httpx.AsyncClient:
+    """Lazily initializes the httpx.AsyncClient inside the running event loop."""
+    if self._client is None or self._client.is_closed:
+      self._client = httpx.AsyncClient(verify=self.ssl_verify, timeout=60.0)
+    return self._client
 
   async def get_token(self, force_refresh: bool = False) -> str:
     """Acquires or returns cached AIS session token from /jderest/v2/tokenrequest."""
@@ -661,7 +668,11 @@ async def jde_create_discrete_work_order(
         "status": "SUCCESS",
         "orchestrator_response": result,
     }
-  except Exception:
+  except Exception as exc:
+    logger.warning(
+        "ORCH_CreateDiscreteWorkOrder failed (%s); falling back to AIS formservice P48013_W48013A",
+        exc,
+    )
     result = await jde_client.formservice_action(
         form_name="P48013_W48013A",
         version="ZJDE0001",
@@ -757,7 +768,11 @@ async def jde_complete_discrete_work_order(
         "status": "SUCCESS",
         "orchestrator_response": result,
     }
-  except Exception:
+  except Exception as exc:
+    logger.warning(
+        "ORCH_CompleteWorkOrder failed (%s); falling back to AIS formservice P31114_W31114A",
+        exc,
+    )
     result = await jde_client.formservice_action(
         form_name="P31114_W31114A",
         version="ZJDE0001",

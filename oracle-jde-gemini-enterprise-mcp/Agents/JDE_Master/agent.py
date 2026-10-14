@@ -76,22 +76,22 @@ def _set_state_value(tool_context: ToolContext, key: str, value) -> bool:
     try:
         state[key] = value
         return True
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("State dict assignment failed for key %s: %s", key, exc)
     update_fn = getattr(state, "update", None)
     if callable(update_fn):
         try:
             update_fn({key: value})
             return True
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("State update() failed for key %s: %s", key, exc)
     set_fn = getattr(state, "set", None)
     if callable(set_fn):
         try:
             set_fn(key, value)
             return True
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("State set() failed for key %s: %s", key, exc)
     return False
 
 

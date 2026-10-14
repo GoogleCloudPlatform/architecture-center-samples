@@ -10,6 +10,7 @@ from google.adk.tools.mcp_tool.mcp_toolset import McpToolset, StreamableHTTPConn
 import sys
 import os
 import logging
+import threading
 import time
 
 import google.auth.transport.requests as _google_auth_requests
@@ -83,6 +84,7 @@ def _extract_request_user_context(context) -> dict:
 def _make_oidc_header_provider(audience: str):
     _cached_token = None
     _cached_token_expiry = 0.0
+    _token_lock = threading.Lock()
 
     def provider(context) -> dict:
         nonlocal _cached_token, _cached_token_expiry
@@ -91,17 +93,18 @@ def _make_oidc_header_provider(audience: str):
         if env_token:
             headers["Authorization"] = f"Bearer {env_token}"
         else:
-            now = time.time()
-            if _cached_token and now < _cached_token_expiry:
-                token = _cached_token
-            else:
-                try:
-                    token = _google_id_token.fetch_id_token(_auth_request, audience)
-                    _cached_token = token
-                    _cached_token_expiry = now + 3000  # Cache for 50 minutes
-                except Exception as exc:
-                    logger.warning("Could not fetch OIDC token for MCP auth: %s", exc)
-                    token = None
+            with _token_lock:
+                now = time.time()
+                if _cached_token and now < _cached_token_expiry:
+                    token = _cached_token
+                else:
+                    try:
+                        token = _google_id_token.fetch_id_token(_auth_request, audience)
+                        _cached_token = token
+                        _cached_token_expiry = now + 3000  # Cache for 50 minutes
+                    except Exception as exc:
+                        logger.warning("Could not fetch OIDC token for MCP auth: %s", exc)
+                        token = None
             if token:
                 headers["Authorization"] = f"Bearer {token}"
 
@@ -115,21 +118,30 @@ def _make_oidc_header_provider(audience: str):
 
 
 _mcp_jde_init_error = None
-try:
-    if not MCP_SERVER_JDE_URL:
-        raise ValueError("MCP_SERVER_JDE_URL environment variable is not set")
-    mcp_jde_toolset = McpToolset(
-        connection_params=StreamableHTTPConnectionParams(
-            url=MCP_SERVER_JDE_URL,
-            timeout=30.0,
-        ),
-        header_provider=_make_oidc_header_provider(MCP_SERVER_JDE_URL),
-    )
-    logger.info(f"Initialized Mcp JDE Toolset with URL: {MCP_SERVER_JDE_URL}")
-except Exception as e:
-    logger.error(f"Failed to initialize JDE MCP toolset: {e}", exc_info=True)
-    mcp_jde_toolset = None
-    _mcp_jde_init_error = str(e)
+mcp_jde_toolset = None
+_max_retries = 3
+_retry_delay = 2
+for _attempt in range(_max_retries):
+    try:
+        if not MCP_SERVER_JDE_URL:
+            raise ValueError("MCP_SERVER_JDE_URL environment variable is not set")
+        mcp_jde_toolset = McpToolset(
+            connection_params=StreamableHTTPConnectionParams(
+                url=MCP_SERVER_JDE_URL,
+                timeout=30.0,
+            ),
+            header_provider=_make_oidc_header_provider(MCP_SERVER_JDE_URL),
+        )
+        logger.info(f"Initialized Mcp JDE Toolset with URL: {MCP_SERVER_JDE_URL}")
+        _mcp_jde_init_error = None
+        break
+    except Exception as e:
+        _mcp_jde_init_error = str(e)
+        logger.warning(f"Attempt {_attempt + 1} to initialize JDE MCP toolset failed: {e}")
+        if _attempt < _max_retries - 1:
+            time.sleep(_retry_delay * (2 ** _attempt))
+if mcp_jde_toolset is None:
+    logger.error(f"Failed to initialize JDE MCP toolset after {_max_retries} attempts: {_mcp_jde_init_error}")
 
 
 def jde_backend_unavailable() -> dict:
