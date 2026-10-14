@@ -37,24 +37,32 @@ echo "  Build AR Image:        $BUILD_AR_IMAGE ($AR_REPO_NAME)"
 echo "========================================================================"
 
 # Helper functions to create or update secrets in Google Cloud Secret Manager
-upsert_secret_from_value() {
+_emit_secret_data() {
+    local mode="$1"
+    local payload="$2"
+    if [ "$mode" = "file" ]; then
+        cat -- "$payload"
+    else
+        printf "%s" "$payload"
+    fi
+}
+
+_upsert_secret() {
     local secret_name="$1"
-    local secret_val="$2"
-    local current_val=""
+    local mode="$2"
+    local payload="$3"
     if gcloud secrets describe "$secret_name" --project="$PROJECT_ID" >/dev/null 2>&1; then
-        if current_val=$(gcloud secrets versions access latest --secret="$secret_name" --project="$PROJECT_ID" 2>/dev/null); then
-            if [ "$secret_val" = "$current_val" ]; then
-                echo "Secret '$secret_name' is unchanged. Skipping new version."
-                return 0
-            fi
+        if (set -o pipefail; gcloud secrets versions access latest --secret="$secret_name" --project="$PROJECT_ID" 2>/dev/null | cmp -s - <(_emit_secret_data "$mode" "$payload")); then
+            echo "Secret '$secret_name' is unchanged. Skipping new version."
+            return 0
         fi
         echo "Updating existing Secret Manager secret '$secret_name'..."
-        printf "%s" "$secret_val" | gcloud secrets versions add "$secret_name" --data-file=- --project="$PROJECT_ID" >/dev/null
+        _emit_secret_data "$mode" "$payload" | gcloud secrets versions add "$secret_name" --data-file=- --project="$PROJECT_ID" >/dev/null
     else
         echo "Creating Secret Manager secret '$secret_name' in region '$REGION'..."
         # Official gcloud CLI syntax (verified via 'gcloud secrets create --help'):
         # requires --replication-policy="user-managed" and --locations="$REGION" (note: --replication is not a valid gcloud flag).
-        printf "%s" "$secret_val" | gcloud secrets create "$secret_name" \
+        _emit_secret_data "$mode" "$payload" | gcloud secrets create "$secret_name" \
             --replication-policy="user-managed" \
             --locations="$REGION" \
             --data-file=- \
@@ -65,7 +73,13 @@ upsert_secret_from_value() {
 upsert_secret_from_file() {
     local secret_name="$1"
     local file_path="$2"
-    upsert_secret_from_value "$secret_name" "$(cat "$file_path")"
+    _upsert_secret "$secret_name" "file" "$file_path"
+}
+
+upsert_secret_from_value() {
+    local secret_name="$1"
+    local secret_val="$2"
+    _upsert_secret "$secret_name" "value" "$secret_val"
 }
 
 # 1. Ensure tools.yaml exists locally (copy from tools.yaml.example if needed)
