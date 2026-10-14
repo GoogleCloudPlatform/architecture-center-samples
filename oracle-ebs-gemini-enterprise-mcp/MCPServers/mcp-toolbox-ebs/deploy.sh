@@ -41,8 +41,12 @@ upsert_secret_from_file() {
     local secret_name="$1"
     local file_path="$2"
     local tmp_secret
+    if [ -z "${TRAP_SET:-}" ]; then
+        trap 'rm -f $TRACKED_TEMPS' EXIT
+        TRAP_SET=1
+    fi
     tmp_secret=$(mktemp)
-    trap "rm -f '$tmp_secret'" EXIT
+    TRACKED_TEMPS="${TRACKED_TEMPS:-} $tmp_secret"
 
     set +e
     gcloud secrets describe "$secret_name" --project="$PROJECT_ID" >/dev/null 2>&1
@@ -58,14 +62,11 @@ upsert_secret_from_file() {
         if [ $version_exists -eq 0 ] && cmp -s "$file_path" "$tmp_secret"; then
             echo "Secret '$secret_name' is unchanged. Skipping new version."
             rm -f "$tmp_secret"
-            trap - EXIT
             return 0
         fi
-        trap "rm -f '$tmp_secret'" EXIT
         echo "Updating existing Secret Manager secret '$secret_name'..."
         gcloud secrets versions add "$secret_name" --data-file="$file_path" --project="$PROJECT_ID" >/dev/null
     else
-        trap "rm -f '$tmp_secret'" EXIT
         echo "Creating Secret Manager secret '$secret_name' in region '$REGION'..."
         # Official gcloud CLI syntax (verified via 'gcloud secrets create --help'):
         # requires --replication-policy="user-managed" and --locations="$REGION" (note: --replication is not a valid gcloud flag).
@@ -76,19 +77,21 @@ upsert_secret_from_file() {
             --project="$PROJECT_ID" >/dev/null
     fi
     rm -f "$tmp_secret"
-    trap - EXIT
 }
 
 upsert_secret_from_value() {
     local secret_name="$1"
     local secret_val="$2"
     local tmp_file
+    if [ -z "${TRAP_SET:-}" ]; then
+        trap 'rm -f $TRACKED_TEMPS' EXIT
+        TRAP_SET=1
+    fi
     tmp_file=$(mktemp)
-    trap "rm -f '$tmp_file'" EXIT
+    TRACKED_TEMPS="${TRACKED_TEMPS:-} $tmp_file"
     printf "%s" "$secret_val" > "$tmp_file"
     upsert_secret_from_file "$secret_name" "$tmp_file"
     rm -f "$tmp_file"
-    trap - EXIT
 }
 
 # 1. Ensure tools.yaml exists locally (copy from tools.yaml.example if needed)
