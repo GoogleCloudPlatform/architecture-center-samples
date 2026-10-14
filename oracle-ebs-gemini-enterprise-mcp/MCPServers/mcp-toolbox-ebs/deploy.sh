@@ -36,30 +36,7 @@ echo "  VPC / Subnet:          $VPC_NAME / $SUBNET_NAME"
 echo "  Build AR Image:        $BUILD_AR_IMAGE ($AR_REPO_NAME)"
 echo "========================================================================"
 
-# Helper function to create or update a secret in Google Cloud Secret Manager
-upsert_secret_from_file() {
-    local secret_name="$1"
-    local file_path="$2"
-
-    if gcloud secrets describe "$secret_name" --project="$PROJECT_ID" >/dev/null 2>&1; then
-        if gcloud secrets versions access latest --secret="$secret_name" --project="$PROJECT_ID" 2>/dev/null | cmp -s - "$file_path"; then
-            echo "Secret '$secret_name' is unchanged. Skipping new version."
-            return 0
-        fi
-        echo "Updating existing Secret Manager secret '$secret_name'..."
-        gcloud secrets versions add "$secret_name" --data-file="$file_path" --project="$PROJECT_ID" >/dev/null
-    else
-        echo "Creating Secret Manager secret '$secret_name' in region '$REGION'..."
-        # Official gcloud CLI syntax (verified via 'gcloud secrets create --help'):
-        # requires --replication-policy="user-managed" and --locations="$REGION" (note: --replication is not a valid gcloud flag).
-        gcloud secrets create "$secret_name" \
-            --replication-policy="user-managed" \
-            --locations="$REGION" \
-            --data-file="$file_path" \
-            --project="$PROJECT_ID" >/dev/null
-    fi
-}
-
+# Helper functions to create or update secrets in Google Cloud Secret Manager
 upsert_secret_from_value() {
     local secret_name="$1"
     local secret_val="$2"
@@ -83,6 +60,12 @@ upsert_secret_from_value() {
             --data-file=- \
             --project="$PROJECT_ID" >/dev/null
     fi
+}
+
+upsert_secret_from_file() {
+    local secret_name="$1"
+    local file_path="$2"
+    upsert_secret_from_value "$secret_name" "$(cat "$file_path")"
 }
 
 # 1. Ensure tools.yaml exists locally (copy from tools.yaml.example if needed)
