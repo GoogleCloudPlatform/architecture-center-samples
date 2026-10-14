@@ -598,8 +598,9 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
                     )
                     rtg_rows = cur.fetchall()
                     for r_opsq, r_wcmcu, r_dsc1, r_runl, r_runm, r_setl in rtg_rows:
-                        std_run_l = int(round(r_runl * qty_ea))
-                        std_run_m = int(round(r_runm * qty_ea))
+                        std_run_l = int(round((r_runl or 0) * qty_ea))
+                        std_run_m = int(round((r_runm or 0) * qty_ea))
+                        r_setl_val = r_setl or 0
                         cur.execute(
                             """
                             INSERT INTO PRODDTA.F3112
@@ -620,7 +621,7 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
                                 "dsc1": r_dsc1,
                                 "runl": std_run_l,
                                 "runm": std_run_m,
-                                "setl": r_setl,
+                                "setl": r_setl_val,
                                 "uorg": qty_scaled,
                                 "strt": start_julian,
                                 "drqj": req_julian,
@@ -630,12 +631,12 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
                         )
                         attached_routings.append(
                             {
-                                "operation_seq": r_opsq / 100.0,
-                                "work_center": r_wcmcu.strip(),
-                                "description": r_dsc1.strip(),
+                                "operation_seq": (r_opsq or 0) / 100.0,
+                                "work_center": (r_wcmcu or "").strip(),
+                                "description": (r_dsc1 or "").strip(),
                                 "std_run_labor_hrs": std_run_l / 100.0,
                                 "std_run_machine_hrs": std_run_m / 100.0,
-                                "std_setup_hrs": r_setl / 100.0,
+                                "std_setup_hrs": r_setl_val / 100.0,
                             }
                         )
 
@@ -768,7 +769,7 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
                     {"itm": c_itm, "mcu": bp},
                 )
                 cost_row = cur.fetchone()
-                unit_cost_scaled = int(cost_row[0]) if cost_row else 2500000
+                unit_cost_scaled = int(cost_row[0]) if cost_row and cost_row[0] is not None else 2500000
                 extended_cost_cents = int(round((unit_cost_scaled / 10000.0) * issue_qty * 100))
 
                 # Insert IM document into F4111 Cardex

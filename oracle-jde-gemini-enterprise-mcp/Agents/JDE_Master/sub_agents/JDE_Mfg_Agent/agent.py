@@ -10,6 +10,7 @@ from google.adk.tools.mcp_tool.mcp_toolset import McpToolset, StreamableHTTPConn
 import sys
 import os
 import logging
+import time
 
 import google.auth.transport.requests as _google_auth_requests
 import google.oauth2.id_token as _google_id_token
@@ -80,17 +81,29 @@ def _extract_request_user_context(context) -> dict:
 
 
 def _make_oidc_header_provider(audience: str):
+    _cached_token = None
+    _cached_token_expiry = 0.0
+
     def provider(context) -> dict:
+        nonlocal _cached_token, _cached_token_expiry
         headers = {}
         env_token = os.environ.get("MCP_ID_TOKEN", "").strip()
         if env_token:
             headers["Authorization"] = f"Bearer {env_token}"
         else:
-            try:
-                token = _google_id_token.fetch_id_token(_auth_request, audience)
+            now = time.time()
+            if _cached_token and now < _cached_token_expiry:
+                token = _cached_token
+            else:
+                try:
+                    token = _google_id_token.fetch_id_token(_auth_request, audience)
+                    _cached_token = token
+                    _cached_token_expiry = now + 3000  # Cache for 50 minutes
+                except Exception as exc:
+                    logger.warning("Could not fetch OIDC token for MCP auth: %s", exc)
+                    token = None
+            if token:
                 headers["Authorization"] = f"Bearer {token}"
-            except Exception as exc:
-                logger.warning("Could not fetch OIDC token for MCP auth: %s", exc)
 
         user_context = _extract_request_user_context(context)
         user_id = user_context.get("user_id")

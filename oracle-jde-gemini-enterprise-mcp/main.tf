@@ -52,7 +52,7 @@ resource "null_resource" "oracle_jde_gemini_enterprise_framework" {
 
       EXISTING_ID=$(curl -s -H "Authorization: Bearer $(gcloud auth print-access-token)" \
         "https://${var.region}-aiplatform.googleapis.com/v1beta1/projects/${var.project_id}/locations/${var.region}/reasoningEngines" \
-        | python3 -c "import sys, json; data = json.load(sys.stdin); engines = [e['name'].split('/')[-1] for e in data.get('reasoningEngines', []) if e.get('displayName') == 'JDE_Master']; print(engines[0] if engines else '')" 2>/dev/null || true)
+        | python3 -c "import sys, json; data = json.load(sys.stdin); engines = [e.get('name', '').split('/')[-1] for e in data.get('reasoningEngines', []) if e.get('displayName') == 'JDE_Master' and 'name' in e]; print(engines[0] if engines else '')" 2>/dev/null || true)
 
       AGENT_ARGS="JDE_Master"
       if [ -n "$EXISTING_ID" ]; then

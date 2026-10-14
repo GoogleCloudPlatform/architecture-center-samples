@@ -14,6 +14,7 @@ import csv
 import io
 import json
 import logging
+import math
 import os
 import re
 import sys
@@ -89,13 +90,14 @@ def _parse_numeric(val) -> float:
     if val is None:
         return 0.0
     if isinstance(val, (int, float)):
-        return float(val)
+        return 0.0 if (math.isnan(val) or math.isinf(val)) else float(val)
     s = str(val).strip()
-    if not s or s.lower() in ("null", "none", "n/a", "-"):
+    if not s or s.lower() in ("null", "none", "n/a", "-", "nan", "inf", "-inf"):
         return 0.0
     s = re.sub(r"[$,%\s]", "", s)
     try:
-        return float(s)
+        parsed = float(s)
+        return 0.0 if (math.isnan(parsed) or math.isinf(parsed)) else parsed
     except ValueError:
         logger.warning(f"Failed to parse numeric value from {val!r}, defaulting to 0.0")
         return 0.0
@@ -189,10 +191,17 @@ def _sort_data(rows: list[dict], sort_column: str, sort_order: str) -> list[dict
 
     def _key(row: dict):
         val = row.get(sort_column, "")
-        try:
-            return (0, _parse_numeric(val))
-        except (TypeError, ValueError):
-            return (1, str(val).lower())
+        if isinstance(val, (int, float)) and not (math.isnan(val) or math.isinf(val)):
+            return (0, float(val))
+        s = re.sub(r"[$,%\s]", "", str(val or "").strip())
+        if s and s.lower() not in ("null", "none", "n/a", "-", "nan", "inf", "-inf"):
+            try:
+                num = float(s)
+                if not (math.isnan(num) or math.isinf(num)):
+                    return (0, num)
+            except (TypeError, ValueError):
+                pass
+        return (1, str(val).lower())
 
     return sorted(rows, key=_key, reverse=reverse)
 
@@ -562,7 +571,12 @@ def render_line_chart(
         if x_column not in rows[0]:
             raise ValueError(f"x_column '{x_column}' not found in data. Available columns: {list(rows[0].keys())}")
         x_vals = [str(row.get(x_column, "")).strip() for row in rows]
-        y_col_list = [c.strip() for c in y_columns.split(",") if c.strip()]
+        if isinstance(y_columns, list):
+            y_col_list = [str(c).strip() for c in y_columns if str(c).strip()]
+        elif isinstance(y_columns, str):
+            y_col_list = [c.strip() for c in y_columns.split(",") if c.strip()]
+        else:
+            raise ValueError("y_columns must be a string or a list of strings.")
         if not y_col_list:
             raise ValueError("y_columns must specify at least one column.")
         for col in y_col_list:
