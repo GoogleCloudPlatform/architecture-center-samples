@@ -15,6 +15,9 @@ BUILD_AR_IMAGE="${BUILD_AR_IMAGE:-true}"
 JDE_AIS_BASE_URL="${JDE_AIS_BASE_URL:-http://10.118.0.43:7077}"
 JDE_ENVIRONMENT="${JDE_ENVIRONMENT:-JPD920}"
 JDE_ROLE="${JDE_ROLE:-MFG_MGR}"
+INGRESS="${INGRESS:-all}"
+VPC_EGRESS="${VPC_EGRESS:-all-traffic}"
+CLOUD_BUILD_SERVICE_ACCOUNT="${CLOUD_BUILD_SERVICE_ACCOUNT:-}"
 
 REQUIRED_VARS=(PROJECT_ID REGION SERVICE_ACCOUNT_EMAIL VPC_NAME SUBNET_NAME)
 for VAR in "${REQUIRED_VARS[@]}"; do
@@ -59,17 +62,31 @@ upsert_secret_from_value() {
     fi
 }
 
-SECRET_ENV_ARGS=""
+SECRET_ENV_ARGS=()
+ACTIVE_SECRETS=()
 if [ -n "${JDE_DB_DSN:-}" ]; then
     upsert_secret_from_value "${MCP_SERVICE_NAME}-db-dsn" "$JDE_DB_DSN"
     upsert_secret_from_value "${MCP_SERVICE_NAME}-db-user" "${JDE_DB_USER:-JDE_AI}"
+    ACTIVE_SECRETS+=("${MCP_SERVICE_NAME}-db-dsn" "${MCP_SERVICE_NAME}-db-user")
+    SECRET_BINDINGS="JDE_DB_DSN=${MCP_SERVICE_NAME}-db-dsn:latest,JDE_DB_USER=${MCP_SERVICE_NAME}-db-user:latest"
     if [ -n "${JDE_DB_PASSWORD:-}" ] && [ "${JDE_DB_PASSWORD}" != "REPLACE_ME" ]; then
         upsert_secret_from_value "${MCP_SERVICE_NAME}-db-pass" "${JDE_DB_PASSWORD}"
+        ACTIVE_SECRETS+=("${MCP_SERVICE_NAME}-db-pass")
+        SECRET_BINDINGS="${SECRET_BINDINGS},JDE_DB_PASSWORD=${MCP_SERVICE_NAME}-db-pass:latest"
     fi
     if [ -n "${JDE_PASSWORD:-}" ] && [ "${JDE_PASSWORD}" != "REPLACE_ME" ]; then
         upsert_secret_from_value "${MCP_SERVICE_NAME}-ais-pass" "${JDE_PASSWORD}"
+        ACTIVE_SECRETS+=("${MCP_SERVICE_NAME}-ais-pass")
+        SECRET_BINDINGS="${SECRET_BINDINGS},JDE_PASSWORD=${MCP_SERVICE_NAME}-ais-pass:latest"
     fi
-    SECRET_ENV_ARGS="--set-secrets=JDE_DB_DSN=${MCP_SERVICE_NAME}-db-dsn:latest,JDE_DB_USER=${MCP_SERVICE_NAME}-db-user:latest,JDE_DB_PASSWORD=${MCP_SERVICE_NAME}-db-pass:latest,JDE_PASSWORD=${MCP_SERVICE_NAME}-ais-pass:latest"
+    for SECRET_ID in "${ACTIVE_SECRETS[@]}"; do
+        gcloud secrets add-iam-policy-binding "$SECRET_ID" \
+            --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
+            --role="roles/secretmanager.secretAccessor" \
+            --project="$PROJECT_ID" \
+            --quiet >/dev/null
+    done
+    SECRET_ENV_ARGS=(--set-secrets="$SECRET_BINDINGS")
 fi
 
 if ! gcloud artifacts repositories describe "$AR_REPO_NAME" --location="$REGION" --project="$PROJECT_ID" >/dev/null 2>&1; then
@@ -82,12 +99,19 @@ if ! gcloud artifacts repositories describe "$AR_REPO_NAME" --location="$REGION"
 fi
 
 MCP_IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${AR_REPO_NAME}/${MCP_SERVICE_NAME}:latest"
-echo "Building and publishing JDE Hybrid MCP container image to Artifact Registry:"
+echo "Building and publishing JDE Hybrid MCP container image to Artifact Registry in region '$REGION':"
 echo "  $MCP_IMAGE"
-gcloud builds submit . \
-    --tag "$MCP_IMAGE" \
-    --project "$PROJECT_ID" \
+BUILD_ARGS=(
+    --tag "$MCP_IMAGE"
+    --project "$PROJECT_ID"
+    --region "$REGION"
+    --default-buckets-behavior=regional-user-owned-bucket
     --quiet
+)
+if [ -n "$CLOUD_BUILD_SERVICE_ACCOUNT" ]; then
+    BUILD_ARGS+=(--service-account "$CLOUD_BUILD_SERVICE_ACCOUNT")
+fi
+gcloud builds submit . "${BUILD_ARGS[@]}"
 
 echo "Deploying Cloud Run service '$MCP_SERVICE_NAME'..."
 gcloud run deploy "$MCP_SERVICE_NAME" \
@@ -96,10 +120,11 @@ gcloud run deploy "$MCP_SERVICE_NAME" \
     --service-account "$SERVICE_ACCOUNT_EMAIL" \
     --region "$REGION" \
     --set-env-vars "JDE_AIS_BASE_URL=${JDE_AIS_BASE_URL},JDE_ENVIRONMENT=${JDE_ENVIRONMENT},JDE_ROLE=${JDE_ROLE},JDE_USERNAME=${JDE_USERNAME:-NGONZAL},JDE_SCHEMA=PRODDTA" \
-    $SECRET_ENV_ARGS \
+    "${SECRET_ENV_ARGS[@]}" \
     --network "$VPC_NAME" \
     --subnet "$SUBNET_NAME" \
-    --vpc-egress all-traffic \
+    --vpc-egress "$VPC_EGRESS" \
+    --ingress "$INGRESS" \
     --no-allow-unauthenticated
 
 SERVICE_URL=$(gcloud run services describe "$MCP_SERVICE_NAME" --project "$PROJECT_ID" --region "$REGION" --format 'value(status.url)')
