@@ -132,13 +132,22 @@ def set_active_jde_context(ctx: Dict[str, Any]) -> None:
     _user_contexts_by_email[email_key] = dict(ctx)
 
 
-def date_to_jde_julian(dt_str: str) -> int:
+def date_to_jde_julian(dt_str: Optional[str] = None) -> int:
   """Converts YYYY-MM-DD date string to 6-digit JDE Julian integer (CYYDDD)."""
-  dt = datetime.strptime(dt_str, "%Y-%m-%d").date()
+  if not dt_str:
+    dt = datetime.today().date()
+  else:
+    try:
+      dt = datetime.strptime(str(dt_str)[:10], "%Y-%m-%d").date()
+    except Exception:
+      dt = datetime.today().date()
   century = (dt.year - 1900) // 100
   year_2d = dt.year % 100
   day_of_year = dt.timetuple().tm_yday
   return century * 100000 + year_2d * 1000 + day_of_year
+
+
+iso_to_julian = date_to_jde_julian
 
 
 def jde_julian_to_iso(julian_val: Optional[int]) -> Optional[str]:
@@ -153,6 +162,9 @@ def jde_julian_to_iso(julian_val: Optional[int]) -> Optional[str]:
     return dt.isoformat()
   except ValueError:
     return str(julian_val)
+
+
+julian_to_iso = jde_julian_to_iso
 
 
 def execute_oracle_query(

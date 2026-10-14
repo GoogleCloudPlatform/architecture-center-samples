@@ -1199,7 +1199,7 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
                 )
                 gl_row = cur.fetchone()
                 gl_aid = gl_row[0] if gl_row else f"{co_code}{target_obj[:3]}"
-                gl_desc = gl_row[1] if gl_row else f"{bp} GL {target_obj}.{target_sub}"
+                gl_desc = (gl_row[1] or "") if gl_row else f"{bp} GL {target_obj}.{target_sub}"
 
                 # Lookup DMAAI exception & precedent impact
                 cur.execute(
