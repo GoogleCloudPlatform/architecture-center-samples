@@ -57,6 +57,7 @@ gcloud builds submit . \
 ### 3. Store Oracle EBS Credentials & Tool Definitions in Secret Manager
 
 ```bash
+# Create regional secrets (uses official gcloud CLI flags --replication-policy="user-managed" --locations="${REGION}" per 'gcloud secrets create --help')
 printf "%s" "${EBS_DB_CONNECTION_STRING}" | gcloud secrets create "${SERVICE_NAME}-db-conn" --replication-policy="user-managed" --locations="${REGION}" --data-file=- --project="${PROJECT_ID}"
 printf "%s" "${EBS_DB_USER}"              | gcloud secrets create "${SERVICE_NAME}-db-user" --replication-policy="user-managed" --locations="${REGION}" --data-file=- --project="${PROJECT_ID}"
 printf "%s" "${EBS_DB_PASSWORD}"          | gcloud secrets create "${SERVICE_NAME}-db-pass" --replication-policy="user-managed" --locations="${REGION}" --data-file=- --project="${PROJECT_ID}"

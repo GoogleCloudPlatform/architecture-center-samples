@@ -63,6 +63,8 @@ upsert_secret_from_file() {
         gcloud secrets versions add "$secret_name" --data-file="$file_path" --project="$PROJECT_ID" >/dev/null
     else
         echo "Creating Secret Manager secret '$secret_name' in region '$REGION'..."
+        # Official gcloud CLI syntax (verified via 'gcloud secrets create --help'):
+        # requires --replication-policy="user-managed" and --locations="$REGION" (note: --replication is not a valid gcloud flag).
         gcloud secrets create "$secret_name" \
             --replication-policy="user-managed" \
             --locations="$REGION" \
