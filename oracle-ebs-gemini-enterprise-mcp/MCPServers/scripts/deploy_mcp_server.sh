@@ -1591,6 +1591,8 @@ DEPLOY_CMD=(
     --network "${NETWORK}"
     --subnet "${SUBNET}"
     --no-allow-unauthenticated
+    # marks the service as made by this script (destroy_mcp_server.sh, --list); --update-labels keeps other labels
+    --update-labels "${DEPLOY_LABEL_KEY}=${DEPLOY_LABEL_VALUE},mcp-system=${SYSTEM_SHORT}${VARIANT:+,mcp-variant=${VARIANT}}"
 )
 [ -z "${SET_SECRETS}" ] || DEPLOY_CMD+=(--set-secrets "${SET_SECRETS}")
 [ -z "${SET_ENV_VARS}" ] || DEPLOY_CMD+=(--set-env-vars "${SET_ENV_VARS}")
