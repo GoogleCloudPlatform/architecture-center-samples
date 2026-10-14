@@ -44,9 +44,11 @@ EOF
 
       cd Agents/
 
-      EXISTING_ID=$(curl -s -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-        "https://${var.region}-aiplatform.googleapis.com/v1beta1/projects/${var.project_id}/locations/${var.region}/reasoningEngines" \
-        | python3 -c "import sys, json; data = json.load(sys.stdin); engines = [e.get('name', '').split('/')[-1] for e in data.get('reasoningEngines', []) if e.get('displayName') == 'PSFT_Master' and 'name' in e]; print(engines[0] if engines else '')" 2>/dev/null || true)
+      EXISTING_ID=$(gcloud ai reasoning-engines list \
+        --region="${var.region}" \
+        --project="${var.project_id}" \
+        --filter="displayName=PSFT_Master" \
+        --format="value(name)" 2>/dev/null | awk -F'/' '{print $NF}' || true)
 
       AGENT_ARGS="PSFT_Master"
       if [ -n "$EXISTING_ID" ]; then

@@ -99,6 +99,10 @@ if [ -n "${PSFT_DB_CONNECTION_STRING:-}" ] && [ "${PSFT_DB_CONNECTION_STRING}" !
     upsert_secret_from_value "${MCP_TOOLBOX_SERVICE_NAME}-db-user" "${PSFT_DB_USER:-PSFT_AI}"
     upsert_secret_from_value "${MCP_TOOLBOX_SERVICE_NAME}-db-pass" "${PSFT_DB_PASSWORD:-PSFT_AI}"
     SECRET_ENV_BINDINGS=",PSFT_DB_CONNECTION_STRING=${MCP_TOOLBOX_SERVICE_NAME}-db-conn:latest,PSFT_DB_USER=${MCP_TOOLBOX_SERVICE_NAME}-db-user:latest,PSFT_DB_PASSWORD=${MCP_TOOLBOX_SERVICE_NAME}-db-pass:latest"
+else
+    echo "Error: PSFT_DB_CONNECTION_STRING is empty or set to the default placeholder." >&2
+    echo "Please configure your database credentials in .env before deploying." >&2
+    exit 1
 fi
 
 # Upload tools.yaml to Secret Manager so tool definitions can also be updated without rebuilding

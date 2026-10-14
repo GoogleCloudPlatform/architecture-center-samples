@@ -107,7 +107,8 @@ cp "${SCRIPT_DIR}/../utils/logging_config.py" "${AGENT_DIR}/logging_config.py"
 
 # Dynamically substitute PROJECT_ID placeholder in agent_engine_config.json if present
 if [ -f "${AGENT_DIR}/agent_engine_config.json" ] && [ -n "${GOOGLE_CLOUD_PROJECT:-}" ]; then
-  sed -i.bak "s/PROJECT_ID/${GOOGLE_CLOUD_PROJECT}/g" "${AGENT_DIR}/agent_engine_config.json"
+  cp "${AGENT_DIR}/agent_engine_config.json" "${AGENT_DIR}/agent_engine_config.json.bak"
+  sed "s/PROJECT_ID/${GOOGLE_CLOUD_PROJECT}/g" "${AGENT_DIR}/agent_engine_config.json.bak" > "${AGENT_DIR}/agent_engine_config.json"
   trap 'mv "${AGENT_DIR}/agent_engine_config.json.bak" "${AGENT_DIR}/agent_engine_config.json" 2>/dev/null || true' EXIT
 fi
 

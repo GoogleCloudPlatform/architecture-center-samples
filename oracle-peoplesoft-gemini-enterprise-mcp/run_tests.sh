@@ -44,7 +44,7 @@ fi
 
 if [ -d "Agents/PSFT_Master" ]; then
     echo -e "${GREEN}[2/2] Validating PeopleSoft Master & Sub-Agent Python modules...${NC}"
-    find Agents utils -name "*.py" -print0 | xargs -0 python3 -m py_compile || TEST_FAILURES=$((TEST_FAILURES + 1))
+    find Agents utils -name "*.py" -exec python3 -m py_compile {} + || TEST_FAILURES=$((TEST_FAILURES + 1))
 else
     echo -e "${RED}Error: Agents/PSFT_Master directory not found.${NC}"
     TEST_FAILURES=$((TEST_FAILURES + 1))
