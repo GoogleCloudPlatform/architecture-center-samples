@@ -60,15 +60,16 @@ _upsert_secret() {
     local mode="$2"
     local payload="$3"
     if gcloud secrets describe "$secret_name" --project="$PROJECT_ID" >/dev/null 2>&1; then
-        local current_val=""
-        if current_val=$(gcloud secrets versions access latest --secret="$secret_name" --project="$PROJECT_ID" 2>/dev/null); then
-            local new_val
-            new_val=$(_emit_secret_data "$mode" "$payload") || return 1
-            if [ "$current_val" = "$new_val" ]; then
+        local tmp_secret
+        tmp_secret=$(mktemp) || return 1
+        if gcloud secrets versions access latest --secret="$secret_name" --project="$PROJECT_ID" > "$tmp_secret" 2>/dev/null; then
+            if _emit_secret_data "$mode" "$payload" | cmp -s - "$tmp_secret"; then
                 echo "Secret '$secret_name' is unchanged. Skipping new version."
+                rm -f "$tmp_secret"
                 return 0
             fi
         fi
+        rm -f "$tmp_secret"
         echo "Updating existing Secret Manager secret '$secret_name'..."
         _emit_secret_data "$mode" "$payload" | gcloud secrets versions add "$secret_name" --data-file=- --project="$PROJECT_ID" >/dev/null
     else
