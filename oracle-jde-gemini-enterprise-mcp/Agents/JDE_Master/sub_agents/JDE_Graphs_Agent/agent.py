@@ -125,9 +125,7 @@ def _format_value(val: float, is_currency: bool = False) -> str:
     """Format a number for executive display on data labels and legends."""
     abs_v = abs(val)
     if is_currency:
-        if abs_v >= 1000 and abs(val - round(val)) < 1e-4:
-            return f"${val:,.0f}"
-        elif abs_v >= 100 and abs(val - round(val)) < 1e-4:
+        if abs_v >= 100 and abs(val - round(val)) < 1e-4:
             return f"${val:,.0f}"
         else:
             return f"${val:,.2f}"

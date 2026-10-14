@@ -80,11 +80,13 @@ if [ -n "${JDE_DB_DSN:-}" ]; then
         SECRET_BINDINGS="${SECRET_BINDINGS},JDE_PASSWORD=${MCP_SERVICE_NAME}-ais-pass:latest"
     fi
     for SECRET_ID in "${ACTIVE_SECRETS[@]}"; do
-        gcloud secrets add-iam-policy-binding "$SECRET_ID" \
+        if ! gcloud secrets add-iam-policy-binding "$SECRET_ID" \
             --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
             --role="roles/secretmanager.secretAccessor" \
             --project="$PROJECT_ID" \
-            --quiet >/dev/null 2>&1 || true
+            --quiet >/dev/null 2>&1; then
+            echo "Warning: Failed to bind Secret Manager Secret Accessor role to $SERVICE_ACCOUNT_EMAIL for secret $SECRET_ID. Please ensure the service account has access."
+        fi
     done
     SECRET_ENV_ARGS=(--set-secrets="$SECRET_BINDINGS")
 fi
