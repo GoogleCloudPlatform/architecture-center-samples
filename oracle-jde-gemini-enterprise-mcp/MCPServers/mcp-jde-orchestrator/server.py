@@ -226,18 +226,21 @@ class JDEOrchestratorClient:
     return self._client
 
   async def get_token(self, force_refresh: bool = False) -> str:
-    """Acquires or returns cached AIS session token from /jderest/v2/tokenrequest."""
+    """Acquires or returns cached AIS session token from /jderest/v2/tokenrequest using the configured AIS service account while propagating the mapped user identity."""
     ctx = get_active_jde_context()
     usr = str(ctx.get("jde_user", self.username))
     email = str(ctx.get("email_or_user", self.user_email))
     env = str(ctx.get("environment", self.environment))
     role = str(ctx.get("role_name", self.role))
-    cache_key = f"{usr}:{email}:{env}:{role}"
+    cache_key = f"{self.username}:{env}:{role}"
     if cache_key in self._tokens and not force_refresh:
       return self._tokens[cache_key]
     url = f"{self.base_url}/jderest/v2/tokenrequest"
+    # Authenticate with the configured AIS proxy/service account credentials
+    # (self.username / self.password) and propagate the mapped end-user JDE
+    # identity via X-JDE-User / X-User-Email headers and orchestration inputs.
     payload = {
-        "username": usr,
+        "username": self.username,
         "userEmail": email,
         "password": self.password,
         "environment": env,
@@ -652,12 +655,12 @@ async def jde_create_discrete_work_order(
         "ORCH_CreateDiscreteWorkOrder",
         {
             "BranchPlant": branch_plant.strip(),
-            "ParentItem": parent_item_number.strip(),
-            "QuantityOrdered": quantity_ordered,
+            "ItemNumber": parent_item_number.strip(),
+            "OrderQuantity": quantity_ordered,
             "StartDate": start_date_iso,
             "RequestedDate": requested_date_iso,
             "Description": work_order_description,
-            "AttachPartsAndRouting": attach_parts_and_routing,
+            "AttachPartsListAndRouting": attach_parts_and_routing,
         },
     )
     return {
@@ -723,9 +726,9 @@ async def jde_issue_material_to_work_order(
         {
             "WorkOrderNumber": work_order_number,
             "ComponentItem": component_item_number.strip(),
-            "QuantityIssued": quantity_to_issue,
+            "IssueQuantity": quantity_to_issue,
             "BranchPlant": branch_plant.strip(),
-            "Location": location,
+            "FromLocation": location,
         },
     )
     return {
@@ -752,12 +755,14 @@ async def jde_complete_discrete_work_order(
 ) -> Dict[str, Any]:
   """[JDE Orchestrator] Records Discrete Manufacturing Work Order completion and scrap quantities via ORCH_CompleteWorkOrder (P31114 Work Order Completions), receiving finished assembly into F41021/F4111 and updating F4801."""
   try:
+    ctx = get_active_jde_context()
     result = await jde_client.invoke_orchestration(
         "ORCH_CompleteWorkOrder",
         {
             "WorkOrderNumber": work_order_number,
-            "QuantityCompleted": quantity_completed,
-            "QuantityScrapped": quantity_scrapped,
+            "BranchPlant": ctx.get("branch_plant", "M30"),
+            "CompletedQuantity": quantity_completed,
+            "ScrappedQuantity": quantity_scrapped,
             "NewStatusCode": new_status_code,
         },
     )

@@ -176,9 +176,12 @@ def get_session_user_context(tool_context: ToolContext) -> dict:
         return direct_context
     default_email = os.environ.get("DEFAULT_JDE_USER_EMAIL", "").strip()
     if not default_email:
-        raise RuntimeError(
-            "Unable to determine user identity from session state and DEFAULT_JDE_USER_EMAIL is not configured."
-        )
+        return {
+            "ok": False,
+            "source_agent": "JDE_Mfg_Agent",
+            "error_code": "AUTH_FAILED",
+            "message": "Unable to determine user identity from session state and DEFAULT_JDE_USER_EMAIL is not configured.",
+        }
     return {
         "user_id": default_email,
         "email": default_email,
