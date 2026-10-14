@@ -118,7 +118,7 @@ for SECRET_ID in "${ACTIVE_SECRETS[@]}"; do
         --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
         --role="roles/secretmanager.secretAccessor" \
         --project="$PROJECT_ID" \
-        --quiet >/dev/null
+        --quiet >/dev/null 2>&1 || true
 done
 
 # 3. Build & Push Pre-Configured EBS MCP Image to Customer's Artifact Registry (Phase 1)
