@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e # CRITICAL: Force the script to fail and halt if any command crashes
+set -eo pipefail # CRITICAL: Force the script to fail and halt if any command or pipeline crashes
 
 # Ensure we're running from the script's directory
 cd "$(dirname "$0")" || exit 1
@@ -55,8 +55,6 @@ _emit_secret_data() {
 }
 
 _upsert_secret() {
-    local - 2>/dev/null || true
-    set -o pipefail
     local secret_name="$1"
     local mode="$2"
     local payload="$3"
