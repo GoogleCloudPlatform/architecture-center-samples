@@ -556,7 +556,12 @@ def render_line_chart(
         if x_column not in rows[0]:
             raise ValueError(f"x_column '{x_column}' not found in data. Available columns: {list(rows[0].keys())}")
         x_vals = [str(row.get(x_column, "")).strip() for row in rows]
-        y_col_list = [c.strip() for c in y_columns.split(",") if c.strip()]
+        if isinstance(y_columns, list):
+            y_col_list = [str(c).strip() for c in y_columns if str(c).strip()]
+        elif isinstance(y_columns, str):
+            y_col_list = [c.strip() for c in y_columns.split(",") if c.strip()]
+        else:
+            y_col_list = [str(y_columns).strip()]
         if not y_col_list:
             raise ValueError("y_columns must specify at least one column.")
         for col in y_col_list:

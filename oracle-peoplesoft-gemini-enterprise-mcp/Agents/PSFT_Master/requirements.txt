@@ -4,6 +4,7 @@ google-adk
 google-cloud-aiplatform
 google-cloud-resource-manager
 google-auth>=2.0
+httpx
 mcp
 matplotlib
 opentelemetry-exporter-otlp-proto-http
