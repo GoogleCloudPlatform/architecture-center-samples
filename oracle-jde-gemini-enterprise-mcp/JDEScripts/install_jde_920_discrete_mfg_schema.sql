@@ -4,10 +4,11 @@
 -- Target PDB: JDEORCL on jde-demo-db (10.118.0.41:1521/jdeorcl)
 -- ============================================================================
 
-ALTER SESSION SET CONTAINER = JDEORCL;
+-- Connect directly to the JDEORCL PDB (e.g., sqlplus system@10.118.0.41:1521/jdeorcl)
+-- ALTER SESSION SET CONTAINER = JDEORCL;
 
 -- 1. Create Tablespaces & JDE 9.2 Schemas
-DEFINE JDE_SCHEMA_PASSWORD = REPLACE_WITH_JDE_DB_PASSWORD
+ACCEPT JDE_SCHEMA_PASSWORD CHAR PROMPT 'Enter JDE Schema Password: ' HIDE
 
 DECLARE
   v_cnt NUMBER;

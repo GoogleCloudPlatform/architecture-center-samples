@@ -85,13 +85,13 @@ reset_config: ## Clear local configs to force re-prompting
 	@echo "Done. You can now run 'make set_config_mcp_servers' to enter new values."
 
 plan_mcp_server: ## Plan Terraform for JDE MCP Server
-	terraform -chdir=$(TF_DIR) plan -target="null_resource.oracle_jde_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) plan -target="null_resource.oracle_jde_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_email=$(PROJECT_SA_EMAIL)"
 
 deploy_mcp_server: ## Deploy JDE MCP Server
-	terraform -chdir=$(TF_DIR) apply -auto-approve -target="null_resource.oracle_jde_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) apply -auto-approve -target="null_resource.oracle_jde_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_email=$(PROJECT_SA_EMAIL)"
 
 destroy_mcp_server: ## Destroy JDE MCP Server
-	terraform -chdir=$(TF_DIR) destroy -auto-approve -target="null_resource.oracle_jde_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) destroy -auto-approve -target="null_resource.oracle_jde_gemini_enterprise_mcp_server" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_email=$(PROJECT_SA_EMAIL)"
 
 plan_jde_agents: ## Plan Terraform for JDE Manufacturing AI Agent (JDE_Master)
 	@touch infra.auto.tfvars
@@ -106,10 +106,10 @@ plan_jde_agents: ## Plan Terraform for JDE Manufacturing AI Agent (JDE_Master)
 	else \
 		echo "mcp_server_jde_url = \"$$MCP_URL/mcp\"" >> infra.auto.tfvars; \
 	fi
-	terraform -chdir=$(TF_DIR) plan -target="null_resource.oracle_jde_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) plan -target="null_resource.oracle_jde_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_email=$(PROJECT_SA_EMAIL)"
 
 deploy_jde_agents: ## Deploy JDE Manufacturing AI Agent (JDE_Master)
-	terraform -chdir=$(TF_DIR) apply -auto-approve -target="null_resource.oracle_jde_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) apply -auto-approve -target="null_resource.oracle_jde_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_email=$(PROJECT_SA_EMAIL)"
 
 destroy_jde_agents: ## Destroy JDE Manufacturing AI Agent deployment
-	terraform -chdir=$(TF_DIR) destroy -auto-approve -target="null_resource.oracle_jde_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_key=$(PROJECT_SA_EMAIL)"
+	terraform -chdir=$(TF_DIR) destroy -auto-approve -target="null_resource.oracle_jde_gemini_enterprise_framework" -var="project_id=$(PROJECT_ID)" -var="region=$(REGION)" -var="service_account_email=$(PROJECT_SA_EMAIL)"

@@ -35,7 +35,7 @@ variable "python_version" {
   default     = "3.11"
 }
 
-variable "service_account_key" {
+variable "service_account_email" {
   description = "Email of the GCP service account used for Cloud Run and Agent deployment"
   type        = string
 }

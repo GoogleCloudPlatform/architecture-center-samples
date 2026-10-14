@@ -4,7 +4,8 @@ SET DEFINE OFF;
 -- Hybrid MCP Analytical Views, Julian Date Converters & Autonomous Audit Log
 -- =============================================================================
 
-ALTER SESSION SET CONTAINER = JDEORCL;
+-- Connect directly to the JDEORCL PDB (e.g., sqlplus system@10.118.0.41:1521/jdeorcl)
+-- ALTER SESSION SET CONTAINER = JDEORCL;
 
 -- Fix F0006 200-301 row if missing
 MERGE INTO PRODDTA.F0006 d

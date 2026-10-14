@@ -69,12 +69,12 @@ if [ -n "${JDE_DB_DSN:-}" ]; then
     upsert_secret_from_value "${MCP_SERVICE_NAME}-db-user" "${JDE_DB_USER:-JDE_AI}"
     ACTIVE_SECRETS+=("${MCP_SERVICE_NAME}-db-dsn" "${MCP_SERVICE_NAME}-db-user")
     SECRET_BINDINGS="JDE_DB_DSN=${MCP_SERVICE_NAME}-db-dsn:latest,JDE_DB_USER=${MCP_SERVICE_NAME}-db-user:latest"
-    if [ -n "${JDE_DB_PASSWORD:-}" ] && [ "${JDE_DB_PASSWORD}" != "REPLACE_ME" ]; then
+    if [ -n "${JDE_DB_PASSWORD:-}" ] && [ "${JDE_DB_PASSWORD}" != "REPLACE_ME" ] && [ "${JDE_DB_PASSWORD}" != "REPLACE_WITH_JDE_DB_PASSWORD" ]; then
         upsert_secret_from_value "${MCP_SERVICE_NAME}-db-pass" "${JDE_DB_PASSWORD}"
         ACTIVE_SECRETS+=("${MCP_SERVICE_NAME}-db-pass")
         SECRET_BINDINGS="${SECRET_BINDINGS},JDE_DB_PASSWORD=${MCP_SERVICE_NAME}-db-pass:latest"
     fi
-    if [ -n "${JDE_PASSWORD:-}" ] && [ "${JDE_PASSWORD}" != "REPLACE_ME" ]; then
+    if [ -n "${JDE_PASSWORD:-}" ] && [ "${JDE_PASSWORD}" != "REPLACE_ME" ] && [ "${JDE_PASSWORD}" != "REPLACE_WITH_JDE_AIS_PASSWORD" ]; then
         upsert_secret_from_value "${MCP_SERVICE_NAME}-ais-pass" "${JDE_PASSWORD}"
         ACTIVE_SECRETS+=("${MCP_SERVICE_NAME}-ais-pass")
         SECRET_BINDINGS="${SECRET_BINDINGS},JDE_PASSWORD=${MCP_SERVICE_NAME}-ais-pass:latest"
@@ -103,6 +103,11 @@ fi
 MCP_IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${AR_REPO_NAME}/${MCP_SERVICE_NAME}:latest"
 echo "Building and publishing JDE Hybrid MCP container image to Artifact Registry in region '$REGION':"
 echo "  $MCP_IMAGE"
+if [ ! -f .gcloudignore ]; then
+    printf "%s\n" ".env" ".gcloudignore" > .gcloudignore
+elif ! grep -Fxq ".env" .gcloudignore; then
+    printf "\n%s\n" ".env" >> .gcloudignore
+fi
 BUILD_ARGS=(
     --tag "$MCP_IMAGE"
     --project "$PROJECT_ID"

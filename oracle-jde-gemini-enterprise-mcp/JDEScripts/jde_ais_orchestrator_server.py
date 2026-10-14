@@ -26,7 +26,7 @@ DB_HOST = os.environ.get("JDE_DB_HOST", "10.118.0.41")
 DB_PORT = int(os.environ.get("JDE_DB_PORT", "1521"))
 DB_SERVICE = os.environ.get("JDE_DB_SERVICE", "jdeorcl")
 DB_USER = os.environ.get("JDE_DB_USER", "PRODDTA")
-DB_PASSWORD = os.environ.get("JDE_DB_PASSWORD", "REPLACE_WITH_JDE_DB_PASSWORD")
+DB_PASSWORD = os.environ.get("JDE_DB_PASSWORD", "")
 
 app = FastAPI(
     title="JD Edwards EnterpriseOne AIS & Orchestrator Server",

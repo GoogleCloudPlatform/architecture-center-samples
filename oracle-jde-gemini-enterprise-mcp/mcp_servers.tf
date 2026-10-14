@@ -31,13 +31,13 @@ resource "null_resource" "oracle_jde_gemini_enterprise_mcp_server" {
 
       echo "Generating .env file for JDE Hybrid Orchestrator + SQL MCP Server..."
 
-      SA_NAME=$(echo "${var.service_account_key}" | cut -d'@' -f1)
+      SA_NAME=$(echo "${var.service_account_email}" | cut -d'@' -f1)
 
       cd MCPServers/mcp-jde-orchestrator/
 
       cat <<EOF > .env
 PROJECT_ID=${var.project_id}
-SERVICE_ACCOUNT_EMAIL=${var.service_account_key}
+SERVICE_ACCOUNT_EMAIL=${var.service_account_email}
 SERVICE_ACCOUNT_NAME=$SA_NAME
 REGION=${var.region}
 VPC_NAME=${var.vpc_name}

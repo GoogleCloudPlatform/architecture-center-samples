@@ -5,7 +5,8 @@
 -- =============================================================================
 WHENEVER SQLERROR CONTINUE;
 SET DEFINE OFF;
-ALTER SESSION SET CONTAINER = JDEORCL;
+-- Connect directly to the JDEORCL PDB (e.g., sqlplus system@10.118.0.41:1521/jdeorcl)
+-- ALTER SESSION SET CONTAINER = JDEORCL;
 
 -- =============================================================================
 -- 2. PRODDTA.F0901 — JDE General Ledger Account Master (Chart of Accounts for Co 00030 / M30)

@@ -5,7 +5,8 @@ SET DEFINE OFF;
 -- Maps Gemini Enterprise user email via F01151 & F0092 to JDE User ID & F00950.
 -- =============================================================================
 WHENEVER SQLERROR CONTINUE;
-ALTER SESSION SET CONTAINER = JDEORCL;
+-- Connect directly to the JDEORCL PDB (e.g., sqlplus system@10.118.0.41:1521/jdeorcl)
+-- ALTER SESSION SET CONTAINER = JDEORCL;
 
 -- 1. JDE Address Book Master (PRODDTA.F0101)
 CREATE TABLE PRODDTA.F0101 (
