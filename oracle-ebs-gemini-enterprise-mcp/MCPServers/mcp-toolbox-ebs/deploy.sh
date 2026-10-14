@@ -55,9 +55,14 @@ _upsert_secret() {
     local mode="$2"
     local payload="$3"
     if gcloud secrets describe "$secret_name" --project="$PROJECT_ID" >/dev/null 2>&1; then
-        if (set -o pipefail; gcloud secrets versions access latest --secret="$secret_name" --project="$PROJECT_ID" 2>/dev/null | cmp -s - <(_emit_secret_data "$mode" "$payload")); then
-            echo "Secret '$secret_name' is unchanged. Skipping new version."
-            return 0
+        local current_val=""
+        if current_val=$(gcloud secrets versions access latest --secret="$secret_name" --project="$PROJECT_ID" 2>/dev/null); then
+            local new_val
+            new_val=$(_emit_secret_data "$mode" "$payload")
+            if [ "$current_val" = "$new_val" ]; then
+                echo "Secret '$secret_name' is unchanged. Skipping new version."
+                return 0
+            fi
         fi
         echo "Updating existing Secret Manager secret '$secret_name'..."
         _emit_secret_data "$mode" "$payload" | gcloud secrets versions add "$secret_name" --data-file=- --project="$PROJECT_ID" >/dev/null
@@ -99,9 +104,14 @@ fi
 # 2. Store Oracle EBS DB credentials in Secret Manager (if provided via .env or environment)
 SECRET_ENV_BINDINGS=""
 if [ -n "${EBS_DB_CONNECTION_STRING:-}" ] && [ "${EBS_DB_CONNECTION_STRING}" != "apps.example.com:1521/EBSDB" ]; then
+    if [ -z "${EBS_DB_PASSWORD:-}" ] || [ "${EBS_DB_PASSWORD}" = "REPLACE_WITH_APPS_AI_PASSWORD" ]; then
+        echo "Error: EBS_DB_PASSWORD is empty or set to the default placeholder 'REPLACE_WITH_APPS_AI_PASSWORD'." >&2
+        echo "Please configure a valid database password in your .env file." >&2
+        exit 1
+    fi
     upsert_secret_from_value "${MCP_TOOLBOX_SERVICE_NAME}-db-conn" "$EBS_DB_CONNECTION_STRING"
     upsert_secret_from_value "${MCP_TOOLBOX_SERVICE_NAME}-db-user" "${EBS_DB_USER:-apps_ai}"
-    upsert_secret_from_value "${MCP_TOOLBOX_SERVICE_NAME}-db-pass" "${EBS_DB_PASSWORD:-apps_ai}"
+    upsert_secret_from_value "${MCP_TOOLBOX_SERVICE_NAME}-db-pass" "$EBS_DB_PASSWORD"
     SECRET_ENV_BINDINGS=",EBS_DB_CONNECTION_STRING=${MCP_TOOLBOX_SERVICE_NAME}-db-conn:latest,EBS_DB_USER=${MCP_TOOLBOX_SERVICE_NAME}-db-user:latest,EBS_DB_PASSWORD=${MCP_TOOLBOX_SERVICE_NAME}-db-pass:latest"
 fi
 
