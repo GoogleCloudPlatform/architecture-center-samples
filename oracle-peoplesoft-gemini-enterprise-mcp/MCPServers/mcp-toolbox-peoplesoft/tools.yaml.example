@@ -177,8 +177,8 @@ tools:
            WHERE (UPPER(o.EMAILID) LIKE '%' || UPPER(NVL(:user_id, '%')) || '%'
               OR UPPER(o.OPRID) LIKE '%' || UPPER(NVL(:user_id, '%')) || '%'
               OR o.OPRID = 'VP1')
-             AND ROWNUM <= 25
            ORDER BY CASE WHEN o.OPRID = 'VP1' THEN 0 ELSE 1 END, ru.ROLENAME
+           FETCH FIRST 25 ROWS ONLY
         parameters:
           - name: user_id
             type: string

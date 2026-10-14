@@ -44,5 +44,6 @@ Sub-agents are loaded dynamically via `AgentTool` according to the `enabled_agen
 | `GOOGLE_CLOUD_LOCATION` | Google Cloud region | `us-central1` |
 | `GOOGLE_CLOUD_BUCKET_NAME` | Staging GCS bucket for Agent Engine deployment | required |
 | `MCP_SERVER_SQL_URL` | Cloud Run MCP Toolbox `/mcp` endpoint URL | required |
-| `DEFAULT_PSFT_USER_EMAIL` | Fallback Oracle PeopleSoft `PSOPRDEFN` email when running outside OAuth2 UI | optional |
+| `ENV` | Deployment environment (`development` or `production`) | `development` |
+| `DEFAULT_PSFT_USER_EMAIL` | Fallback Oracle PeopleSoft `PSOPRDEFN` email for non-production (`ENV != 'production'`) CLI testing | optional |
 | `DEBUG` | Enable verbose debug logging | `false` |

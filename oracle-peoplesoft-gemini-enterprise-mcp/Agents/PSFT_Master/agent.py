@@ -73,17 +73,26 @@ def _telemetry_span(name: str, attributes: dict = None):
     if not _TELEMETRY_CLIENT:
         yield None
         return
-    
+
     start_time = time.perf_counter()
+    span_context = None
     try:
-        with _TELEMETRY_CLIENT.span(name=name, attributes=attributes or {}) as span:
-            yield span
+        span_context = _TELEMETRY_CLIENT.span(name=name, attributes=attributes or {})
     except Exception as e:
-        logger.debug(f"Error in telemetry span {name}: {e}")
-        raise
-    finally:
-        duration_ms = (time.perf_counter() - start_time) * 1000
-        logger.debug(f"Span '{name}' completed in {duration_ms:.2f}ms")
+        logger.warning(f"Failed to create telemetry span {name}: {e}")
+
+    if span_context:
+        try:
+            with span_context as span:
+                yield span
+        except Exception as e:
+            logger.debug(f"Error inside telemetry span {name}: {e}")
+            raise
+        finally:
+            duration_ms = (time.perf_counter() - start_time) * 1000
+            logger.debug(f"Span '{name}' completed in {duration_ms:.2f}ms")
+    else:
+        yield None
 
 # ---------------------------------------------------------------------------
 # 2. Logging & Path Configuration
@@ -328,6 +337,14 @@ def get_session_user_context(tool_context: ToolContext):
                 })
             return safe_context
 
+        if os.environ.get("ENV", "development").lower() != "production":
+            fallback_email = os.environ.get("DEFAULT_PSFT_USER_EMAIL", "").strip()
+            if fallback_email:
+                safe_context = _build_safe_user_context(fallback_email)
+                _set_state_value(tool_context, _USER_ID_STATE_KEY, fallback_email)
+                _set_state_value(tool_context, _USER_CONTEXT_STATE_KEY, safe_context)
+                return safe_context
+
         if _TELEMETRY_CLIENT:
             _TELEMETRY_CLIENT.log_event("session_context_cache_miss", {})
         return {
@@ -459,6 +476,12 @@ def get_user_id(tool_context: ToolContext):
                 logger.debug("Resolved user email from token info.")
         else:
             email = None
+
+        if not email and os.environ.get("ENV", "development").lower() != "production":
+            fallback_email = os.environ.get("DEFAULT_PSFT_USER_EMAIL", "").strip()
+            if fallback_email:
+                email = fallback_email
+                logger.info("Using non-production fallback email from DEFAULT_PSFT_USER_EMAIL.")
 
         if not email:
             if _TELEMETRY_CLIENT:

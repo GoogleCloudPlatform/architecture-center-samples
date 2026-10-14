@@ -93,6 +93,15 @@ set -a
 . ./"$ENV_FILE"
 set +a
 
+if [ -z "${GOOGLE_CLOUD_PROJECT:-}" ] || [ "${GOOGLE_CLOUD_PROJECT}" = "your-project-id" ]; then
+  printf "Error: GOOGLE_CLOUD_PROJECT is not set or still uses the default value in %s.\n" "$ENV_FILE"
+  exit 1
+fi
+if [ -z "${GOOGLE_CLOUD_LOCATION:-}" ] || [ "${GOOGLE_CLOUD_LOCATION}" = "your-location" ]; then
+  printf "Error: GOOGLE_CLOUD_LOCATION is not set or still uses the default value in %s.\n" "$ENV_FILE"
+  exit 1
+fi
+
 LOG_FILE="logs/${AGENT_NAME}_deploy.log"
 
 AGENT_ENGINE_ID_ARG=""
