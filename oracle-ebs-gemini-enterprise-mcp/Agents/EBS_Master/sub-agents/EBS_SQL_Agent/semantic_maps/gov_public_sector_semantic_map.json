@@ -1,0 +1,111 @@
+{
+  "module": "Public Sector & Government Operations (GOV)",
+  "description": "Semantic mapping for the 6 Gemini for Government skills across Oracle EBS Receivables (AR), FND Attachments, HR (PER), Purchasing (PO), Trading Community Architecture (TCA / HZ), Sourcing (PON), Internet Expenses (OIE), Payables (AP), and Grants Accounting (GMS).",
+  "tables": [
+    {
+      "table_name": "APPS.VW_GOV_CONSTITUENT_NOTICES",
+      "business_name": "Constituent & Public Notices (Skill 3.1: Plain Language Notice Generator)",
+      "description": "Consolidated view over RA_CUSTOMER_TRX_ALL and FND_DOCUMENTS_LONG_TEXT containing population-level public benefit notices (e.g. NOTICE-CO-SNAP-2026-COLA, NOTICE-MUN-2026-WATER) and individual adverse-action determinations (e.g. CLAIM-84920).",
+      "columns": [
+        {"name": "NOTICE_ID", "description": "Notice or determination number (e.g., NOTICE-CO-SNAP-2026-COLA, NOTICE-MUN-2026-WATER, CLAIM-84920)."},
+        {"name": "NOTICE_DATE", "description": "Issue date of the notice (YYYY-MM-DD)."},
+        {"name": "NOTICE_SCOPE_TYPE", "description": "GOV_PUBLIC_NOTICE (population-level notice eligible for plain-language rewriting) or INDIVIDUAL_ADVERSE_ACTION (must be escalated due to PII and individual fair hearing rights)."},
+        {"name": "STATUTORY_CITATION", "description": "Governing federal/state statutory citation (e.g., 7-CFR-273.12(e)(1))."},
+        {"name": "NOTICE_SUMMARY", "description": "Summary description of the notice or determination."},
+        {"name": "STATUTORY_NOTICE_TEXT", "description": "Full text of the statutory directive or notice from FND_DOCUMENTS_LONG_TEXT."}
+      ]
+    },
+    {
+      "table_name": "APPS.VW_GOV_FOIA_RECORDS",
+      "business_name": "FOIA & Public Records Production Package (Skill 3.2: Redaction & FOIA Compliance)",
+      "description": "Consolidated view over PER_ALL_PEOPLE_F, PO_HEADERS_ALL, and FND_DOCUMENTS_LONG_TEXT for FOIA requests (e.g., FOIA-2026-0412 / RFP-2024-HEALTH / EMP-FOIA-1042).",
+      "columns": [
+        {"name": "FOIA_REQUEST_ID", "description": "Public records request identifier (e.g., FOIA-2026-0412)."},
+        {"name": "SOLICITATION_OR_CASE_REF", "description": "Referenced solicitation or case number (e.g., RFP-2024-HEALTH)."},
+        {"name": "EMPLOYEE_NUMBER", "description": "Employee number (e.g., EMP-FOIA-1042)."},
+        {"name": "EMPLOYEE_NAME", "description": "Full name of public official (e.g., Vance, Jordan R.)."},
+        {"name": "RAW_SSN", "description": "Unredacted Social Security Number requiring mandatory Exemption 6 / 7(C) redaction."},
+        {"name": "RAW_DOB", "description": "Unredacted Date of Birth requiring mandatory Exemption 6 / 7(C) redaction."},
+        {"name": "FULL_DOCUMENT_CONTENT", "description": "Full text of the responsive FOIA record containing public award facts plus sensitive PII, FTI (26 U.S.C. 6103), CJIS, and HIPAA PHI."}
+      ]
+    },
+    {
+      "table_name": "APPS.VW_GOV_AGENCY_POLICY_RULES",
+      "business_name": "Agency Procurement & Statutory Policy Rules (Skill 3.3: Policy & Statute Assistant)",
+      "description": "Consolidated view over PO_CONTROL_GROUPS_ALL, PO_CONTROL_RULES, and FND_DOCUMENTS_LONG_TEXT covering state procurement thresholds, SNAP separate household & BBCE rules, and post-OBBBA (Pub. L. 119-21) statutory preemption.",
+      "columns": [
+        {"name": "POLICY_RULE_SET", "description": "Control group name (e.g., CO-STATE-PROCUREMENT-2026)."},
+        {"name": "THRESHOLD_CATEGORY", "description": "Procurement tier code (e.g., DISCRETIONARY_PURCHASE_LIMIT, DOCUMENTED_QUOTE_SMALL_PURCHASE_LIMIT)."},
+        {"name": "DOLLAR_THRESHOLD_USD", "description": "Dollar limit in USD (e.g., 10000, 150000)."},
+        {"name": "STATUTORY_POLICY_TEXT", "description": "Full text of the agency statutory and regulatory policy transmittal."}
+      ]
+    },
+    {
+      "table_name": "APPS.VW_GOV_INTAKE_DOCUMENTS",
+      "business_name": "Citizen Document Intake Queue & TCA Identity Verification (Skill 3.4: Document Intake Cleanup & Validation)",
+      "description": "Consolidated view over HZ_PARTIES and FND_DOCUMENTS_LONG_TEXT providing staged citizen intake packets, Gate A optical telemetry, per-field OCR confidence scores, and Gate C paystub math.",
+      "columns": [
+        {"name": "CASE_NUMBER", "description": "Program case reference (e.g., SNAP-94821, TANF-2026-8812)."},
+        {"name": "APPLICANT_LEGAL_NAME", "description": "Verified legal name in HZ_PARTIES (e.g., Maria Elena Rodriguez, Marcus Vance)."},
+        {"name": "MASKED_SSN_HASH", "description": "Masked SSN on file (e.g., ***-**-4829)."},
+        {"name": "INTAKE_OCR_AND_TELEMETRY_PAYLOAD", "description": "Full Gate A optical metrics, per-field OCR confidence scores, and Gate C paystub gross/net/YTD figures."}
+      ]
+    },
+    {
+      "table_name": "APPS.VW_GOV_SOURCING_RFPS",
+      "business_name": "Sourcing Solicitations & Vendor Bids (Skill 3.5: RFP Vendor Evaluation Scorer)",
+      "description": "Consolidated view over PON_AUCTION_HEADERS_ALL, PON_BID_HEADERS, and FND_DOCUMENTS_LONG_TEXT for RFP-2026-CLOUD-MOD and vendor bids (CivicCloud, LegacyGov, MetroTech).",
+      "columns": [
+        {"name": "RFP_NUMBER", "description": "Solicitation document number (e.g., RFP-2026-CLOUD-MOD)."},
+        {"name": "BID_NUMBER", "description": "Vendor bid number (990511, 990512, 990513)."},
+        {"name": "VENDOR_NAME", "description": "Vendor code (CIVICCLOUD-SOLUTIONS, LEGACYGOV-SYSTEMS, METROTECH-PARTNERS)."},
+        {"name": "TOTAL_BID_PRICE_USD", "description": "Total Volume II Cost Proposal amount in USD."},
+        {"name": "RFP_AND_BIDS_EVIDENCE_DOSSIER", "description": "Complete solicitation Section M.1/M.2 criteria, Addenda 1 & 2, and vendor proposal evidence with page citations."}
+      ]
+    },
+    {
+      "table_name": "APPS.VW_GOV_EXPENSE_REPORTS",
+      "business_name": "Travel Expense Reports & Hotel Folios (Skill 3.6: Expense Auditor)",
+      "description": "Consolidated view over AP_EXPENSE_REPORT_HEADERS_ALL, AP_EXPENSE_REPORT_LINES_ALL, and FND_DOCUMENTS_LONG_TEXT for 2 CFR Part 200 travel expense audits (e.g., EXP-ATL-9921, EXP-DEN-5521, EXP-CHI-8812).",
+      "columns": [
+        {"name": "EXPENSE_REPORT_NUMBER", "description": "Expense report number (EXP-ATL-9921, EXP-DEN-5521, EXP-CHI-8812)."},
+        {"name": "REPORT_SUMMARY_AND_AWARD", "description": "Claimant, federal grant award ID, and trip purpose."},
+        {"name": "LINE_NUM", "description": "Distribution line number."},
+        {"name": "EXPENSE_LINE_DESCRIPTION", "description": "Itemized charge description."},
+        {"name": "LINE_CLAIMED_AMOUNT_USD", "description": "Claimed dollar amount for the line."},
+        {"name": "ATTACHED_FOLIO_OCR_TRANSCRIPT", "description": "Full itemized hotel/flight receipt OCR folio."}
+      ]
+    },
+    {
+      "table_name": "APPS.VW_GOV_PO_INVOICE_MATCH",
+      "business_name": "Grant AP Invoices, POs & GMS Awards (Skill 3.6: Expense Auditor)",
+      "description": "Consolidated view over AP_INVOICES_ALL, PO_HEADERS_ALL, and GMS_AWARDS_ALL for auditing grant invoices and sole-source POs (HM-4409, V-2026-301, MS-1049 / PO-7801).",
+      "columns": [
+        {"name": "INVOICE_NUM", "description": "AP Invoice number (HM-4409, V-2026-301, MS-1049)."},
+        {"name": "INVOICE_TOTAL_USD", "description": "Total invoice amount in USD."},
+        {"name": "MATCHED_PO_NUMBER", "description": "Matched PO number (e.g., PO-7801)."},
+        {"name": "FEDERAL_GRANT_AWARD_ID", "description": "GMS Award number (HRSA-RURAL-2026, CDC-CHRONIC-26, NOAA-OCN-25-12)."}
+      ]
+    }
+  ],
+  "common_joins": [
+    {
+      "description": "Link FND Attached Documents to Document Long Text",
+      "join_condition": "FND_ATTACHED_DOCUMENTS.DOCUMENT_ID = FND_DOCUMENTS.DOCUMENT_ID AND FND_DOCUMENTS.MEDIA_ID = FND_DOCUMENTS_LONG_TEXT.MEDIA_ID"
+    }
+  ],
+  "example_queries": [
+    {
+      "description": "Retrieve public notice details for NOTICE-CO-SNAP-2026-COLA",
+      "sql": "SELECT NOTICE_ID, NOTICE_SCOPE_TYPE, STATUTORY_CITATION, STATUTORY_NOTICE_TEXT FROM APPS.VW_GOV_CONSTITUENT_NOTICES WHERE NOTICE_ID = 'NOTICE-CO-SNAP-2026-COLA'"
+    },
+    {
+      "description": "Retrieve FOIA records and employee personnel file for RFP-2024-HEALTH",
+      "sql": "SELECT FOIA_REQUEST_ID, SOLICITATION_OR_CASE_REF, EMPLOYEE_NUMBER, EMPLOYEE_NAME, FULL_DOCUMENT_CONTENT FROM APPS.VW_GOV_FOIA_RECORDS"
+    },
+    {
+      "description": "Create and submit an Oracle Internet Expenses (OIE) travel expense report from multimodal OCR or chat input via official Oracle PL/SQL APIs (ebs_create_expense_report)",
+      "sql": "SELECT APPS.GE_EBS_MCP_TOOLS.create_expense_report(:report_number, :purpose_description, :week_end_date, :expense_lines_json, :receipt_ocr_text, :employee_id) AS create_expense_report_result FROM dual"
+    }
+  ]
+}
