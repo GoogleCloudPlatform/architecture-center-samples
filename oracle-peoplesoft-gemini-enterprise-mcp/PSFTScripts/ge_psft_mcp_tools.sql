@@ -11,8 +11,6 @@ WHENEVER SQLERROR CONTINUE
 
 DECLARE
   v_seq_exists NUMBER;
-  v_default_expr VARCHAR2(100);
-  v_default LONG;
 BEGIN
   SELECT COUNT(*) INTO v_seq_exists
     FROM ALL_SEQUENCES
@@ -21,40 +19,6 @@ BEGIN
   IF v_seq_exists = 0 THEN
     EXECUTE IMMEDIATE 'CREATE SEQUENCE SYSADM.PS_GOV_VCHR_SEQ START WITH 100001 INCREMENT BY 1 NOCACHE';
   END IF;
-
-  -- Ensure all NOT NULL columns on PeopleSoft Voucher Build staging tables
-  -- have standard PeopleSoft database-level default values (' ' for CHAR/VARCHAR2,
-  -- 0 for NUMBER, SYSDATE for DATE/TIMESTAMP) so direct SQL staging inserts
-  -- never fail with ORA-01400 on columns omitted from the column list.
-  FOR r_col IN (
-    SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, DATA_DEFAULT
-      FROM ALL_TAB_COLUMNS
-     WHERE OWNER = 'SYSADM'
-       AND TABLE_NAME IN ('PS_VCHR_HDR_STG', 'PS_VCHR_LINE_STG', 'PS_VCHR_DIST_STG')
-       AND NULLABLE = 'N'
-  ) LOOP
-    v_default := r_col.DATA_DEFAULT;
-    IF v_default IS NULL THEN
-      IF r_col.DATA_TYPE IN ('VARCHAR2', 'CHAR', 'NVARCHAR2', 'NCHAR') THEN
-        v_default_expr := ''' ''';
-      ELSIF r_col.DATA_TYPE IN ('NUMBER', 'FLOAT', 'BINARY_FLOAT', 'BINARY_DOUBLE') THEN
-        v_default_expr := '0';
-      ELSIF r_col.DATA_TYPE = 'DATE' OR r_col.DATA_TYPE LIKE 'TIMESTAMP%' THEN
-        v_default_expr := 'SYSDATE';
-      ELSE
-        v_default_expr := NULL;
-      END IF;
-
-      IF v_default_expr IS NOT NULL THEN
-        BEGIN
-          EXECUTE IMMEDIATE 'ALTER TABLE SYSADM.' || r_col.TABLE_NAME ||
-                            ' MODIFY (' || r_col.COLUMN_NAME || ' DEFAULT ' || v_default_expr || ')';
-        EXCEPTION
-          WHEN OTHERS THEN NULL;
-        END;
-      END IF;
-    END IF;
-  END LOOP;
 END;
 /
 
@@ -311,6 +275,95 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
       RETURN v_result;
   END create_onhand;
 
+  PROCEDURE stage_voucher_table (
+    p_table_name IN VARCHAR2,
+    p_bu         IN VARCHAR2,
+    p_vchr_id    IN VARCHAR2,
+    p_inv_id     IN VARCHAR2,
+    p_vendor     IN VARCHAR2,
+    p_amt        IN NUMBER,
+    p_descr30    IN VARCHAR2,
+    p_descr254   IN VARCHAR2
+  ) IS
+    v_cols CLOB := '';
+    v_vals CLOB := '';
+    v_sql  CLOB;
+    v_expr VARCHAR2(200);
+    v_sep  VARCHAR2(2) := '';
+  BEGIN
+    IF p_table_name NOT IN ('PS_VCHR_HDR_STG', 'PS_VCHR_LINE_STG', 'PS_VCHR_DIST_STG') THEN
+      RAISE_APPLICATION_ERROR(-20004, 'Unsupported staging table: ' || p_table_name);
+    END IF;
+
+    FOR r_col IN (
+      SELECT COLUMN_NAME, DATA_TYPE
+        FROM ALL_TAB_COLUMNS
+       WHERE OWNER = 'SYSADM'
+         AND TABLE_NAME = p_table_name
+         AND NULLABLE = 'N'
+       ORDER BY COLUMN_ID
+    ) LOOP
+      CASE r_col.COLUMN_NAME
+        WHEN 'BUSINESS_UNIT'    THEN v_expr := 'p.b_bu';
+        WHEN 'BUSINESS_UNIT_GL' THEN v_expr := 'p.b_bu';
+        WHEN 'VCHR_BLD_KEY_C1'  THEN v_expr := 'p.b_vchr_id';
+        WHEN 'VOUCHER_ID'       THEN v_expr := 'p.b_vchr_id';
+        WHEN 'VOUCHER_STYLE'    THEN v_expr := '''REG''';
+        WHEN 'INVOICE_ID'       THEN v_expr := 'p.b_inv_id';
+        WHEN 'INVOICE_DT'       THEN v_expr := 'TRUNC(SYSDATE)';
+        WHEN 'ACCOUNTING_DT'    THEN v_expr := 'TRUNC(SYSDATE)';
+        WHEN 'ENTERED_DT'       THEN v_expr := 'TRUNC(SYSDATE)';
+        WHEN 'VENDOR_SETID'     THEN v_expr := '''SHARE''';
+        WHEN 'VENDOR_ID'        THEN v_expr := 'p.b_vendor';
+        WHEN 'VNDR_LOC'         THEN v_expr := '''0000000001''';
+        WHEN 'ADDRESS_SEQ_NUM'  THEN v_expr := '1';
+        WHEN 'ORIGIN'           THEN v_expr := '''ONL''';
+        WHEN 'OPRID'            THEN v_expr := '''VP1''';
+        WHEN 'GROSS_AMT'        THEN v_expr := 'p.b_amt';
+        WHEN 'MERCHANDISE_AMT'  THEN v_expr := 'p.b_amt';
+        WHEN 'UNIT_PRICE'       THEN v_expr := 'p.b_amt';
+        WHEN 'QTY_VCHR'         THEN v_expr := '1';
+        WHEN 'VOUCHER_LINE_NUM' THEN v_expr := '1';
+        WHEN 'DISTRIB_LINE_NUM' THEN v_expr := '1';
+        WHEN 'ACCOUNT'          THEN v_expr := '''600000''';
+        WHEN 'PYMNT_TERMS_CD'   THEN v_expr := '''NET30''';
+        WHEN 'TXN_CURRENCY_CD'  THEN v_expr := '''USD''';
+        WHEN 'BASE_CURRENCY'    THEN v_expr := '''USD''';
+        WHEN 'VCHR_SRC'         THEN v_expr := '''ONL''';
+        WHEN 'DESCR'            THEN v_expr := 'p.b_descr30';
+        WHEN 'DESCR254_MIXED'   THEN v_expr := 'p.b_descr254';
+        ELSE
+          IF r_col.DATA_TYPE IN ('VARCHAR2', 'CHAR', 'NVARCHAR2', 'NCHAR') THEN
+            v_expr := ''' ''';
+          ELSIF r_col.DATA_TYPE IN ('NUMBER', 'FLOAT', 'BINARY_FLOAT', 'BINARY_DOUBLE') THEN
+            v_expr := '0';
+          ELSIF r_col.DATA_TYPE = 'DATE' THEN
+            v_expr := 'TRUNC(SYSDATE)';
+          ELSIF r_col.DATA_TYPE LIKE 'TIMESTAMP%' THEN
+            v_expr := 'SYSTIMESTAMP';
+          ELSE
+            v_expr := ''' ''';
+          END IF;
+      END CASE;
+
+      v_cols := v_cols || v_sep || r_col.COLUMN_NAME;
+      v_vals := v_vals || v_sep || v_expr;
+      v_sep  := ', ';
+    END LOOP;
+
+    IF v_cols IS NULL OR DBMS_LOB.GETLENGTH(v_cols) = 0 THEN
+      RAISE_APPLICATION_ERROR(-20005, 'Table SYSADM.' || p_table_name || ' not found in ALL_TAB_COLUMNS.');
+    END IF;
+
+    v_sql := 'INSERT INTO SYSADM.' || p_table_name || ' (' || v_cols || ') ' ||
+             'SELECT ' || v_vals || ' FROM (' ||
+             'SELECT :1 AS b_bu, :2 AS b_vchr_id, :3 AS b_inv_id, :4 AS b_vendor, ' ||
+             ':5 AS b_amt, :6 AS b_descr30, :7 AS b_descr254 FROM DUAL) p';
+
+    EXECUTE IMMEDIATE v_sql
+      USING p_bu, p_vchr_id, p_inv_id, p_vendor, p_amt, p_descr30, p_descr254;
+  END stage_voucher_table;
+
   FUNCTION create_ap_voucher (
     p_vendor_id        IN VARCHAR2,
     p_invoice_num      IN VARCHAR2,
@@ -325,6 +378,9 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     v_is_neg    BOOLEAN := FALSE;
     v_amt       NUMBER;
     v_vendor    VARCHAR2(10) := LPAD(SUBSTR(NVL(TRIM(p_vendor_id), 'USA0000002'), 1, 10), 10, '0');
+    v_inv_id    VARCHAR2(30);
+    v_descr30   VARCHAR2(30);
+    v_descr254  VARCHAR2(254);
     v_result    VARCHAR2(1000);
   BEGIN
     IF v_amt_str LIKE '(%)' THEN
@@ -351,42 +407,15 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
       v_vendor := SUBSTR(TRIM(p_vendor_id), 1, 10);
     END IF;
 
+    v_inv_id   := SUBSTR(TRIM(p_invoice_num), 1, 30);
+    v_descr30  := SUBSTR(NVL(p_description, 'Staged line'), 1, 30);
+    v_descr254 := SUBSTR(NVL(p_description, 'Staged via Gemini Enterprise PeopleSoft MCP Tool create_ap_voucher'), 1, 254);
+
     -- Stage voucher header, line, and distribution in PeopleSoft Voucher Build staging tables
-    -- using explicit column lists backed by the PeopleSoft NOT NULL column defaults (' ', 0, SYSDATE)
-    -- configured in the setup block above.
-    INSERT INTO SYSADM.PS_VCHR_HDR_STG (
-      BUSINESS_UNIT, VCHR_BLD_KEY_C1, VCHR_BLD_KEY_C2, VCHR_BLD_KEY_N1, VCHR_BLD_KEY_N2,
-      VOUCHER_ID, VOUCHER_STYLE, INVOICE_ID, INVOICE_DT, VENDOR_SETID,
-      VENDOR_ID, VNDR_LOC, ADDRESS_SEQ_NUM, ORIGIN, OPRID,
-      ACCOUNTING_DT, GROSS_AMT, PYMNT_TERMS_CD, ENTERED_DT, TXN_CURRENCY_CD,
-      VCHR_SRC, DESCR254_MIXED
-    ) VALUES (
-      v_bu, v_vchr_id, ' ', 0, 0,
-      v_vchr_id, 'REG', SUBSTR(TRIM(p_invoice_num), 1, 30), TRUNC(SYSDATE), 'SHARE',
-      v_vendor, '0000000001', 1, 'ONL', 'VP1',
-      TRUNC(SYSDATE), v_amt, 'NET30', TRUNC(SYSDATE), 'USD',
-      'ONL', SUBSTR(NVL(p_description, 'Staged via Gemini Enterprise PeopleSoft MCP Tool create_ap_voucher'), 1, 254)
-    );
-
-    INSERT INTO SYSADM.PS_VCHR_LINE_STG (
-      BUSINESS_UNIT, VCHR_BLD_KEY_C1, VCHR_BLD_KEY_C2, VCHR_BLD_KEY_N1, VCHR_BLD_KEY_N2,
-      VOUCHER_ID, VOUCHER_LINE_NUM, MERCHANDISE_AMT, QTY_VCHR, UNIT_PRICE,
-      BUSINESS_UNIT_GL, DESCR, DESCR254_MIXED
-    ) VALUES (
-      v_bu, v_vchr_id, ' ', 0, 0,
-      v_vchr_id, 1, v_amt, 1, v_amt,
-      v_bu, SUBSTR(NVL(p_description, 'Staged line'), 1, 30), SUBSTR(NVL(p_description, 'Staged line'), 1, 254)
-    );
-
-    INSERT INTO SYSADM.PS_VCHR_DIST_STG (
-      BUSINESS_UNIT, VCHR_BLD_KEY_C1, VCHR_BLD_KEY_C2, VCHR_BLD_KEY_N1, VCHR_BLD_KEY_N2,
-      VOUCHER_ID, VOUCHER_LINE_NUM, DISTRIB_LINE_NUM, BUSINESS_UNIT_GL, ACCOUNT,
-      MERCHANDISE_AMT, QTY_VCHR
-    ) VALUES (
-      v_bu, v_vchr_id, ' ', 0, 0,
-      v_vchr_id, 1, 1, v_bu, '600000',
-      v_amt, 1
-    );
+    -- by populating all required NOT NULL columns without modifying delivered table DDL.
+    stage_voucher_table('PS_VCHR_HDR_STG',  v_bu, v_vchr_id, v_inv_id, v_vendor, v_amt, v_descr30, v_descr254);
+    stage_voucher_table('PS_VCHR_LINE_STG', v_bu, v_vchr_id, v_inv_id, v_vendor, v_amt, v_descr30, v_descr254);
+    stage_voucher_table('PS_VCHR_DIST_STG', v_bu, v_vchr_id, v_inv_id, v_vendor, v_amt, v_descr30, v_descr254);
 
     COMMIT;
 

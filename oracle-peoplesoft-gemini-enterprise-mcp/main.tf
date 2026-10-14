@@ -48,7 +48,7 @@ EOF
         --region="${var.region}" \
         --project="${var.project_id}" \
         --filter="displayName=PSFT_Master" \
-        --format="value(name)" 2>/dev/null | awk -F'/' '{print $NF}' || true)
+        --format="value(name)" 2>/dev/null | awk -F'/' '{print $NF}' | head -n 1 || true)
 
       AGENT_ARGS="PSFT_Master"
       if [ -n "$EXISTING_ID" ]; then
