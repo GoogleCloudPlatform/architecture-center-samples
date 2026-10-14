@@ -176,7 +176,8 @@ if [ -n "${LOG_STREAM}" ]; then
       echo "Error: Invalid stream name '-n ${LOG_STREAM}' for target=agent. Use 'stdout' or 'stderr'."
       exit 1
     fi
-    LOG_NAME_SUFFIX="aiplatform.googleapis.com%2Freasoning_engine_${LOG_STREAM}"
+    LOG_NAME_SUFFIX="aiplatform.googleapis.com%2Freasoning_engine"
+    FILTER+=" AND jsonPayload.stream=\"${LOG_STREAM}\""
   else
     if [ "${LOG_STREAM}" != "stdout" ] && [ "${LOG_STREAM}" != "stderr" ] && [ "${LOG_STREAM}" != "requests" ]; then
       echo "Error: Invalid stream name '-n ${LOG_STREAM}' for target=cloudrun. Use 'stdout', 'stderr', or 'requests'."

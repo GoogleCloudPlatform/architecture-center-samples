@@ -94,7 +94,7 @@ fi
 
 # 2. Store Oracle PeopleSoft DB credentials in Secret Manager (if provided via .env or environment)
 SECRET_ENV_BINDINGS=""
-if [ -n "${PSFT_DB_CONNECTION_STRING:-}" ] && [ "${PSFT_DB_CONNECTION_STRING}" != "psft-db.example.com:1521/EP92U055" ] && [ -n "${PSFT_DB_PASSWORD:-}" ]; then
+if [ -n "${PSFT_DB_CONNECTION_STRING:-}" ] && [ "${PSFT_DB_CONNECTION_STRING}" != "psft-db.example.com:1521/EP92U055" ] && [ -n "${PSFT_DB_PASSWORD:-}" ] && [ "${PSFT_DB_PASSWORD}" != "REPLACE_WITH_PSFT_AI_PASSWORD" ]; then
     upsert_secret_from_value "${MCP_TOOLBOX_SERVICE_NAME}-db-conn" "$PSFT_DB_CONNECTION_STRING"
     upsert_secret_from_value "${MCP_TOOLBOX_SERVICE_NAME}-db-user" "${PSFT_DB_USER:-PSFT_AI}"
     upsert_secret_from_value "${MCP_TOOLBOX_SERVICE_NAME}-db-pass" "$PSFT_DB_PASSWORD"
