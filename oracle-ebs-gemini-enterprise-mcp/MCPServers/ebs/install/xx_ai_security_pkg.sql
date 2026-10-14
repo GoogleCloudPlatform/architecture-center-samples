@@ -24,7 +24,7 @@
 DECLARE
     l_n NUMBER;
 BEGIN
-    SELECT COUNT(*) INTO l_n FROM all_tables WHERE owner = 'APPS' AND table_name = 'XX_AI_USER_CONTEXT';
+    SELECT COUNT(*) INTO l_n FROM all_tables WHERE owner = 'APPS' AND table_name = 'XX_AI_USER_CONTEXT' FETCH FIRST 1 ROW ONLY;
     IF l_n = 0 THEN
         EXECUTE IMMEDIATE 'CREATE TABLE apps.xx_ai_user_context (
             email                  VARCHAR2(240) NOT NULL,
@@ -35,7 +35,7 @@ BEGIN
             CONSTRAINT xx_ai_user_context_pk PRIMARY KEY (email))';
     END IF;
 
-    SELECT COUNT(*) INTO l_n FROM all_tables WHERE owner = 'APPS' AND table_name = 'XX_GGLTOOLBOX$MCP_LOG';
+    SELECT COUNT(*) INTO l_n FROM all_tables WHERE owner = 'APPS' AND table_name = 'XX_GGLTOOLBOX$MCP_LOG' FETCH FIRST 1 ROW ONLY;
     IF l_n = 0 THEN
         EXECUTE IMMEDIATE 'CREATE TABLE apps.xx_ggltoolbox$mcp_log (
             log_date     DATE DEFAULT SYSDATE NOT NULL,
@@ -138,7 +138,8 @@ begin
     select email_address
       into l_email_address
       from apps.fnd_user
-     where user_id = apps.fnd_global.user_id;
+     where user_id = apps.fnd_global.user_id
+     FETCH FIRST 1 ROW ONLY;
   exception
     when OTHERS then return null;
   end;
@@ -211,7 +212,8 @@ BEGIN
         AND fa.application_id = apps.fnd_global.resp_appl_id
         AND fsg.security_group_id = apps.fnd_global.security_group_id -- Join for Security Group
         AND hou.organization_id(+) = apps.fnd_global.org_id
-        AND fr.application_id = 800;
+        -- AND fr.application_id = 800
+        FETCH FIRST 1 ROW ONLY;
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
             mcp_toolbox_log('Session not initialised: '||l_email_address,'DEBUG',l_email_address,l_program_unit);
@@ -224,6 +226,7 @@ BEGIN
     THEN
         mcp_toolbox_log('Session already initialised: '||l_email_address,'DEBUG',l_email_address,l_program_unit);
         l_return_value := '{"STATUS":"SUCCESS","MESSAGE":'||l_return_value||'}';
+        COMMIT;
         return l_return_value;
     END IF;
     
@@ -445,6 +448,7 @@ BEGIN
         AND fa.application_id = apps.fnd_global.resp_appl_id
         AND fsg.security_group_id = apps.fnd_global.security_group_id -- Join for Security Group
         AND hou.organization_id(+) = apps.fnd_global.org_id
+        FETCH FIRST 1 ROW ONLY
     ;
     
     l_return_value := '{"STATUS":"SUCCESS","MESSAGE":'||l_return_value||'}';
@@ -481,7 +485,9 @@ BEGIN
      WHERE (u.start_date IS NULL OR u.start_date <= SYSDATE)
        AND (u.end_date IS NULL OR u.end_date > SYSDATE)
        AND ( (INSTR(l_id, '@') > 0 AND UPPER(u.email_address) = UPPER(l_id))
-          OR (INSTR(l_id, '@') = 0 AND u.user_name = UPPER(l_id)) );
+          OR (INSTR(l_id, '@') = 0 AND u.user_name = UPPER(l_id)) )
+    FETCH FIRST 1 ROW ONLY
+          ;
     IF l_count = 0 THEN
         RAISE_APPLICATION_ERROR(-20011, 'No active EBS user for ' || SUBSTR(l_id, 1, 100));
     ELSIF l_count > 1 THEN
@@ -547,14 +553,15 @@ PROCEDURE init_user_session(p_user_id IN VARCHAR2) IS
 BEGIN
     g_email := NULL;                           -- no identity unless this call succeeds (fail closed)
     l_user := resolve_user(p_user_id);         -- also refuses unknown and ambiguous users
-    SELECT u.email_address INTO l_email FROM apps.fnd_user u WHERE u.user_name = l_user;
+    SELECT u.email_address INTO l_email FROM apps.fnd_user u WHERE u.user_name = l_user FETCH FIRST 1 ROW ONLY;
     IF l_email IS NULL THEN
         RAISE_APPLICATION_ERROR(-20013, 'EBS user ' || l_user || ' has no e-mail address, so its context cannot be set');
     END IF;
     -- the context the user chose with ebs_change_my_context, if any
     BEGIN
         SELECT operating_unit, responsibility, application_short_name INTO l_ou, l_resp, l_app
-          FROM apps.xx_ai_user_context WHERE email = UPPER(l_email);
+          FROM apps.xx_ai_user_context WHERE email = UPPER(l_email)
+          FETCH FIRST 1 ROW ONLY;
         l_saved := TRUE;
     EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
     END;
@@ -644,7 +651,8 @@ BEGIN
                                              AND fr.application_id = apps.fnd_global.resp_appl_id
       LEFT JOIN apps.fnd_application fa ON fa.application_id = apps.fnd_global.resp_appl_id
       LEFT JOIN apps.hr_operating_units hou ON hou.organization_id = apps.fnd_global.org_id
-      LEFT JOIN apps.xx_ai_user_context c ON c.email = UPPER(g_email);
+      LEFT JOIN apps.xx_ai_user_context c ON c.email = UPPER(g_email)
+      FETCH FIRST 1 ROW ONLY;
     RETURN l_json;
 EXCEPTION
     WHEN OTHERS THEN
