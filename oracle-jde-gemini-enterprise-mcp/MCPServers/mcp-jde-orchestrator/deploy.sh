@@ -50,8 +50,11 @@ upsert_secret_from_value() {
             printf "%s" "$secret_val" | gcloud secrets versions add "$secret_name" --data-file=- --project="$PROJECT_ID" >/dev/null
         fi
     else
-        echo "Creating Secret Manager secret '$secret_name'..."
-        gcloud secrets create "$secret_name" --project="$PROJECT_ID" >/dev/null
+        echo "Creating Secret Manager secret '$secret_name' in region '$REGION'..."
+        gcloud secrets create "$secret_name" \
+            --replication-policy="user-managed" \
+            --locations="$REGION" \
+            --project="$PROJECT_ID" >/dev/null
         printf "%s" "$secret_val" | gcloud secrets versions add "$secret_name" --data-file=- --project="$PROJECT_ID" >/dev/null
     fi
 }
