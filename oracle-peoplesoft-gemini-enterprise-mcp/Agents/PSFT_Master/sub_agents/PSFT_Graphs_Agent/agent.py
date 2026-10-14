@@ -273,7 +273,8 @@ COLOR_PALETTES = {
 
 
 def _get_colors(palette_name: str, count: int) -> list[str]:
-    palette = COLOR_PALETTES.get((palette_name or "corporate").lower(), COLOR_PALETTES["corporate"])
+    name = str(palette_name or "corporate").lower()
+    palette = COLOR_PALETTES.get(name, COLOR_PALETTES["corporate"])
     return [palette[i % len(palette)] for i in range(count)]
 
 

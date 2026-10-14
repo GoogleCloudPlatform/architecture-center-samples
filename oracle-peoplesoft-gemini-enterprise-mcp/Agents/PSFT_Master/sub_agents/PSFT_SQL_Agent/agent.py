@@ -297,6 +297,12 @@ def get_session_user_context(tool_context: ToolContext) -> dict:
     """Return the cached non-sensitive user context set by the master agent. 
     Always use this tool to retrieve user identity for session initialization, 
     rather than trying to parse it from raw tokens or other sources."""
+    if tool_context is None:
+        return _error_envelope(
+            error_code="INVALID_CONTEXT",
+            message="ToolContext is missing.",
+            retryable=False,
+        )
     state = getattr(tool_context, "state", None)
     trace_id = _safe_state_get(state, _TRACE_ID_STATE_KEY)
     if not trace_id:

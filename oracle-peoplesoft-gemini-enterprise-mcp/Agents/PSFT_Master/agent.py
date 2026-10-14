@@ -262,6 +262,8 @@ def _safe_state_get(state, key: str):
 
 def _extract_existing_session_user_id(tool_context: ToolContext):
     """Best-effort lookup of the authenticated end-user from the ADK context."""
+    if tool_context is None:
+        return None
     direct_user_id = getattr(tool_context, "user_id", None)
     if isinstance(direct_user_id, str) and "@" in direct_user_id.strip():
         return direct_user_id.strip()
@@ -286,6 +288,13 @@ def get_session_user_context(tool_context: ToolContext):
     Returns the cached, non-sensitive user context from ADK session state.
     Use this before delegating to sub-agents so USER_ID is consistently forwarded.
     """
+    if tool_context is None:
+        return {
+            "ok": False,
+            "source_agent": "PSFT_Master",
+            "error_code": "INVALID_CONTEXT",
+            "message": "ToolContext is missing.",
+        }
     with _telemetry_span("get_session_user_context", {"component": "session_cache"}):
         state = getattr(tool_context, "state", None)
         cached_context = _safe_state_get(state, _USER_CONTEXT_STATE_KEY)
@@ -340,6 +349,13 @@ def get_user_id(tool_context: ToolContext):
     Note:        The exact structure of the session context and how the user ID is stored may depend on the authentication implementation and the environment in which the agent is running. 
     This tool assumes that the session context includes a "user_id" property that can be accessed to identify the caller.
     """
+    if tool_context is None:
+        return {
+            "ok": False,
+            "source_agent": "PSFT_Master",
+            "error_code": "INVALID_CONTEXT",
+            "message": "ToolContext is missing.",
+        }
     # Initialize or retrieve trace ID for request correlation
     state = getattr(tool_context, "state", None)
     trace_id = _safe_state_get(state, _TRACE_ID_STATE_KEY)
