@@ -51,7 +51,9 @@ export IMAGE_URL="${REGION}-docker.pkg.dev/${PROJECT_ID}/${AR_REPO_NAME}/${SERVI
 
 gcloud builds submit . \
     --tag "${IMAGE_URL}" \
-    --project "${PROJECT_ID}"
+    --project "${PROJECT_ID}" \
+    --region "${REGION}" \
+    --default-buckets-behavior=regional-user-owned-bucket
 ```
 
 ### 3. Store Oracle EBS Credentials & Tool Definitions in Secret Manager
@@ -79,9 +81,12 @@ gcloud secrets create "${SERVICE_NAME}-secret" \
     --data-file=tools.yaml \
     --project="${PROJECT_ID}"
 
-gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
-    --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
-    --role="roles/secretmanager.secretAccessor"
+for SECRET_ID in "${SERVICE_NAME}-db-conn" "${SERVICE_NAME}-db-user" "${SERVICE_NAME}-db-pass" "${SERVICE_NAME}-secret"; do
+    gcloud secrets add-iam-policy-binding "${SECRET_ID}" \
+        --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
+        --role="roles/secretmanager.secretAccessor" \
+        --project="${PROJECT_ID}"
+done
 ```
 
 ### 4. Deploy to Cloud Run
@@ -96,7 +101,9 @@ gcloud run deploy "${SERVICE_NAME}" \
     --args="--config=/app/tools.yaml","--address=0.0.0.0","--port=8080","--log-level=DEBUG" \
     --network "${VPC_NAME}" \
     --subnet "${SUBNET_NAME}" \
-    --allow-unauthenticated
+    --vpc-egress "${VPC_EGRESS:-private-ranges-only}" \
+    --ingress "${INGRESS:-all}" \
+    --no-allow-unauthenticated
 ```
 
 ### 5. Retrieve the MCP Server URL
