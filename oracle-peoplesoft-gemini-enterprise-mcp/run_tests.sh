@@ -19,6 +19,10 @@ if [ -f ".env" ]; then
     set +a
 fi
 
+if [ -f ".venv/bin/activate" ]; then
+    source .venv/bin/activate
+fi
+
 if ! command -v python3 >/dev/null 2>&1; then
     echo -e "${RED}Error: python3 is not installed in the active environment.${NC}"
     exit 1

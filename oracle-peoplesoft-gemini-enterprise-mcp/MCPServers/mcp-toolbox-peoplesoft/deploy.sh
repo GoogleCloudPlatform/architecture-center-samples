@@ -94,13 +94,13 @@ fi
 
 # 2. Store Oracle PeopleSoft DB credentials in Secret Manager (if provided via .env or environment)
 SECRET_ENV_BINDINGS=""
-if [ -n "${PSFT_DB_CONNECTION_STRING:-}" ] && [ "${PSFT_DB_CONNECTION_STRING}" != "psft-db.example.com:1521/EP92U055" ]; then
+if [ -n "${PSFT_DB_CONNECTION_STRING:-}" ] && [ "${PSFT_DB_CONNECTION_STRING}" != "psft-db.example.com:1521/EP92U055" ] && [ -n "${PSFT_DB_PASSWORD:-}" ]; then
     upsert_secret_from_value "${MCP_TOOLBOX_SERVICE_NAME}-db-conn" "$PSFT_DB_CONNECTION_STRING"
     upsert_secret_from_value "${MCP_TOOLBOX_SERVICE_NAME}-db-user" "${PSFT_DB_USER:-PSFT_AI}"
-    upsert_secret_from_value "${MCP_TOOLBOX_SERVICE_NAME}-db-pass" "${PSFT_DB_PASSWORD:-PSFT_AI}"
+    upsert_secret_from_value "${MCP_TOOLBOX_SERVICE_NAME}-db-pass" "$PSFT_DB_PASSWORD"
     SECRET_ENV_BINDINGS=",PSFT_DB_CONNECTION_STRING=${MCP_TOOLBOX_SERVICE_NAME}-db-conn:latest,PSFT_DB_USER=${MCP_TOOLBOX_SERVICE_NAME}-db-user:latest,PSFT_DB_PASSWORD=${MCP_TOOLBOX_SERVICE_NAME}-db-pass:latest"
 else
-    echo "Error: PSFT_DB_CONNECTION_STRING is empty or set to the default placeholder." >&2
+    echo "Error: PSFT_DB_CONNECTION_STRING or PSFT_DB_PASSWORD is empty or set to the default placeholder." >&2
     echo "Please configure your database credentials in .env before deploying." >&2
     exit 1
 fi
