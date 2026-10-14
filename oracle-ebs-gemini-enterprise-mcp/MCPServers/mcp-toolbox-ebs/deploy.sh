@@ -51,7 +51,6 @@ _emit_secret_data() {
 }
 
 _upsert_secret() {
-    set -o pipefail
     local secret_name="$1"
     local mode="$2"
     local payload="$3"
@@ -113,6 +112,8 @@ upsert_secret_from_file "$MCP_TOOLBOX_SECRET_NAME" "tools.yaml"
 ACTIVE_SECRETS=("$MCP_TOOLBOX_SECRET_NAME")
 if [ -n "$SECRET_ENV_BINDINGS" ]; then
     ACTIVE_SECRETS+=("${MCP_TOOLBOX_SERVICE_NAME}-db-conn" "${MCP_TOOLBOX_SERVICE_NAME}-db-user" "${MCP_TOOLBOX_SERVICE_NAME}-db-pass")
+else
+    echo "Notice: EBS_DB_CONNECTION_STRING is not configured or is set to the default placeholder. Database secrets will not be bound to the Cloud Run service."
 fi
 for SECRET_ID in "${ACTIVE_SECRETS[@]}"; do
     if ! gcloud secrets add-iam-policy-binding "$SECRET_ID" \
