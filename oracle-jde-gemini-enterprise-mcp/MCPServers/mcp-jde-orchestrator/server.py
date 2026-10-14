@@ -225,6 +225,12 @@ class JDEOrchestratorClient:
       self._client = httpx.AsyncClient(verify=self.ssl_verify, timeout=60.0)
     return self._client
 
+  async def close(self) -> None:
+    """Closes the underlying httpx.AsyncClient to prevent resource leaks."""
+    if self._client is not None and not self._client.is_closed:
+      await self._client.aclose()
+      self._client = None
+
   async def get_token(self, force_refresh: bool = False) -> str:
     """Acquires or returns cached AIS session token from /jderest/v2/tokenrequest using the configured AIS service account while propagating the mapped user identity."""
     ctx = get_active_jde_context()
@@ -471,7 +477,7 @@ def jde_query_work_order_control_tower(
   sql = f"""
       SELECT work_order_number,
              order_type,
-             branch_plant,
+             TRIM(branch_plant) AS branch_plant,
              parent_item_number,
              item_description,
              status_code,
@@ -486,7 +492,7 @@ def jde_query_work_order_control_tower(
              schedule_health,
              shortage_component_count
         FROM {JDE_SCHEMA}.VW_JDE_MFG_WORK_ORDERS
-       WHERE TRIM(branch_plant) = :bp
+       WHERE branch_plant = :bp
          AND status_code BETWEEN :st_from AND :st_to
          AND (:only_risk = 0 OR schedule_health IN ('LATE', 'AT_RISK_SHORTAGE'))
        ORDER BY requested_date_iso ASC, work_order_number ASC
@@ -494,7 +500,7 @@ def jde_query_work_order_control_tower(
   rows = execute_oracle_query(
       sql,
       {
-          "bp": branch_plant.strip(),
+          "bp": branch_plant.strip().upper().rjust(12),
           "st_from": status_from.strip(),
           "st_to": status_to.strip(),
           "only_risk": 1 if only_late_or_at_risk else 0,
@@ -521,7 +527,7 @@ def jde_check_work_order_material_shortages(
              operation_seq,
              component_item_number,
              component_description,
-             branch_plant,
+             TRIM(branch_plant) AS branch_plant,
              uom,
              qty_required,
              qty_issued,
@@ -534,7 +540,7 @@ def jde_check_work_order_material_shortages(
              next_open_po_number,
              next_po_promised_date_iso
         FROM {JDE_SCHEMA}.VW_JDE_MFG_PARTS_SHORTAGES
-       WHERE TRIM(branch_plant) = :bp
+       WHERE branch_plant = :bp
          AND (:wo_num IS NULL OR work_order_number = :wo_num)
          AND (:only_short = 0 OR qty_shortage > 0)
        ORDER BY qty_shortage DESC, work_order_number ASC, operation_seq ASC
@@ -542,7 +548,7 @@ def jde_check_work_order_material_shortages(
   rows = execute_oracle_query(
       sql,
       {
-          "bp": branch_plant.strip(),
+          "bp": branch_plant.strip().upper().rjust(12),
           "wo_num": work_order_number,
           "only_short": 1 if only_shortages else 0,
       },
@@ -564,7 +570,7 @@ def jde_analyze_work_center_capacity_and_bottlenecks(
   sql = f"""
       SELECT work_center,
              work_center_description,
-             branch_plant,
+             TRIM(branch_plant) AS branch_plant,
              open_operations_count,
              scheduled_setup_hours,
              scheduled_machine_hours,
@@ -575,10 +581,10 @@ def jde_analyze_work_center_capacity_and_bottlenecks(
              utilization_pct,
              bottleneck_status
         FROM {JDE_SCHEMA}.VW_JDE_MFG_ROUTING_LOAD
-       WHERE TRIM(branch_plant) = :bp
+       WHERE branch_plant = :bp
        ORDER BY utilization_pct DESC
   """
-  rows = execute_oracle_query(sql, {"bp": branch_plant.strip()})
+  rows = execute_oracle_query(sql, {"bp": branch_plant.strip().upper().rjust(12)})
   return {
       "engine": "Oracle 19c SQL Analytics (VW_JDE_MFG_ROUTING_LOAD)",
       "branch_plant": branch_plant.strip(),
@@ -596,7 +602,7 @@ def jde_analyze_production_cost_variances(
       SELECT work_order_number,
              parent_item_number,
              item_description,
-             branch_plant,
+             TRIM(branch_plant) AS branch_plant,
              cost_type,
              cost_type_description,
              standard_cost_usd,
@@ -608,12 +614,12 @@ def jde_analyze_production_cost_variances(
              variance_pct,
              variance_severity
         FROM {JDE_SCHEMA}.VW_JDE_MFG_COST_VARIANCES
-       WHERE TRIM(branch_plant) = :bp
+       WHERE branch_plant = :bp
          AND (:wo_num IS NULL OR work_order_number = :wo_num)
        ORDER BY ABS(total_variance_usd) DESC
   """
   rows = execute_oracle_query(
-      sql, {"bp": branch_plant.strip(), "wo_num": work_order_number}
+      sql, {"bp": branch_plant.strip().upper().rjust(12), "wo_num": work_order_number}
   )
   return {
       "engine": "Oracle 19c SQL Analytics (VW_JDE_MFG_COST_VARIANCES)",
@@ -1160,15 +1166,24 @@ async def jde_generate_a2ui_exception_approval_card(
 # PART 3: STREAMABLE HTTP JSON-RPC 2.0 MCP SERVER (/mcp) FOR CLOUD RUN
 # ==============================================================================
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response
 import uvicorn
 import inspect
 
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+  yield
+  await jde_client.close()
+
+
 http_app = FastAPI(
     title="JDE-Hybrid-Orchestrator-SQL-MCP",
     version="1.2.0",
     description="Hybrid JD Edwards EnterpriseOne 9.2 MCP Server (JDE Orchestrator v3 REST + Oracle 19c SQL Analytics + Watchlist/DMAAI/Precedent + A2UI v0.9)",
+    lifespan=_lifespan,
 )
 
 TOOL_REGISTRY = {

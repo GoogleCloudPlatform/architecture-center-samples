@@ -96,9 +96,10 @@ def now_hhmmss() -> int:
 
 
 def next_number(cur, system_code: str) -> int:
+    sy_padded = system_code.strip().ljust(4)
     cur.execute(
-        "SELECT NNDOCO FROM PRODDTA.F0002 WHERE TRIM(NNSY) = :sy FOR UPDATE",
-        {"sy": system_code.strip()},
+        "SELECT NNDOCO FROM PRODDTA.F0002 WHERE NNSY = :sy FOR UPDATE",
+        {"sy": sy_padded},
     )
     row = cur.fetchone()
     if not row:
@@ -145,17 +146,20 @@ def resolve_jde_user(cur, payload: Optional[Dict[str, Any]] = None, headers: Opt
 
 def check_f00950_security(cur, jde_user: str, app_id: str, branch_plant: str) -> None:
     try:
+        u_padded = jde_user.strip().upper().ljust(15)
+        app_padded = app_id.strip().upper().ljust(10)
+        mcu_padded = branch_plant.strip().upper().rjust(12)
         cur.execute(
             """
             SELECT FSOKAY, FSATN, FSCHNG
             FROM PRODCTL.F00950
-            WHERE TRIM(FSUSER) IN (:u, '*PUBLIC')
-              AND TRIM(FSOBNM) = :app
-              AND TRIM(FSMCU)  = :mcu
-            ORDER BY CASE WHEN TRIM(FSUSER) = :u THEN 0 ELSE 1 END
+            WHERE FSUSER IN (:u, '*PUBLIC        ')
+              AND FSOBNM = :app
+              AND FSMCU  = :mcu
+            ORDER BY CASE WHEN FSUSER = :u THEN 0 ELSE 1 END
             FETCH FIRST 1 ROWS ONLY
             """,
-            {"u": jde_user.strip().upper(), "app": app_id.strip().upper(), "mcu": branch_plant.strip().upper()},
+            {"u": u_padded, "app": app_padded, "mcu": mcu_padded},
         )
         row = cur.fetchone()
         if not row or (row[0] != "Y" or row[1] != "Y"):

@@ -68,10 +68,10 @@ CREATE OR REPLACE VIEW PRODDTA.VW_JDE_MFG_WORK_ORDERS AS
 WITH inv_summary AS (
   SELECT
       LIITM AS short_item,
-      TRIM(LIMCU) AS branch_plant,
+      LIMCU AS branch_plant,
       SUM(NVL(LIPQOH, 0) - NVL(LIHCOM, 0) - NVL(LIPCOM, 0)) AS qty_available_net
   FROM PRODDTA.F41021
-  GROUP BY LIITM, TRIM(LIMCU)
+  GROUP BY LIITM, LIMCU
 ),
 shortage_details AS (
   SELECT
@@ -79,7 +79,7 @@ shortage_details AS (
       COUNT(*) AS shortage_count
   FROM PRODDTA.F3111 p
   LEFT JOIN inv_summary inv
-    ON inv.short_item = p.WMITM AND inv.branch_plant = TRIM(p.WMCMCU)
+    ON inv.short_item = p.WMITM AND inv.branch_plant = p.WMCMCU
   WHERE (NVL(p.WMUORG, 0) - NVL(p.WMTRQT, 0)) > 0
     AND (NVL(p.WMUORG, 0) - NVL(p.WMTRQT, 0)) > NVL(inv.qty_available_net, 0)
   GROUP BY p.WMDOCO
@@ -87,7 +87,7 @@ shortage_details AS (
 SELECT
     w.WADOCO AS work_order_number,
     TRIM(w.WADCTO) AS order_type,
-    TRIM(w.WAMCU) AS branch_plant,
+    w.WAMCU AS branch_plant,
     w.WAITM AS parent_short_item,
     TRIM(w.WALITM) AS parent_item_number,
     TRIM(w.WADSC1) AS item_description,
@@ -124,31 +124,31 @@ SELECT
     END AS schedule_health
 FROM PRODDTA.F4801 w
 LEFT JOIN shortage_details sd ON sd.WMDOCO = w.WADOCO
-WHERE TRIM(w.WADCTO) = 'WO';
+WHERE w.WADCTO = 'WO';
 
 -- 4. View 2: Work Order Material Shortages & Open PO Supply (F3111 + F41021 + F4311)
 CREATE OR REPLACE VIEW PRODDTA.VW_JDE_MFG_PARTS_SHORTAGES AS
 WITH inv_summary AS (
   SELECT
       LIITM AS short_item,
-      TRIM(LIMCU) AS branch_plant,
+      LIMCU AS branch_plant,
       ROUND(SUM(NVL(LIPQOH, 0)) / 10000, 2) AS qty_on_hand,
       ROUND(SUM(NVL(LIHCOM, 0) + NVL(LIPCOM, 0)) / 10000, 2) AS qty_committed,
       ROUND(SUM(NVL(LIPQOH, 0) - NVL(LIHCOM, 0) - NVL(LIPCOM, 0)) / 10000, 2) AS qty_available_net
   FROM PRODDTA.F41021
-  GROUP BY LIITM, TRIM(LIMCU)
+  GROUP BY LIITM, LIMCU
 ),
 po_next AS (
   SELECT
       PDITM AS short_item,
-      TRIM(PDMCU) AS branch_plant,
+      PDMCU AS branch_plant,
       MIN(PDDOCO) KEEP (DENSE_RANK FIRST ORDER BY PDPDDJ ASC) AS next_open_po_number,
       MIN(PDPDDJ) AS next_po_promised_julian
   FROM PRODDTA.F4311
-  WHERE TRIM(PDDCTO) = 'OP'
-    AND TRIM(PDLTTR) < '620'
+  WHERE PDDCTO = 'OP'
+    AND PDLTTR < '620'
     AND NVL(PDUORG, 0) > NVL(PDUREC, 0)
-  GROUP BY PDITM, TRIM(PDMCU)
+  GROUP BY PDITM, PDMCU
 )
 SELECT
     p.WMDOCO AS work_order_number,
@@ -156,7 +156,7 @@ SELECT
     ROUND(NVL(p.WMOPSQ, 1000) / 100, 1) AS operation_seq,
     TRIM(p.WMLITM) AS component_item_number,
     TRIM(p.WMDSC1) AS component_description,
-    TRIM(p.WMCMCU) AS branch_plant,
+    p.WMCMCU AS branch_plant,
     TRIM(p.WMUM) AS uom,
     ROUND(NVL(p.WMUORG, 0) / 10000, 2) AS qty_required,
     ROUND(NVL(p.WMTRQT, 0) / 10000, 2) AS qty_issued,
@@ -177,17 +177,17 @@ JOIN PRODDTA.F4801 w
   ON w.WADOCO = p.WMDOCO
 LEFT JOIN inv_summary inv
   ON inv.short_item = p.WMITM
- AND inv.branch_plant = TRIM(p.WMCMCU)
+ AND inv.branch_plant = p.WMCMCU
 LEFT JOIN po_next po
   ON po.short_item = p.WMITM
- AND po.branch_plant = TRIM(p.WMCMCU);
+ AND po.branch_plant = p.WMCMCU;
 
 -- 5. View 3: Work Center Capacity & Routing Bottlenecks (F3112 + F4801)
 CREATE OR REPLACE VIEW PRODDTA.VW_JDE_MFG_ROUTING_LOAD AS
 SELECT
     TRIM(r.WLMCU) AS work_center,
     MAX(TRIM(r.WLDSC1)) AS work_center_description,
-    TRIM(w.WAMCU) AS branch_plant,
+    w.WAMCU AS branch_plant,
     COUNT(DISTINCT r.WLDOCO || '-' || r.WLOPSQ) AS open_operations_count,
     ROUND(SUM(NVL(r.WLSETL, 0)) / 100, 2) AS scheduled_setup_hours,
     ROUND(SUM(NVL(r.WLRUNM, 0)) / 100, 2) AS scheduled_machine_hours,
@@ -206,8 +206,8 @@ SELECT
 FROM PRODDTA.F3112 r
 JOIN PRODDTA.F4801 w
   ON w.WADOCO = r.WLDOCO
-WHERE TRIM(w.WASRST) < '90'
-GROUP BY TRIM(r.WLMCU), TRIM(w.WAMCU);
+WHERE w.WASRST < '90'
+GROUP BY r.WLMCU, w.WAMCU;
 
 -- 6. View 4: Production Costing & Variance Analysis (F3102 + F4801)
 CREATE OR REPLACE VIEW PRODDTA.VW_JDE_MFG_COST_VARIANCES AS
@@ -215,7 +215,7 @@ SELECT
     c.IGDOCO AS work_order_number,
     TRIM(w.WALITM) AS parent_item_number,
     TRIM(w.WADSC1) AS item_description,
-    TRIM(c.IGMCU) AS branch_plant,
+    c.IGMCU AS branch_plant,
     TRIM(c.IGCOST) AS cost_type,
     CASE TRIM(c.IGCOST)
       WHEN 'A1' THEN 'A1 - Direct Material'
