@@ -1,0 +1,45 @@
+{
+  "module": "PeopleTools Security & Operator Definitions",
+  "description": "PeopleTools operator definitions (`PSOPRDEFN`) and role assignments (`PSROLEUSER`).",
+  "tables": [
+    {
+      "table_name": "SYSADM.PSOPRDEFN",
+      "business_name": "Operator Definition",
+      "description": "Stores PeopleSoft user IDs (`OPRID`), email addresses (`EMAILID`), and linked employee IDs (`EMPLID`).",
+      "columns": [
+        {
+          "name": "OPRID",
+          "description": "Operator ID (e.g., VP1)."
+        },
+        {
+          "name": "OPRDEFNDESC",
+          "description": "Operator full name (e.g., Kenneth Schumacher)."
+        },
+        {
+          "name": "EMPLID",
+          "description": "Linked Employee ID (e.g., KU0042)."
+        },
+        {
+          "name": "EMAILID",
+          "description": "Email address mapped to Gemini Enterprise OAuth user."
+        }
+      ]
+    },
+    {
+      "table_name": "SYSADM.PSROLEUSER",
+      "business_name": "Operator Role Assignments",
+      "description": "Maps PeopleSoft operators (`ROLEUSER`) to security roles (`ROLENAME`).",
+      "columns": [
+        {
+          "name": "ROLEUSER",
+          "description": "Operator ID."
+        },
+        {
+          "name": "ROLENAME",
+          "description": "Assigned PeopleTools security role."
+        }
+      ]
+    }
+  ],
+  "common_joins": []
+}
