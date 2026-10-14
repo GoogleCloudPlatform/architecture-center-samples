@@ -8,11 +8,15 @@ WHENEVER SQLERROR CONTINUE
 -- ============================================================================
 
 -- 1. Create or update PSFT_AI database integration user
-ACCEPT PSFT_AI_PASSWORD CHAR PROMPT 'Enter password for PSFT_AI: ' HIDE
+-- Pass the password as the first command-line argument for non-interactive CI/CD execution:
+--   sqlplus sys/<sys_password>@<psft_db_host>:1521/EP92U055 as sysdba @create_psft_ai.sql "<psft_ai_password>"
+DEFINE PSFT_AI_PASSWORD = "&1"
 
 -- Create user directly; ORA-01920 is ignored via WHENEVER SQLERROR CONTINUE
 CREATE USER PSFT_AI IDENTIFIED BY "&PSFT_AI_PASSWORD";
 ALTER USER PSFT_AI IDENTIFIED BY "&PSFT_AI_PASSWORD" ACCOUNT UNLOCK;
+UNDEFINE PSFT_AI_PASSWORD
+UNDEFINE 1
 
 GRANT CREATE SESSION TO PSFT_AI;
 

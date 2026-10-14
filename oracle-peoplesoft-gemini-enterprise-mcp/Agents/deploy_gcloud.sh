@@ -74,7 +74,7 @@ fi
 # make sure we have the env vars in place
 # check if .env exists, if not create it with default values
 if [ ! -f "$ENV_FILE" ]; then
-  cat <<EOL > "$ENV_FILE"
+  cat <<'EOL' > "$ENV_FILE"
 # Google Cloud project ID
 GOOGLE_CLOUD_PROJECT="your-project-id"
 # Google Cloud location

@@ -21,7 +21,7 @@ This directory contains the SQL and PL/SQL scripts required to configure the Ora
 Connect to the Oracle PeopleSoft database (`EP92U055`) as `SYSDBA` and run `create_psft_ai.sql`:
 
 ```bash
-sqlplus sys/<sys_password>@<psft_db_host>:1521/EP92U055 as sysdba @create_psft_ai.sql
+sqlplus sys/<sys_password>@<psft_db_host>:1521/EP92U055 as sysdba @create_psft_ai.sql "<psft_ai_password>"
 ```
 
 ### Step 2: Install Core PL/SQL Package and Audit Logging Table

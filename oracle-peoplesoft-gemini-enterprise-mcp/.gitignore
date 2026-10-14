@@ -218,6 +218,12 @@ experiments/*
 .adk
 *.pdf
 
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+
 # Auto-synced copies of utils/logging_config.py — refreshed by deploy_gcloud.sh
 MCPServers/mcp-oracle-peoplesoft/logging_config.py
 MCPServers/mcp-oracle-sql/logging_config.py
