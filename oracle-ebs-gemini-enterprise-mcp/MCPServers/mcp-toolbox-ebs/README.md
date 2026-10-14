@@ -109,13 +109,14 @@ gcloud run deploy "${SERVICE_NAME}" \
 
 ### 5. Retrieve & Verify the Authenticated MCP Server URL
 
-Since the service is deployed with `--no-allow-unauthenticated`, include an OIDC ID token in the `Authorization` header (`Authorization: Bearer $(gcloud auth print-identity-token)`) when making requests:
+Since the service is deployed with `--no-allow-unauthenticated`, include an OIDC ID token scoped to the Cloud Run service URL (`--audiences="${SERVICE_URL}"`) in the `Authorization` header when making requests:
 
 ```bash
-export MCP_URL="$(gcloud run services describe ${SERVICE_NAME} --project ${PROJECT_ID} --region ${REGION} --format 'value(status.url)')/mcp"
+export SERVICE_URL="$(gcloud run services describe ${SERVICE_NAME} --project ${PROJECT_ID} --region ${REGION} --format 'value(status.url)')"
+export MCP_URL="${SERVICE_URL}/mcp"
 echo "${MCP_URL}"
 curl -s -X POST "${MCP_URL}" \
     -H "Content-Type: application/json" \
-    -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+    -H "Authorization: Bearer $(gcloud auth print-identity-token --audiences="${SERVICE_URL}")" \
     -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```

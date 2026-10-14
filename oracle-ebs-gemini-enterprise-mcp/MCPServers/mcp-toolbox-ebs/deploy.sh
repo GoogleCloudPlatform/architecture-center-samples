@@ -65,7 +65,7 @@ _upsert_secret() {
     fi
     if gcloud secrets describe "$secret_name" --project="$PROJECT_ID" >/dev/null 2>&1; then
         local tmp_secret
-        tmp_secret=$(mktemp) || return 1
+        tmp_secret=$(mktemp "${TMPDIR:-/tmp}/ebs-secret.XXXXXXXXXX") || return 1
         if gcloud secrets versions access latest --secret="$secret_name" --project="$PROJECT_ID" > "$tmp_secret" 2>/dev/null; then
             if _emit_secret_data "$mode" "$payload" | cmp -s - "$tmp_secret"; then
                 echo "Secret '$secret_name' is unchanged. Skipping new version."
