@@ -84,7 +84,7 @@ if [ -n "${JDE_DB_DSN:-}" ]; then
             --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
             --role="roles/secretmanager.secretAccessor" \
             --project="$PROJECT_ID" \
-            --quiet >/dev/null
+            --quiet >/dev/null 2>&1 || true
     done
     SECRET_ENV_ARGS=(--set-secrets="$SECRET_BINDINGS")
 fi
