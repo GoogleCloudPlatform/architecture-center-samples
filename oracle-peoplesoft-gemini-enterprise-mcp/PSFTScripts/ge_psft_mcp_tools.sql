@@ -269,6 +269,7 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     RETURN v_result;
   EXCEPTION
     WHEN NO_DATA_FOUND THEN
+      ROLLBACK;
       v_result := 'SUCCESS: Reservation ID ' || p_reservation_id || ' already cleared or not found.';
       write_log('INFO', 'delete_reservation', 'VP1', v_result);
       RETURN v_result;
