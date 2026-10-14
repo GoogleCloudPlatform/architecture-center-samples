@@ -57,10 +57,10 @@ gcloud builds submit . \
 ### 3. Store Oracle PeopleSoft Credentials & Tool Definitions in Secret Manager
 
 ```bash
-printf "%s" "${PSFT_DB_CONNECTION_STRING}" | gcloud secrets create "${SERVICE_NAME}-db-conn" --data-file=- --project="${PROJECT_ID}"
-printf "%s" "${PSFT_DB_USER}"              | gcloud secrets create "${SERVICE_NAME}-db-user" --data-file=- --project="${PROJECT_ID}"
-printf "%s" "${PSFT_DB_PASSWORD}"          | gcloud secrets create "${SERVICE_NAME}-db-pass" --data-file=- --project="${PROJECT_ID}"
-gcloud secrets create "${SERVICE_NAME}-secret" --data-file=tools.yaml --project="${PROJECT_ID}"
+printf "%s" "${PSFT_DB_CONNECTION_STRING}" | gcloud secrets create "${SERVICE_NAME}-db-conn" --replication-policy="user-managed" --locations="${REGION}" --data-file=- --project="${PROJECT_ID}"
+printf "%s" "${PSFT_DB_USER}"              | gcloud secrets create "${SERVICE_NAME}-db-user" --replication-policy="user-managed" --locations="${REGION}" --data-file=- --project="${PROJECT_ID}"
+printf "%s" "${PSFT_DB_PASSWORD}"          | gcloud secrets create "${SERVICE_NAME}-db-pass" --replication-policy="user-managed" --locations="${REGION}" --data-file=- --project="${PROJECT_ID}"
+gcloud secrets create "${SERVICE_NAME}-secret" --replication-policy="user-managed" --locations="${REGION}" --data-file=tools.yaml --project="${PROJECT_ID}"
 
 gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
     --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
