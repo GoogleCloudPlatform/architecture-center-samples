@@ -7,3 +7,4 @@ mcp
 opentelemetry-instrumentation-google-genai
 uvicorn
 matplotlib
+pyyaml

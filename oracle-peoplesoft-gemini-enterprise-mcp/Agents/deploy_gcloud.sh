@@ -105,6 +105,12 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cp "${SCRIPT_DIR}/../utils/logging_config.py" "${AGENT_DIR}/logging_config.py"
 
+# Dynamically substitute PROJECT_ID placeholder in agent_engine_config.json if present
+if [ -f "${AGENT_DIR}/agent_engine_config.json" ] && [ -n "${GOOGLE_CLOUD_PROJECT:-}" ]; then
+  sed -i.bak "s/PROJECT_ID/${GOOGLE_CLOUD_PROJECT}/g" "${AGENT_DIR}/agent_engine_config.json"
+  rm -f "${AGENT_DIR}/agent_engine_config.json.bak"
+fi
+
 printf "Deploying '%s' from '%s'...\n" "${AGENT_NAME}" "${AGENT_DIR}"
 
 adk deploy agent_engine \
