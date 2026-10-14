@@ -341,7 +341,7 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     IF TRIM(p_invoice_num) IS NULL THEN
       RAISE_APPLICATION_ERROR(-20003, 'Invoice number cannot be empty.');
     END IF;
-    IF v_amt IS NULL OR v_amt <= 0 THEN
+    IF v_amt IS NULL OR v_amt = 0 THEN
       RAISE_APPLICATION_ERROR(-20002, 'Invalid voucher amount: ' || p_amount);
     END IF;
     -- Generate unique concurrency-safe 8-char VOUCHER_ID ('GV' + 6 digits) via Oracle Sequence

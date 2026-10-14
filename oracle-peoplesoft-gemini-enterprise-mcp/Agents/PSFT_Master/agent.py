@@ -410,9 +410,10 @@ def get_user_id(tool_context: ToolContext):
             if access_token:
                 with _telemetry_span("tokeninfo_lookup", {"endpoint": "googleapis_tokeninfo", "trace_id": trace_id}):
                     try:
+                        param_name = "id_token" if access_token.startswith("eyJ") else "access_token"
                         response = httpx.post(
                             "https://oauth2.googleapis.com/tokeninfo",
-                            data={"access_token": access_token},
+                            data={param_name: access_token},
                             timeout=10.0,
                         )
                         response.raise_for_status()

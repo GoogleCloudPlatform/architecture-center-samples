@@ -55,9 +55,9 @@ if [ "$1" != "list" ] && [ -z "$2" ]; then
 fi
 
 # Uncomment this line to print the curl commands instead of executing them (for debugging)
-#CURL = "echo curl" 
+#CURL="echo curl"
 # Use the actual curl command to execute the API calls
-CURL="curl" 
+CURL="curl"
 
 # --- Configuration ---
 # Replace the following placeholder values with your actual configuration details.
