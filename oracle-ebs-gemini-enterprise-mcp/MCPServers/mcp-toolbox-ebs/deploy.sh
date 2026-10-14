@@ -44,6 +44,10 @@ _emit_secret_data() {
     local mode="$1"
     local payload="$2"
     if [ "$mode" = "file" ]; then
+        if [ ! -r "$payload" ]; then
+            echo "Error: Secret source file '$payload' not found or not readable." >&2
+            return 1
+        fi
         cat -- "$payload"
     else
         printf "%s" "$payload"
@@ -51,6 +55,7 @@ _emit_secret_data() {
 }
 
 _upsert_secret() {
+    set -o pipefail
     local secret_name="$1"
     local mode="$2"
     local payload="$3"
@@ -159,6 +164,13 @@ if [ "$BUILD_AR_IMAGE" = "true" ] && [ -f Dockerfile ]; then
     )
     if [ -n "$CLOUD_BUILD_SERVICE_ACCOUNT" ]; then
         BUILD_ARGS+=(--service-account "$CLOUD_BUILD_SERVICE_ACCOUNT")
+    fi
+    # Ensure sensitive .env file is not uploaded to Cloud Build
+    if [ ! -f .gcloudignore ]; then
+        echo ".env" > .gcloudignore
+        echo ".gcloudignore" >> .gcloudignore
+    elif ! grep -q "^\.env$" .gcloudignore; then
+        echo ".env" >> .gcloudignore
     fi
     gcloud builds submit . "${BUILD_ARGS[@]}"
 else
