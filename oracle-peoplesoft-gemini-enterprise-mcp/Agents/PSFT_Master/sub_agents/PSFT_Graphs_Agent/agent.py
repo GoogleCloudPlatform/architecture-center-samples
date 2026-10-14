@@ -607,18 +607,33 @@ def render_line_chart(
             if len(y_col_list) == 1:
                 ax.fill_between(range(len(x_vals)), y_vals, color=colors[i], alpha=0.10, zorder=2)
 
-            for idx, val in enumerate(y_vals):
-                ax.annotate(
-                    _format_value(val, is_curr),
-                    xy=(idx, val),
-                    xytext=(0, 8),
-                    textcoords="offset points",
-                    ha="center",
-                    va="bottom",
-                    fontsize=9.0,
-                    fontweight="bold",
-                    color="#0F172A",
-                )
+            if len(x_vals) <= 15:
+                for idx, val in enumerate(y_vals):
+                    ax.annotate(
+                        _format_value(val, is_curr),
+                        xy=(idx, val),
+                        xytext=(0, 8),
+                        textcoords="offset points",
+                        ha="center",
+                        va="bottom",
+                        fontsize=9.0,
+                        fontweight="bold",
+                        color="#0F172A",
+                    )
+            elif y_vals:
+                min_idx, max_idx = y_vals.index(min(y_vals)), y_vals.index(max(y_vals))
+                for idx in {0, len(y_vals) - 1, min_idx, max_idx}:
+                    ax.annotate(
+                        _format_value(y_vals[idx], is_curr),
+                        xy=(idx, y_vals[idx]),
+                        xytext=(0, 8),
+                        textcoords="offset points",
+                        ha="center",
+                        va="bottom",
+                        fontsize=9.0,
+                        fontweight="bold",
+                        color="#0F172A",
+                    )
 
         max_v = max(all_vals) if all_vals else 10.0
         min_v = min(all_vals) if all_vals else 0.0

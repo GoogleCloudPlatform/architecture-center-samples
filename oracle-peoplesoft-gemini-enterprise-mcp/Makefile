@@ -62,23 +62,53 @@ set_config_mcp_servers: ## Set configuration for MCP Server (DB connection, VPC,
 	@cp MCPServers/mcp-toolbox-peoplesoft/tools.yaml.example MCPServers/mcp-toolbox-peoplesoft/tools.yaml
 	@touch infra.auto.tfvars
 	@if ! grep -q "psft_db_connection_string" infra.auto.tfvars; then \
-		read -p "Enter Oracle PeopleSoft DB Connection String (e.g., 10.117.0.20:1521/EP92U055): " db_conn; \
-		echo "psft_db_connection_string = \"$$db_conn\"" >> infra.auto.tfvars; \
+		if [ -n "$$PSFT_DB_CONNECTION_STRING" ]; then \
+			echo "psft_db_connection_string = \"$$PSFT_DB_CONNECTION_STRING\"" >> infra.auto.tfvars; \
+		elif [ -t 0 ]; then \
+			read -p "Enter Oracle PeopleSoft DB Connection String (e.g., 10.117.0.20:1521/EP92U055): " db_conn; \
+			echo "psft_db_connection_string = \"$$db_conn\"" >> infra.auto.tfvars; \
+		else \
+			echo "Error: Non-interactive shell detected and psft_db_connection_string is missing in infra.auto.tfvars." >&2; exit 1; \
+		fi; \
 	fi
 	@if ! grep -q "psft_db_user" infra.auto.tfvars; then \
-		read -p "Enter Oracle PeopleSoft DB User [PSFT_AI]: " db_user; \
-		db_user=$${db_user:-PSFT_AI}; \
-		echo "psft_db_user = \"$$db_user\"" >> infra.auto.tfvars; \
+		if [ -n "$$PSFT_DB_USER" ]; then \
+			echo "psft_db_user = \"$$PSFT_DB_USER\"" >> infra.auto.tfvars; \
+		elif [ -t 0 ]; then \
+			read -p "Enter Oracle PeopleSoft DB User [PSFT_AI]: " db_user; \
+			db_user=$${db_user:-PSFT_AI}; \
+			echo "psft_db_user = \"$$db_user\"" >> infra.auto.tfvars; \
+		else \
+			echo "psft_db_user = \"PSFT_AI\"" >> infra.auto.tfvars; \
+		fi; \
 	fi
 	@if ! grep -q "psft_db_password" infra.auto.tfvars; then \
-		read -s -p "Enter Oracle PeopleSoft DB Password: " db_pass; echo ""; \
-		echo "psft_db_password = \"$$db_pass\"" >> infra.auto.tfvars; \
+		if [ -n "$$PSFT_DB_PASSWORD" ]; then \
+			echo "psft_db_password = \"$$PSFT_DB_PASSWORD\"" >> infra.auto.tfvars; \
+		elif [ -t 0 ]; then \
+			read -s -p "Enter Oracle PeopleSoft DB Password: " db_pass; echo ""; \
+			echo "psft_db_password = \"$$db_pass\"" >> infra.auto.tfvars; \
+		else \
+			echo "Error: Non-interactive shell detected and psft_db_password is missing in infra.auto.tfvars." >&2; exit 1; \
+		fi; \
 	fi
 	@if ! grep -q "vpc_name" infra.auto.tfvars; then \
-		read -p "Enter VPC Name: " vpc; echo "vpc_name = \"$$vpc\"" >> infra.auto.tfvars; \
+		if [ -n "$$VPC_NAME" ]; then \
+			echo "vpc_name = \"$$VPC_NAME\"" >> infra.auto.tfvars; \
+		elif [ -t 0 ]; then \
+			read -p "Enter VPC Name: " vpc; echo "vpc_name = \"$$vpc\"" >> infra.auto.tfvars; \
+		else \
+			echo "Error: Non-interactive shell detected and vpc_name is missing in infra.auto.tfvars." >&2; exit 1; \
+		fi; \
 	fi
 	@if ! grep -q "subnet_name" infra.auto.tfvars; then \
-		read -p "Enter Subnet Name: " sub; echo "subnet_name = \"$$sub\"" >> infra.auto.tfvars; \
+		if [ -n "$$SUBNET_NAME" ]; then \
+			echo "subnet_name = \"$$SUBNET_NAME\"" >> infra.auto.tfvars; \
+		elif [ -t 0 ]; then \
+			read -p "Enter Subnet Name: " sub; echo "subnet_name = \"$$sub\"" >> infra.auto.tfvars; \
+		else \
+			echo "Error: Non-interactive shell detected and subnet_name is missing in infra.auto.tfvars." >&2; exit 1; \
+		fi; \
 	fi
 	@echo "Configuration saved to infra.auto.tfvars (tools.yaml remains parameterized with Secret Manager env vars)."
 

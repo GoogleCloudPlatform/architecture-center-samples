@@ -401,9 +401,9 @@ def get_user_id(tool_context: ToolContext):
         if user_token:
             with _telemetry_span("tokeninfo_lookup", {"endpoint": "googleapis_tokeninfo", "trace_id": trace_id}):
                 try:
-                    response = httpx.get(
+                    response = httpx.post(
                         "https://oauth2.googleapis.com/tokeninfo",
-                        params={"access_token": user_token},
+                        data={"access_token": user_token},
                         timeout=10.0,
                     )
                     response.raise_for_status()

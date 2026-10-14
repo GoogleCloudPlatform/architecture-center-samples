@@ -156,6 +156,7 @@ case "$COMMAND" in
   list)
     echo "▶️  Executing LIST"
     tmp_file=$(mktemp)
+    trap 'rm -f "$tmp_file"' EXIT
     $CURL -X GET \
       -H "Authorization: Bearer $(gcloud auth print-access-token)" \
       -H "Content-Type: application/json" \
