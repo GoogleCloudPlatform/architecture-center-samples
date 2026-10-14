@@ -82,7 +82,8 @@ def _error_envelope(*, error_code: str, message: str, retryable: bool, data=None
 def _parse_numeric(val) -> float:
     """Parse a numeric value, stripping currency symbols, commas, or percent signs if present."""
     if isinstance(val, (int, float)):
-        return 0.0 if (math.isnan(val) or math.isinf(val)) else float(val)
+        fval = float(val)
+        return 0.0 if (math.isnan(fval) or math.isinf(fval)) else fval
     if val is None:
         return 0.0
     s = str(val).strip()
@@ -185,8 +186,10 @@ def _sort_data(rows: list[dict], sort_column: str, sort_order: str) -> list[dict
 
     def _key(row: dict):
         val = row.get(sort_column, "")
-        if isinstance(val, (int, float)) and not (math.isnan(val) or math.isinf(val)):
-            return (0, float(val))
+        if isinstance(val, (int, float)):
+            fval = float(val)
+            if not (math.isnan(fval) or math.isinf(fval)):
+                return (0, fval)
         s = re.sub(r"[$,%\s]", "", str(val or "").strip())
         if s and s.lower() not in ("none", "null", "n/a", "-", "nan", "inf", "-inf"):
             try:
