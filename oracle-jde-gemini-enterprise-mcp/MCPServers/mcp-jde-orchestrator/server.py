@@ -60,6 +60,8 @@ JDE_AIS_SSL_VERIFY = os.environ.get("JDE_AIS_SSL_VERIFY", "true").lower() not in
 _db_pool: Optional[oracledb.ConnectionPool] = None
 _pool_lock = threading.Lock()
 
+oracledb.defaults.fetch_lobs = False
+
 
 def get_db_pool() -> oracledb.ConnectionPool:
   """Returns a lazy-initialized Oracle DB connection pool."""
@@ -830,7 +832,10 @@ async def jde_execute_custom_orchestration(
     inputs_json: str = "{}",
 ) -> Dict[str, Any]:
   """[JDE Orchestrator] Invokes any custom JD Edwards EnterpriseOne Orchestration by name via /jderest/v3/orchestrator/{orchestration_name}."""
-  inputs = json.loads(inputs_json) if inputs_json else {}
+  try:
+    inputs = json.loads(inputs_json) if inputs_json else {}
+  except json.JSONDecodeError as exc:
+    return {"status": "ERROR", "message": f"Invalid inputs_json: {exc}"}
   return await jde_client.invoke_orchestration(orchestration_name, inputs)
 
 

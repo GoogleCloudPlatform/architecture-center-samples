@@ -294,8 +294,8 @@ CREATE OR REPLACE PACKAGE BODY PRODDTA.GE_JDE_MCP_TOOLS AS
           INTO v_user
           FROM SY920.F0092 u
           JOIN PRODDTA.F01151 e ON e.EAAN8 = u.ULAN8
-         WHERE UPPER(TRIM(e.EAEMAL)) = UPPER(TRIM(p_email_or_user))
-            OR UPPER(TRIM(u.ULUSER)) = UPPER(TRIM(p_email_or_user))
+         WHERE UPPER(e.EAEMAL) = UPPER(TRIM(p_email_or_user))
+            OR u.ULUSER = RPAD(UPPER(TRIM(p_email_or_user)), 10)
          FETCH FIRST 1 ROWS ONLY;
         RETURN v_user;
       EXCEPTION

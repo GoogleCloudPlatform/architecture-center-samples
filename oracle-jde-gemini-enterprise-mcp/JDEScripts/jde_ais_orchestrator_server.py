@@ -431,7 +431,10 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
     if orch_name == "ORCH_CreateDiscreteWorkOrder":
         bp = str(payload.get("BranchPlant", "M30")).strip().rjust(12)
         item_str = str(payload.get("ItemNumber") or payload.get("ParentItem") or "AS-5000-SERVO").strip()
-        qty_ea = float(payload.get("OrderQuantity") or payload.get("QuantityOrdered") or 10)
+        try:
+            qty_ea = float(payload.get("OrderQuantity") or payload.get("QuantityOrdered") or 10)
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Invalid OrderQuantity")
         qty_scaled = int(round(qty_ea * 10000))
         req_julian = iso_to_julian(payload.get("RequestedDate"))
         start_julian = iso_to_julian(payload.get("StartDate"))
@@ -684,10 +687,20 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
         }
 
     elif orch_name == "ORCH_IssueMaterialToWorkOrder":
-        wo_num = int(payload.get("WorkOrderNumber"))
+        try:
+            wo_num = int(payload.get("WorkOrderNumber") or 0)
+            if not wo_num:
+                raise ValueError()
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Invalid or missing WorkOrderNumber")
         bp = str(payload.get("BranchPlant", "M30")).strip()
-        comp_str = str(payload.get("ComponentItem")).strip()
-        issue_qty = float(payload.get("IssueQuantity") or payload.get("QuantityIssued") or 0)
+        comp_str = str(payload.get("ComponentItem") or "").strip()
+        if not comp_str:
+            raise HTTPException(status_code=400, detail="Missing ComponentItem")
+        try:
+            issue_qty = float(payload.get("IssueQuantity") or payload.get("QuantityIssued") or 0)
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Invalid IssueQuantity")
         issue_scaled = int(round(issue_qty * 10000))
         from_loc = str(payload.get("FromLocation") or payload.get("Location") or "RM-B01").strip().ljust(20)
         lot_n = str(payload.get("LotSerial", "")).strip().ljust(30)
@@ -836,12 +849,17 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
         }
 
     elif orch_name == "ORCH_RecordRoutingHours":
-        wo_num = int(payload.get("WorkOrderNumber"))
-        op_seq_user = float(payload.get("OperationSequence", 10))
-        op_seq_db = int(round(op_seq_user * 100)) if op_seq_user < 100 else int(op_seq_user)
-        labor_hrs = float(payload.get("ActualLaborHours", 0))
-        mach_hrs = float(payload.get("ActualMachineHours", 0))
-        comp_qty = float(payload.get("CompletedQuantity", 0))
+        try:
+            wo_num = int(payload.get("WorkOrderNumber") or 0)
+            if not wo_num:
+                raise ValueError()
+            op_seq_user = float(payload.get("OperationSequence", 10))
+            op_seq_db = int(round(op_seq_user * 100)) if op_seq_user < 100 else int(op_seq_user)
+            labor_hrs = float(payload.get("ActualLaborHours", 0))
+            mach_hrs = float(payload.get("ActualMachineHours", 0))
+            comp_qty = float(payload.get("CompletedQuantity", 0))
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Invalid numeric input in ORCH_RecordRoutingHours payload")
 
         with pool.acquire() as conn:
             with conn.cursor() as cur:
@@ -897,10 +915,15 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
         }
 
     elif orch_name == "ORCH_CompleteWorkOrder":
-        wo_num = int(payload.get("WorkOrderNumber"))
+        try:
+            wo_num = int(payload.get("WorkOrderNumber") or 0)
+            if not wo_num:
+                raise ValueError()
+            comp_qty = float(payload.get("CompletedQuantity") or payload.get("QuantityCompleted") or 0)
+            scrap_qty = float(payload.get("ScrappedQuantity") or payload.get("QuantityScrapped") or 0)
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Invalid numeric input in ORCH_CompleteWorkOrder payload")
         bp = str(payload.get("BranchPlant", "M30")).strip()
-        comp_qty = float(payload.get("CompletedQuantity") or payload.get("QuantityCompleted") or 0)
-        scrap_qty = float(payload.get("ScrappedQuantity") or payload.get("QuantityScrapped") or 0)
         to_loc = str(payload.get("ToLocation", "FG-A01")).strip().ljust(20)
         new_status = str(payload.get("NewStatusCode", "90")).strip()[:2]
 
@@ -1052,7 +1075,12 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
         }
 
     elif orch_name == "ORCH_ExpediteShortagePO":
-        po_num = int(payload.get("PurchaseOrderNumber"))
+        try:
+            po_num = int(payload.get("PurchaseOrderNumber") or 0)
+            if not po_num:
+                raise ValueError()
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Invalid or missing PurchaseOrderNumber")
         promised_iso = str(payload.get("PromisedDeliveryDate", "2026-10-10"))
         promised_j = iso_to_julian(promised_iso)
 
@@ -1138,7 +1166,10 @@ def execute_orchestration(orch_name: str, payload: dict, request: Request):
         }
 
     elif orch_name == "ORCH_ResolveDMAAIException":
-        dmaai_num = int(payload.get("DMAAITableNumber", 3120))
+        try:
+            dmaai_num = int(payload.get("DMAAITableNumber", 3120))
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Invalid DMAAITableNumber")
         co_code = str(payload.get("CompanyCode", "00030")).strip()
         doc_type = str(payload.get("DocumentType", "IH")).strip().upper()
         gl_class = str(payload.get("GLClassCode", "IN30")).strip().upper()
