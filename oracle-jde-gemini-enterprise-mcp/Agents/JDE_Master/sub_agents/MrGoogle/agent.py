@@ -17,10 +17,6 @@ os.environ.setdefault('GOOGLE_CLOUD_LOCATION', 'us-central1')
 _BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 _DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
 
-logging.basicConfig(
-    level=logging.DEBUG if _DEBUG else logging.INFO,
-    format="MrGoogle: [%(levelname)s] %(name)s: %(message)s",
-)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG if _DEBUG else logging.INFO)
 

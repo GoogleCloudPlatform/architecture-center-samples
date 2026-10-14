@@ -1211,10 +1211,10 @@ async def health():
 
 @http_app.post("/mcp")
 async def mcp_jsonrpc(request: Request):
-  # Capture X-User-Email or X-Goog-Authenticated-User-Email if sent by ADK agent / proxy
+  # Prioritize cryptographically verified X-Goog-Authenticated-User-Email header
   hdr_email = (
-      request.headers.get("x-user-email")
-      or request.headers.get("x-goog-authenticated-user-email")
+      request.headers.get("x-goog-authenticated-user-email")
+      or request.headers.get("x-user-email")
       or request.headers.get("x-user-id")
   )
   if hdr_email:

@@ -267,6 +267,11 @@ CREATE OR REPLACE PACKAGE BODY PRODDTA.GE_JDE_MCP_TOOLS AS
     write_log('SUCCESS', 'jde_initialize_context', v_user || ' (' || v_email || ')',
               v_result);
     RETURN v_result;
+  EXCEPTION
+    WHEN OTHERS THEN
+      ROLLBACK;
+      write_log('ERROR', 'jde_initialize_context', p_email_or_user, 'Unexpected error: ' || SQLERRM);
+      RETURN '{"STATUS":"ERROR","MESSAGE":"Unexpected error: ' || SQLERRM || '"}';
   END jde_initialize_context;
 
   FUNCTION get_active_jde_user (

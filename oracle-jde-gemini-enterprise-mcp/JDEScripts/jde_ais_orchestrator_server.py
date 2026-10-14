@@ -152,6 +152,7 @@ def check_f00950_security(cur, jde_user: str, app_id: str, branch_plant: str) ->
             WHERE TRIM(FSUSER) IN (:u, '*PUBLIC')
               AND TRIM(FSOBNM) = :app
               AND TRIM(FSMCU)  = :mcu
+            ORDER BY CASE WHEN TRIM(FSUSER) = :u THEN 0 ELSE 1 END
             FETCH FIRST 1 ROWS ONLY
             """,
             {"u": jde_user.strip().upper(), "app": app_id.strip().upper(), "mcu": branch_plant.strip().upper()},
