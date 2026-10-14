@@ -59,6 +59,10 @@ _upsert_secret() {
     local secret_name="$1"
     local mode="$2"
     local payload="$3"
+    if [ "$mode" = "file" ] && [ ! -r "$payload" ]; then
+        echo "Error: Secret source file '$payload' not found or not readable." >&2
+        return 1
+    fi
     if gcloud secrets describe "$secret_name" --project="$PROJECT_ID" >/dev/null 2>&1; then
         local tmp_secret
         tmp_secret=$(mktemp) || return 1
