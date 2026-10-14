@@ -63,7 +63,7 @@ _upsert_secret() {
         local current_val=""
         if current_val=$(gcloud secrets versions access latest --secret="$secret_name" --project="$PROJECT_ID" 2>/dev/null); then
             local new_val
-            new_val=$(_emit_secret_data "$mode" "$payload")
+            new_val=$(_emit_secret_data "$mode" "$payload") || return 1
             if [ "$current_val" = "$new_val" ]; then
                 echo "Secret '$secret_name' is unchanged. Skipping new version."
                 return 0
@@ -167,10 +167,9 @@ if [ "$BUILD_AR_IMAGE" = "true" ] && [ -f Dockerfile ]; then
     fi
     # Ensure sensitive .env file is not uploaded to Cloud Build
     if [ ! -f .gcloudignore ]; then
-        echo ".env" > .gcloudignore
-        echo ".gcloudignore" >> .gcloudignore
-    elif ! grep -q "^\.env$" .gcloudignore; then
-        echo ".env" >> .gcloudignore
+        printf "%s\n" ".env" ".gcloudignore" > .gcloudignore
+    elif ! grep -Fxq ".env" .gcloudignore; then
+        printf "\n%s\n" ".env" >> .gcloudignore
     fi
     gcloud builds submit . "${BUILD_ARGS[@]}"
 else
