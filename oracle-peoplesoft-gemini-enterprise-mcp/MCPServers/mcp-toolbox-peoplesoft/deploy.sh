@@ -17,6 +17,9 @@ AR_REPO_NAME="${AR_REPO_NAME:-peoplesoft-mcp-repo}"
 BUILD_AR_IMAGE="${BUILD_AR_IMAGE:-true}"
 BASE_TOOLBOX_IMAGE="us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:latest"
 MCP_TOOLBOX_SECRET_NAME="${SECRET_NAME:-${MCP_TOOLBOX_SERVICE_NAME}-secret}"
+INGRESS="${INGRESS:-all}"
+VPC_EGRESS="${VPC_EGRESS:-private-ranges-only}"
+CLOUD_BUILD_SERVICE_ACCOUNT="${CLOUD_BUILD_SERVICE_ACCOUNT:-}"
 
 # Make sure required variables are set
 REQUIRED_VARS=(PROJECT_ID REGION SERVICE_ACCOUNT_EMAIL VPC_NAME SUBNET_NAME)
@@ -134,12 +137,19 @@ if [ "$BUILD_AR_IMAGE" = "true" ] && [ -f Dockerfile ]; then
     fi
 
     MCP_TOOLBOX_IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${AR_REPO_NAME}/${MCP_TOOLBOX_SERVICE_NAME}:latest"
-    echo "Building and publishing pre-configured PeopleSoft MCP image to Artifact Registry:"
+    echo "Building and publishing pre-configured PeopleSoft MCP image to Artifact Registry in region '$REGION':"
     echo "  $MCP_TOOLBOX_IMAGE"
-    gcloud builds submit . \
-        --tag "$MCP_TOOLBOX_IMAGE" \
-        --project "$PROJECT_ID" \
+    BUILD_ARGS=(
+        --tag "$MCP_TOOLBOX_IMAGE"
+        --project "$PROJECT_ID"
+        --region "$REGION"
+        --default-buckets-behavior=regional-user-owned-bucket
         --quiet
+    )
+    if [ -n "$CLOUD_BUILD_SERVICE_ACCOUNT" ]; then
+        BUILD_ARGS+=(--service-account "$CLOUD_BUILD_SERVICE_ACCOUNT")
+    fi
+    gcloud builds submit . "${BUILD_ARGS[@]}"
 else
     MCP_TOOLBOX_IMAGE="${IMAGE_URL:-$BASE_TOOLBOX_IMAGE}"
     echo "Using base Toolbox container image: $MCP_TOOLBOX_IMAGE"
@@ -156,6 +166,8 @@ gcloud run deploy "$MCP_TOOLBOX_SERVICE_NAME" \
     --args="--config=/app/tools.yaml","--address=0.0.0.0","--port=8080","--log-level=DEBUG" \
     --network "$VPC_NAME" \
     --subnet "$SUBNET_NAME" \
+    --vpc-egress "$VPC_EGRESS" \
+    --ingress "$INGRESS" \
     --no-allow-unauthenticated
 
 SERVICE_URL=$(gcloud run services describe "$MCP_TOOLBOX_SERVICE_NAME" --project "$PROJECT_ID" --region "$REGION" --format 'value(status.url)')
