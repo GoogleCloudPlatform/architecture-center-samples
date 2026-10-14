@@ -88,10 +88,7 @@ def _parse_numeric(val) -> float:
     if not s or s.lower() in ("none", "null", "n/a", "-"):
         return 0.0
     s = re.sub(r"[$,%\s]", "", s)
-    try:
-        return float(s)
-    except ValueError:
-        return 0.0
+    return float(s)
 
 
 def _detect_is_currency(title: str, col_name: str, raw_rows: list[dict]) -> bool:
