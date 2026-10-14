@@ -63,16 +63,10 @@ _upsert_secret() {
         return 1
     fi
     if gcloud secrets describe "$secret_name" --project="$PROJECT_ID" >/dev/null 2>&1; then
-        local tmp_secret
-        tmp_secret=$(mktemp "${TMPDIR:-/tmp}/ebs-secret.XXXXXXXXXX") || return 1
-        if gcloud secrets versions access latest --secret="$secret_name" --project="$PROJECT_ID" > "$tmp_secret" 2>/dev/null; then
-            if _emit_secret_data "$mode" "$payload" | cmp -s - "$tmp_secret"; then
-                echo "Secret '$secret_name' is unchanged. Skipping new version."
-                rm -f "$tmp_secret"
-                return 0
-            fi
+        if gcloud secrets versions access latest --secret="$secret_name" --project="$PROJECT_ID" 2>/dev/null | cmp -s - <(_emit_secret_data "$mode" "$payload"); then
+            echo "Secret '$secret_name' is unchanged. Skipping new version."
+            return 0
         fi
-        rm -f "$tmp_secret"
         echo "Updating existing Secret Manager secret '$secret_name'..."
         _emit_secret_data "$mode" "$payload" | gcloud secrets versions add "$secret_name" --data-file=- --project="$PROJECT_ID" >/dev/null
     else
@@ -176,8 +170,8 @@ if [ "$BUILD_AR_IMAGE" = "true" ] && [ -f Dockerfile ]; then
         else
             printf "%s\n" ".git" ".gcloudignore" > .gcloudignore
         fi
-        printf "\n%s\n" ".env" >> .gcloudignore
-    elif ! grep -Fxq ".env" .gcloudignore; then
+    fi
+    if ! grep -Fxq ".env" .gcloudignore; then
         printf "\n%s\n" ".env" >> .gcloudignore
     fi
     gcloud builds submit . "${BUILD_ARGS[@]}"
