@@ -68,7 +68,7 @@ Run the automated deployment script to:
 1. Create the `peoplesoft-mcp-repo` Docker repository in your project's **Artifact Registry**
 2. Build and push the pre-configured `mcp-toolbox-peoplesoft` container image (`Dockerfile` + 20 parameterized `tools.yaml` tools)
 3. Store your Oracle PeopleSoft credentials in **Secret Manager**
-4. Deploy `mcp-toolbox-peoplesoft` to **Cloud Run** with Direct VPC Egress
+4. Deploy `mcp-toolbox-peoplesoft` to **Cloud Run** with Direct VPC Egress and IAM authentication (`--no-allow-unauthenticated`)
 
 ```bash
 ./deploy.sh

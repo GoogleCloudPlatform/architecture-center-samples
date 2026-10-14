@@ -57,10 +57,26 @@ gcloud builds submit . \
 ### 3. Store Oracle PeopleSoft Credentials & Tool Definitions in Secret Manager
 
 ```bash
-printf "%s" "${PSFT_DB_CONNECTION_STRING}" | gcloud secrets create "${SERVICE_NAME}-db-conn" --replication-policy="user-managed" --locations="${REGION}" --data-file=- --project="${PROJECT_ID}"
-printf "%s" "${PSFT_DB_USER}"              | gcloud secrets create "${SERVICE_NAME}-db-user" --replication-policy="user-managed" --locations="${REGION}" --data-file=- --project="${PROJECT_ID}"
-printf "%s" "${PSFT_DB_PASSWORD}"          | gcloud secrets create "${SERVICE_NAME}-db-pass" --replication-policy="user-managed" --locations="${REGION}" --data-file=- --project="${PROJECT_ID}"
-gcloud secrets create "${SERVICE_NAME}-secret" --replication-policy="user-managed" --locations="${REGION}" --data-file=tools.yaml --project="${PROJECT_ID}"
+printf "%s" "${PSFT_DB_CONNECTION_STRING}" | gcloud secrets create "${SERVICE_NAME}-db-conn" \
+    --replication-policy="user-managed" \
+    --locations="${REGION}" \
+    --data-file=- \
+    --project="${PROJECT_ID}"
+printf "%s" "${PSFT_DB_USER}"              | gcloud secrets create "${SERVICE_NAME}-db-user" \
+    --replication-policy="user-managed" \
+    --locations="${REGION}" \
+    --data-file=- \
+    --project="${PROJECT_ID}"
+printf "%s" "${PSFT_DB_PASSWORD}"          | gcloud secrets create "${SERVICE_NAME}-db-pass" \
+    --replication-policy="user-managed" \
+    --locations="${REGION}" \
+    --data-file=- \
+    --project="${PROJECT_ID}"
+gcloud secrets create "${SERVICE_NAME}-secret" \
+    --replication-policy="user-managed" \
+    --locations="${REGION}" \
+    --data-file=tools.yaml \
+    --project="${PROJECT_ID}"
 
 gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
     --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
@@ -79,7 +95,7 @@ gcloud run deploy "${SERVICE_NAME}" \
     --args="--config=/app/tools.yaml","--address=0.0.0.0","--port=8080","--log-level=DEBUG" \
     --network "${VPC_NAME}" \
     --subnet "${SUBNET_NAME}" \
-    --allow-unauthenticated
+    --no-allow-unauthenticated
 ```
 
 ### 5. Retrieve the MCP Server URL

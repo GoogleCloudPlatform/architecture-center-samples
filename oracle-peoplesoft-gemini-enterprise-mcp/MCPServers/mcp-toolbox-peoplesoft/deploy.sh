@@ -148,7 +148,7 @@ gcloud run deploy "$MCP_TOOLBOX_SERVICE_NAME" \
     --args="--config=/app/tools.yaml","--address=0.0.0.0","--port=8080","--log-level=DEBUG" \
     --network "$VPC_NAME" \
     --subnet "$SUBNET_NAME" \
-    --allow-unauthenticated
+    --no-allow-unauthenticated
 
 SERVICE_URL=$(gcloud run services describe "$MCP_TOOLBOX_SERVICE_NAME" --project "$PROJECT_ID" --region "$REGION" --format 'value(status.url)')
 echo "========================================================================"

@@ -299,9 +299,8 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     END IF;
 
     -- Stage voucher header, line, and distribution in PeopleSoft Voucher Build staging tables
-    -- (PS_VCHR_HDR_STG, PS_VCHR_LINE_STG, PS_VCHR_DIST_STG) using %ROWTYPE template initialization
-    -- so all PeopleSoft NOT NULL fields are populated cleanly for AP_VCHRBLD
-    SELECT * INTO v_hdr FROM SYSADM.PS_VCHR_HDR_STG WHERE ROWNUM = 1;
+    -- (PS_VCHR_HDR_STG, PS_VCHR_LINE_STG, PS_VCHR_DIST_STG) by populating %ROWTYPE record fields directly
+    -- so staging succeeds even when the staging tables are empty after AP_VCHRBLD runs.
     v_hdr.BUSINESS_UNIT   := v_bu;
     v_hdr.VCHR_BLD_KEY_C1 := v_vchr_id;
     v_hdr.VCHR_BLD_KEY_C2 := ' ';
@@ -326,7 +325,6 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     v_hdr.DESCR254_MIXED  := SUBSTR(NVL(p_description, 'Staged via Gemini Enterprise PeopleSoft MCP Tool create_ap_voucher'), 1, 254);
     INSERT INTO SYSADM.PS_VCHR_HDR_STG VALUES v_hdr;
 
-    SELECT * INTO v_line FROM SYSADM.PS_VCHR_LINE_STG WHERE ROWNUM = 1;
     v_line.BUSINESS_UNIT    := v_bu;
     v_line.VCHR_BLD_KEY_C1  := v_vchr_id;
     v_line.VCHR_BLD_KEY_C2  := ' ';
@@ -342,7 +340,6 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     v_line.DESCR254_MIXED   := SUBSTR(NVL(p_description, 'Staged line'), 1, 254);
     INSERT INTO SYSADM.PS_VCHR_LINE_STG VALUES v_line;
 
-    SELECT * INTO v_dist FROM SYSADM.PS_VCHR_DIST_STG WHERE ROWNUM = 1;
     v_dist.BUSINESS_UNIT    := v_bu;
     v_dist.VCHR_BLD_KEY_C1  := v_vchr_id;
     v_dist.VCHR_BLD_KEY_C2  := ' ';

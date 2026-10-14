@@ -127,8 +127,22 @@ def _format_value(val: float, is_currency: bool = False) -> str:
         return f"{val:,.2f}"
 
 
-def _parse_data(data: str) -> list[dict]:
+def _parse_data(data) -> list[dict]:
     """Parse a JSON or CSV string into a list of row dicts, raising ValueError on bad input."""
+    if isinstance(data, list):
+        if all(isinstance(r, dict) for r in data):
+            return data
+        raise ValueError("JSON input must be a list of dictionaries/objects.")
+    if isinstance(data, dict):
+        for k in ("rows", "data", "items", "results"):
+            if isinstance(data.get(k), list) and data[k]:
+                if not all(isinstance(r, dict) for r in data[k]):
+                    raise ValueError("JSON input must be a list of dictionaries/objects.")
+                return data[k]
+        return [data]
+    if not isinstance(data, str):
+        raise ValueError("data must be a string, list, or dict.")
+
     logger.debug(f"_parse_data called with data length={len(data)} chars, preview={data[:80]!r}")
     stripped = data.strip()
     if stripped.startswith("```"):

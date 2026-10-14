@@ -248,6 +248,16 @@ def _build_safe_user_context(user_id: str) -> dict:
     }
 
 
+def _safe_state_get(state, key: str):
+    """Best-effort getter for ADK state implementations."""
+    if state is None:
+        return None
+    try:
+        return state.get(key)
+    except Exception:
+        return None
+
+
 def _extract_existing_session_user_id(tool_context: ToolContext):
     """Best-effort lookup of the authenticated end-user from the ADK context."""
     direct_user_id = getattr(tool_context, "user_id", None)
@@ -262,10 +272,7 @@ def _extract_existing_session_user_id(tool_context: ToolContext):
     state = getattr(tool_context, "state", None)
     if state is not None:
         for key in ("user_id", "session_user_id", _USER_ID_STATE_KEY):
-            try:
-                value = state.get(key)
-            except Exception:
-                value = None
+            value = _safe_state_get(state, key)
             if isinstance(value, str) and "@" in value.strip():
                 return value.strip()
 
@@ -279,7 +286,7 @@ def get_session_user_context(tool_context: ToolContext):
     """
     with _telemetry_span("get_session_user_context", {"component": "session_cache"}):
         state = getattr(tool_context, "state", None)
-        cached_context = state.get(_USER_CONTEXT_STATE_KEY) if state is not None else None
+        cached_context = _safe_state_get(state, _USER_CONTEXT_STATE_KEY)
         if isinstance(cached_context, dict) and cached_context.get("user_id"):
             if _TELEMETRY_CLIENT:
                 _TELEMETRY_CLIENT.log_event("session_context_cache_hit", {
@@ -287,7 +294,7 @@ def get_session_user_context(tool_context: ToolContext):
                 })
             return cached_context
 
-        cached_user_id = state.get(_USER_ID_STATE_KEY) if state is not None else None
+        cached_user_id = _safe_state_get(state, _USER_ID_STATE_KEY)
         if cached_user_id:
             if _TELEMETRY_CLIENT:
                 _TELEMETRY_CLIENT.log_event("session_context_fallback_hit", {
@@ -312,7 +319,9 @@ def get_session_user_context(tool_context: ToolContext):
 
         if _TELEMETRY_CLIENT:
             _TELEMETRY_CLIENT.log_event("session_context_cache_miss", {})
-        email = os.environ.get("DEFAULT_PSFT_USER_EMAIL", "").strip()
+        email = ""
+        if os.environ.get("DEBUG", "false").lower() == "true":
+            email = os.environ.get("DEFAULT_PSFT_USER_EMAIL", "").strip()
         if not email:
             raise RuntimeError(
                 "Unable to resolve authenticated user email from session state."
@@ -336,7 +345,7 @@ def get_user_id(tool_context: ToolContext):
     """
     # Initialize or retrieve trace ID for request correlation
     state = getattr(tool_context, "state", None)
-    trace_id = state.get(_TRACE_ID_STATE_KEY) if state is not None else None
+    trace_id = _safe_state_get(state, _TRACE_ID_STATE_KEY)
     if not trace_id:
         trace_id = str(uuid.uuid4())
         if state is not None:
@@ -346,7 +355,7 @@ def get_user_id(tool_context: ToolContext):
         _TELEMETRY_CLIENT.set_trace_context(trace_id=trace_id)
     
     with _telemetry_span("get_user_id", {"component": "oauth", "trace_id": trace_id}):
-        cached_context = state.get(_USER_CONTEXT_STATE_KEY) if state is not None else None
+        cached_context = _safe_state_get(state, _USER_CONTEXT_STATE_KEY)
         if isinstance(cached_context, dict) and cached_context.get("user_id"):
             if _TELEMETRY_CLIENT:
                 _TELEMETRY_CLIENT.log_event("user_context_cache_hit", {
@@ -381,7 +390,7 @@ def get_user_id(tool_context: ToolContext):
         # google.adk.sessions.state.State object has a get() method 
         # that can be used to retrieve the value of a specific key from the state.
 
-        user_token = state.get(auth_key) if (state is not None and auth_key) else None
+        user_token = _safe_state_get(state, auth_key) if auth_key else None
 
         # Look up token info from Google's tokeninfo endpoint
         token_info = None
