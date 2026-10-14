@@ -174,8 +174,8 @@ tools:
             FROM SYSADM.PSOPRDEFN o
             JOIN SYSADM.PSROLEUSER ru ON ru.ROLEUSER = o.OPRID
             LEFT JOIN SYSADM.PSROLEDEFN rd ON rd.ROLENAME = ru.ROLENAME
-           WHERE (UPPER(o.EMAILID) LIKE '%' || UPPER(NVL(:user_id, '')) || '%'
-              OR UPPER(o.OPRID) LIKE '%' || UPPER(NVL(:user_id, '')) || '%'
+           WHERE (UPPER(o.EMAILID) LIKE '%' || UPPER(NVL(:user_id, '%')) || '%'
+              OR UPPER(o.OPRID) LIKE '%' || UPPER(NVL(:user_id, '%')) || '%'
               OR o.OPRID = 'VP1')
              AND ROWNUM <= 25
            ORDER BY CASE WHEN o.OPRID = 'VP1' THEN 0 ELSE 1 END, ru.ROLENAME
@@ -226,7 +226,7 @@ tools:
             STATUTORY_NOTICE_TEXT
           FROM SYSADM.VW_GOV_CONSTITUENT_NOTICES
           WHERE UPPER('ALL * ' || NOTICE_ID || ' ' || NOTICE_SCOPE_TYPE || ' ' || STATUTORY_CITATION || ' ' || NOTICE_SUMMARY)
-                LIKE '%' || UPPER(NVL(:notice_id, '')) || '%'
+                LIKE '%' || UPPER(NVL(:notice_id, '%')) || '%'
           ORDER BY NOTICE_INTERNAL_ID
         parameters:
           - name: notice_id
@@ -253,7 +253,7 @@ tools:
           LEFT JOIN SYSADM.PS_GOV_FND_ATTACHED_DOCS ad ON ad.DOCUMENT_ID = d.DOCUMENT_ID
           WHERE d.DOCUMENT_ID BETWEEN 990001 AND 990999
             AND UPPER('ALL * ' || TO_CHAR(d.DOCUMENT_ID) || ' ' || NVL(ad.ENTITY_NAME, '') || ' ' || NVL(ad.PK1_VALUE, '') || ' ' || NVL(dtl.FILE_NAME, '') || ' ' || NVL(dtl.DESCRIPTION, ''))
-                LIKE '%' || UPPER(NVL(:document_query, '')) || '%'
+                LIKE '%' || UPPER(NVL(:document_query, '%')) || '%'
           ORDER BY d.DOCUMENT_ID
         parameters:
           - name: document_query
@@ -282,7 +282,7 @@ tools:
             FULL_DOCUMENT_CONTENT
           FROM SYSADM.VW_GOV_FOIA_RECORDS
           WHERE UPPER('ALL * ' || FOIA_REQUEST_ID || ' ' || SOLICITATION_OR_CASE_REF || ' ' || NVL(RELATED_PO_NUMBER, '') || ' ' || EMPLOYEE_NAME || ' ' || NVL(DOCUMENT_TITLE, ''))
-                LIKE '%' || UPPER(NVL(:search_query, '')) || '%'
+                LIKE '%' || UPPER(NVL(:search_query, '%')) || '%'
           ORDER BY DOCUMENT_ID
         parameters:
           - name: search_query
@@ -311,7 +311,7 @@ tools:
             FULL_DOCUMENT_CONTENT
           FROM SYSADM.VW_GOV_FOIA_RECORDS
           WHERE UPPER('ALL * ' || TO_CHAR(PERSON_ID) || ' ' || EMPLOYEE_NUMBER || ' ' || EMPLOYEE_NAME || ' ' || FOIA_REQUEST_ID || ' ' || SOLICITATION_OR_CASE_REF)
-                LIKE '%' || UPPER(NVL(:employee_query, '')) || '%'
+                LIKE '%' || UPPER(NVL(:employee_query, '%')) || '%'
           ORDER BY PERSON_ID
         parameters:
           - name: employee_query
@@ -336,7 +336,7 @@ tools:
             TRANSMITTAL_TITLE
           FROM SYSADM.VW_GOV_AGENCY_POLICY_RULES
           WHERE UPPER('ALL * ' || POLICY_RULE_SET || ' ' || POLICY_DOMAIN_DESCRIPTION || ' ' || THRESHOLD_CATEGORY || ' ' || NVL(TRANSMITTAL_TITLE, ''))
-                LIKE '%' || UPPER(NVL(:policy_query, '')) || '%'
+                LIKE '%' || UPPER(NVL(:policy_query, '%')) || '%'
           ORDER BY CONTROL_RULE_ID
         parameters:
           - name: policy_query
@@ -358,7 +358,7 @@ tools:
           FROM SYSADM.VW_GOV_AGENCY_POLICY_RULES
           WHERE CONTROL_RULE_ID IN (990401, 990403)
             AND UPPER('ALL * ' || POLICY_RULE_SET || ' ' || NVL(TRANSMITTAL_TITLE, '') || ' ' || NVL(STATUTORY_POLICY_TEXT, ''))
-                LIKE '%' || UPPER(NVL(:search_term, '')) || '%'
+                LIKE '%' || UPPER(NVL(:search_term, '%')) || '%'
           ORDER BY POLICY_DOCUMENT_ID
         parameters:
           - name: search_term
@@ -384,7 +384,7 @@ tools:
             INTAKE_OCR_AND_TELEMETRY_PAYLOAD
           FROM SYSADM.VW_GOV_INTAKE_DOCUMENTS
           WHERE UPPER('ALL * ' || CASE_NUMBER || ' ' || PARTY_NUMBER || ' ' || APPLICANT_LEGAL_NAME || ' ' || STAGED_FILE_NAME || ' ' || NVL(INTAKE_OCR_AND_TELEMETRY_PAYLOAD, ''))
-                LIKE '%' || UPPER(NVL(:case_or_doc_query, '')) || '%'
+                LIKE '%' || UPPER(NVL(:case_or_doc_query, '%')) || '%'
           ORDER BY PARTY_ID
         parameters:
           - name: case_or_doc_query
@@ -411,7 +411,7 @@ tools:
             TCA_PARTY_STATUS
           FROM SYSADM.VW_GOV_INTAKE_DOCUMENTS
           WHERE UPPER('ALL * ' || CASE_NUMBER || ' ' || PARTY_NUMBER || ' ' || APPLICANT_LEGAL_NAME || ' ' || NVL(MASKED_SSN_HASH, '') || ' ' || NVL(VERIFIED_CITY, ''))
-                LIKE '%' || UPPER(NVL(:party_query, '')) || '%'
+                LIKE '%' || UPPER(NVL(:party_query, '%')) || '%'
           ORDER BY PARTY_ID
         parameters:
           - name: party_query
@@ -436,7 +436,7 @@ tools:
           FROM SYSADM.VW_GOV_SOURCING_RFPS
           WHERE BID_NUMBER IN (990511, 990521, 990531)
             AND UPPER('ALL * ' || RFP_NUMBER || ' ' || SOLICITATION_TITLE || ' ' || TO_CHAR(AUCTION_HEADER_ID))
-                LIKE '%' || UPPER(NVL(:rfp_number, '')) || '%'
+                LIKE '%' || UPPER(NVL(:rfp_number, '%')) || '%'
           ORDER BY AUCTION_HEADER_ID
         parameters:
           - name: rfp_number
@@ -461,7 +461,7 @@ tools:
             RFP_AND_BIDS_EVIDENCE_DOSSIER
           FROM SYSADM.VW_GOV_SOURCING_RFPS
           WHERE UPPER('ALL * ' || RFP_NUMBER || ' ' || VENDOR_NAME || ' ' || TO_CHAR(BID_NUMBER) || ' ' || NVL(RFP_AND_BIDS_EVIDENCE_DOSSIER, ''))
-                LIKE '%' || UPPER(NVL(:bid_or_rfp_query, '')) || '%'
+                LIKE '%' || UPPER(NVL(:bid_or_rfp_query, '%')) || '%'
           ORDER BY BID_NUMBER
         parameters:
           - name: bid_or_rfp_query
@@ -490,7 +490,7 @@ tools:
             ATTACHED_FOLIO_OCR_TRANSCRIPT
           FROM SYSADM.VW_GOV_EXPENSE_REPORTS
           WHERE UPPER('ALL * ' || EXPENSE_REPORT_NUMBER || ' ' || REPORT_SUMMARY_AND_AWARD || ' ' || NVL(EXPENSE_LINE_DESCRIPTION, ''))
-                LIKE '%' || UPPER(NVL(:report_query, '')) || '%'
+                LIKE '%' || UPPER(NVL(:report_query, '%')) || '%'
           ORDER BY REPORT_HEADER_ID, LINE_NUM
         parameters:
           - name: report_query
@@ -520,7 +520,7 @@ tools:
             GRANT_POP_END
           FROM SYSADM.VW_GOV_PO_INVOICE_MATCH
           WHERE UPPER('ALL * ' || INVOICE_NUM || ' ' || NVL(MATCHED_PO_NUMBER, '') || ' ' || NVL(FEDERAL_GRANT_AWARD_ID, '') || ' ' || NVL(INVOICE_AND_GRANT_LINE_DETAILS, ''))
-                LIKE '%' || UPPER(NVL(:invoice_or_po_query, '')) || '%'
+                LIKE '%' || UPPER(NVL(:invoice_or_po_query, '%')) || '%'
           ORDER BY INVOICE_ID
         parameters:
           - name: invoice_or_po_query

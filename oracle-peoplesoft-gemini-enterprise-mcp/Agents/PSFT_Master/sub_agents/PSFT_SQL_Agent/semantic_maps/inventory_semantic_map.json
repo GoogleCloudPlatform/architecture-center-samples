@@ -20,8 +20,12 @@
           "description": "Storage area code."
         },
         {
-          "name": "QTY",
+          "name": "QTY_ONHAND",
           "description": "Total quantity on hand."
+        },
+        {
+          "name": "QTY_AVAILABLE",
+          "description": "Available quantity."
         },
         {
           "name": "QTY_RESERVED",
