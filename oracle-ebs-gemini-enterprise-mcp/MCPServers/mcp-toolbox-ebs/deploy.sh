@@ -62,8 +62,12 @@ upsert_secret_from_file() {
         echo "Updating existing Secret Manager secret '$secret_name'..."
         gcloud secrets versions add "$secret_name" --data-file="$file_path" --project="$PROJECT_ID" >/dev/null
     else
-        echo "Creating Secret Manager secret '$secret_name'..."
-        gcloud secrets create "$secret_name" --data-file="$file_path" --project="$PROJECT_ID" >/dev/null
+        echo "Creating Secret Manager secret '$secret_name' in region '$REGION'..."
+        gcloud secrets create "$secret_name" \
+            --replication-policy="user-managed" \
+            --locations="$REGION" \
+            --data-file="$file_path" \
+            --project="$PROJECT_ID" >/dev/null
     fi
     rm -f "$tmp_secret"
 }
