@@ -1,4 +1,4 @@
-from google.adk import Agent
+from google.adk.agents.llm_agent import Agent
 from google.adk.tools.tool_context import ToolContext
 from google.genai.types import (
     SafetySetting,
@@ -118,14 +118,17 @@ def _make_oidc_header_provider(audience: str):
 
 
 _mcp_jde_init_error = None
-mcp_jde_toolset = None
-_max_retries = 3
-_retry_delay = 2
-for _attempt in range(_max_retries):
+
+
+def _create_mcp_jde_toolset():
+    """Factory function to create the McpToolset without blocking module import with sleeps."""
+    global _mcp_jde_init_error
+    if not MCP_SERVER_JDE_URL:
+        _mcp_jde_init_error = "MCP_SERVER_JDE_URL environment variable is not set"
+        logger.error(_mcp_jde_init_error)
+        return None
     try:
-        if not MCP_SERVER_JDE_URL:
-            raise ValueError("MCP_SERVER_JDE_URL environment variable is not set")
-        mcp_jde_toolset = McpToolset(
+        toolset = McpToolset(
             connection_params=StreamableHTTPConnectionParams(
                 url=MCP_SERVER_JDE_URL,
                 timeout=30.0,
@@ -134,14 +137,14 @@ for _attempt in range(_max_retries):
         )
         logger.info(f"Initialized Mcp JDE Toolset with URL: {MCP_SERVER_JDE_URL}")
         _mcp_jde_init_error = None
-        break
+        return toolset
     except Exception as e:
         _mcp_jde_init_error = str(e)
-        logger.warning(f"Attempt {_attempt + 1} to initialize JDE MCP toolset failed: {e}")
-        if _attempt < _max_retries - 1:
-            time.sleep(_retry_delay * (2 ** _attempt))
-if mcp_jde_toolset is None:
-    logger.error(f"Failed to initialize JDE MCP toolset after {_max_retries} attempts: {_mcp_jde_init_error}")
+        logger.error(f"Failed to initialize JDE MCP toolset: {e}", exc_info=True)
+        return None
+
+
+mcp_jde_toolset = _create_mcp_jde_toolset()
 
 
 def jde_backend_unavailable() -> dict:

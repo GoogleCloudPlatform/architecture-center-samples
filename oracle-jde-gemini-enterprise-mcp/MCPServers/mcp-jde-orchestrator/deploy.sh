@@ -63,8 +63,12 @@ SECRET_ENV_ARGS=""
 if [ -n "${JDE_DB_DSN:-}" ]; then
     upsert_secret_from_value "${MCP_SERVICE_NAME}-db-dsn" "$JDE_DB_DSN"
     upsert_secret_from_value "${MCP_SERVICE_NAME}-db-user" "${JDE_DB_USER:-JDE_AI}"
-    upsert_secret_from_value "${MCP_SERVICE_NAME}-db-pass" "${JDE_DB_PASSWORD:-REPLACE_ME}"
-    upsert_secret_from_value "${MCP_SERVICE_NAME}-ais-pass" "${JDE_PASSWORD:-REPLACE_ME}"
+    if [ -n "${JDE_DB_PASSWORD:-}" ] && [ "${JDE_DB_PASSWORD}" != "REPLACE_ME" ]; then
+        upsert_secret_from_value "${MCP_SERVICE_NAME}-db-pass" "${JDE_DB_PASSWORD}"
+    fi
+    if [ -n "${JDE_PASSWORD:-}" ] && [ "${JDE_PASSWORD}" != "REPLACE_ME" ]; then
+        upsert_secret_from_value "${MCP_SERVICE_NAME}-ais-pass" "${JDE_PASSWORD}"
+    fi
     SECRET_ENV_ARGS="--set-secrets=JDE_DB_DSN=${MCP_SERVICE_NAME}-db-dsn:latest,JDE_DB_USER=${MCP_SERVICE_NAME}-db-user:latest,JDE_DB_PASSWORD=${MCP_SERVICE_NAME}-db-pass:latest,JDE_PASSWORD=${MCP_SERVICE_NAME}-ais-pass:latest"
 fi
 

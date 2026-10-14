@@ -198,7 +198,7 @@ def log_audit(
                 "t": f"{tool_name}:{target_object}"[:128],
                 "usr": (jde_user or "NGONZAL").strip()[:30],
                 "wo": int(wo_num) if wo_num else None,
-                "p": json.dumps(payload, default=str)[:3900],
+                "p": json.dumps(payload, default=str),
                 "a": action_type[:32],
                 "s": status[:32],
             },

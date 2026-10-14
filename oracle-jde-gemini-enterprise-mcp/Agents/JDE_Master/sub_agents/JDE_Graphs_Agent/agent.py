@@ -1,4 +1,4 @@
-from google.adk import Agent
+from google.adk.agents.llm_agent import Agent
 from google.adk.tools.tool_context import ToolContext
 from google.genai.types import (
     AutomaticFunctionCallingConfig,
@@ -642,9 +642,18 @@ def render_line_chart(
             )
 
         wrapped_x = [textwrap.fill(lbl, width=18) for lbl in x_vals]
-        ax.set_xticks(range(len(x_vals)))
-        rot = 0 if len(x_vals) <= 6 else 18
-        ax.set_xticklabels(wrapped_x, rotation=rot, ha="center" if rot == 0 else "right", fontsize=9.5, fontweight="bold", color="#1E293B")
+        total_points = len(x_vals)
+        if total_points > 12:
+            step = math.ceil(total_points / 10)
+            ticks = list(range(0, total_points, step))
+            if (total_points - 1) not in ticks:
+                ticks.append(total_points - 1)
+            ax.set_xticks(ticks)
+            ax.set_xticklabels([wrapped_x[t] for t in ticks], rotation=18, ha="right", fontsize=9.5, fontweight="bold", color="#1E293B")
+        else:
+            ax.set_xticks(range(total_points))
+            rot = 0 if total_points <= 6 else 18
+            ax.set_xticklabels(wrapped_x, rotation=rot, ha="center" if rot == 0 else "right", fontsize=9.5, fontweight="bold", color="#1E293B")
         ax.tick_params(axis="y", labelsize=10, colors="#334155")
 
         x_heading = _humanize_label(x_column)

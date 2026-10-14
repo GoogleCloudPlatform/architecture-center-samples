@@ -157,9 +157,12 @@ def get_session_user_context(tool_context: ToolContext):
         return safe_context
     email = os.environ.get("DEFAULT_JDE_USER_EMAIL", "").strip()
     if not email:
-        raise RuntimeError(
-            "Unable to determine user identity from session state and DEFAULT_JDE_USER_EMAIL is not configured."
-        )
+        return {
+            "ok": False,
+            "source_agent": "JDE_Master",
+            "error_code": "AUTH_FAILED",
+            "message": "Unable to determine user identity from session state and DEFAULT_JDE_USER_EMAIL is not configured.",
+        }
     safe_context = _build_safe_user_context(email)
     _set_state_value(tool_context, _USER_ID_STATE_KEY, email)
     _set_state_value(tool_context, _USER_CONTEXT_STATE_KEY, safe_context)
