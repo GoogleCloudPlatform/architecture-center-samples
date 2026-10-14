@@ -164,27 +164,39 @@ def _extract_request_user_context(context) -> dict:
 
 
 def _make_oidc_header_provider(audience: str):
-    """Return a header_provider that fetches a fresh OIDC identity token per MCP request.
+    """Return a header_provider that supplies a cached OIDC identity token per MCP request.
 
-    The token is scoped to this service account and valid for 60 minutes.  Using
-    header_provider (called per request) rather than static headers ensures tokens
-    are always fresh.
+    The token is scoped to this service account and cached in memory for up to
+    50 minutes (tokens are valid for 60 minutes) to avoid metadata server overhead
+    on every request.
 
     Falls back to no auth when run locally without a metadata server.
     """
+    _cached_token = None
+    _cached_token_expiry = 0.0
+
     def provider(context) -> dict:
+        nonlocal _cached_token, _cached_token_expiry
         headers = {}
         env_token = os.environ.get("MCP_ID_TOKEN", "").strip()
         if env_token:
             headers["Authorization"] = f"Bearer {env_token}"
         else:
-            try:
-                token = _google_id_token.fetch_id_token(_auth_request, audience)
+            now = time.time()
+            if _cached_token and now < _cached_token_expiry:
+                token = _cached_token
+            else:
+                try:
+                    token = _google_id_token.fetch_id_token(_auth_request, audience)
+                    _cached_token = token
+                    _cached_token_expiry = now + 3000  # Cache for 50 minutes
+                except Exception as exc:
+                    logger.warning(
+                        "Could not fetch OIDC token for MCP auth (running locally?): %s", exc
+                    )
+                    token = None
+            if token:
                 headers["Authorization"] = f"Bearer {token}"
-            except Exception as exc:
-                logger.warning(
-                    "Could not fetch OIDC token for MCP auth (running locally?): %s", exc
-                )
 
         user_context = _extract_request_user_context(context)
         user_id = user_context.get("user_id")

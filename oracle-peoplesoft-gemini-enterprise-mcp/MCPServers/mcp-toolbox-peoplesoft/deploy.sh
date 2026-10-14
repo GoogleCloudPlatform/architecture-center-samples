@@ -104,14 +104,18 @@ fi
 # Upload tools.yaml to Secret Manager so tool definitions can also be updated without rebuilding
 upsert_secret_from_file "$MCP_TOOLBOX_SECRET_NAME" "tools.yaml"
 
-# Ensure the Cloud Run service account has Secret Manager Secret Accessor permission
-if ! gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-    --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
-    --role="roles/secretmanager.secretAccessor" \
-    --quiet >/dev/null 2>&1; then
-    echo "Warning: Failed to automatically grant Secret Manager Secret Accessor role to ${SERVICE_ACCOUNT_EMAIL}."
-    echo "Please grant this role manually, or the Cloud Run service may fail to access database credentials."
-fi
+# Grant Secret Manager Secret Accessor role to the service account on the specific secrets
+echo "Granting Secret Manager Secret Accessor role to ${SERVICE_ACCOUNT_EMAIL} on specific secrets..."
+SECRETS_TO_GRANT=("${MCP_TOOLBOX_SECRET_NAME}" "${MCP_TOOLBOX_SERVICE_NAME}-db-conn" "${MCP_TOOLBOX_SERVICE_NAME}-db-user" "${MCP_TOOLBOX_SERVICE_NAME}-db-pass")
+for SEC in "${SECRETS_TO_GRANT[@]}"; do
+    if gcloud secrets describe "$SEC" --project="$PROJECT_ID" >/dev/null 2>&1; then
+        gcloud secrets add-iam-policy-binding "$SEC" \
+            --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
+            --role="roles/secretmanager.secretAccessor" \
+            --project="$PROJECT_ID" \
+            --quiet >/dev/null || echo "Warning: Failed to grant accessor on secret $SEC"
+    fi
+done
 
 # 3. Build & Push Pre-Configured PeopleSoft MCP Image to Customer's Artifact Registry (Phase 1)
 if [ "$BUILD_AR_IMAGE" = "true" ] && [ -f Dockerfile ]; then

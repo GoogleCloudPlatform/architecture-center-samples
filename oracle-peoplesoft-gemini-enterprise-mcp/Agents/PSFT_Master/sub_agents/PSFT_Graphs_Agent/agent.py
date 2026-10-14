@@ -14,6 +14,7 @@ import csv
 import io
 import json
 import logging
+import math
 import os
 import re
 import sys
@@ -81,14 +82,18 @@ def _error_envelope(*, error_code: str, message: str, retryable: bool, data=None
 def _parse_numeric(val) -> float:
     """Parse a numeric value, stripping currency symbols, commas, or percent signs if present."""
     if isinstance(val, (int, float)):
-        return float(val)
+        return 0.0 if (math.isnan(val) or math.isinf(val)) else float(val)
     if val is None:
         return 0.0
     s = str(val).strip()
-    if not s or s.lower() in ("none", "null", "n/a", "-"):
+    if not s or s.lower() in ("none", "null", "n/a", "-", "nan", "inf", "-inf"):
         return 0.0
     s = re.sub(r"[$,%\s]", "", s)
-    return float(s)
+    try:
+        parsed = float(s)
+        return 0.0 if (math.isnan(parsed) or math.isinf(parsed)) else parsed
+    except ValueError:
+        return 0.0
 
 
 def _detect_is_currency(title: str, col_name: str, raw_rows: list[dict]) -> bool:
@@ -180,10 +185,17 @@ def _sort_data(rows: list[dict], sort_column: str, sort_order: str) -> list[dict
 
     def _key(row: dict):
         val = row.get(sort_column, "")
-        try:
-            return (0, _parse_numeric(val))
-        except (TypeError, ValueError):
-            return (1, str(val).lower())
+        if isinstance(val, (int, float)) and not (math.isnan(val) or math.isinf(val)):
+            return (0, float(val))
+        s = re.sub(r"[$,%\s]", "", str(val or "").strip())
+        if s and s.lower() not in ("none", "null", "n/a", "-", "nan", "inf", "-inf"):
+            try:
+                num = float(s)
+                if not (math.isnan(num) or math.isinf(num)):
+                    return (0, num)
+            except (TypeError, ValueError):
+                pass
+        return (1, str(val).lower())
 
     return sorted(rows, key=_key, reverse=reverse)
 
