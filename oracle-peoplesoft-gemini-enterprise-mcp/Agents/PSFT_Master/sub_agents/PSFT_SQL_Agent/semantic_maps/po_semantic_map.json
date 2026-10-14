@@ -1,0 +1,53 @@
+{
+  "module": "PeopleSoft Purchasing & Strategic Sourcing (PO / AUC)",
+  "description": "PeopleSoft FSCM 9.2 Purchase Orders and Strategic Sourcing Events.",
+  "tables": [
+    {
+      "table_name": "SYSADM.PS_PO_HDR",
+      "business_name": "Purchase Order Header",
+      "description": "Stores Purchase Order headers by BUSINESS_UNIT and PO_ID.",
+      "columns": [
+        {
+          "name": "BUSINESS_UNIT",
+          "description": "Purchasing Business Unit (e.g., US001)."
+        },
+        {
+          "name": "PO_ID",
+          "description": "10-character PO ID (e.g., 0000990701, 0000990702)."
+        },
+        {
+          "name": "PO_REF",
+          "description": "Purchase Order reference (e.g., PO-7801, PO-2024-HEALTH-01)."
+        },
+        {
+          "name": "PO_STATUS",
+          "description": "PO status (D = Dispatched, A = Approved)."
+        },
+        {
+          "name": "VENDOR_ID",
+          "description": "Supplier ID."
+        }
+      ]
+    },
+    {
+      "table_name": "SYSADM.PS_AUC_HDR",
+      "business_name": "Strategic Sourcing Event Header",
+      "description": "Stores Strategic Sourcing RFP/Auction events by BUSINESS_UNIT and AUC_ID.",
+      "columns": [
+        {
+          "name": "BUSINESS_UNIT",
+          "description": "Sourcing Business Unit (e.g., US001)."
+        },
+        {
+          "name": "AUC_ID",
+          "description": "10-character Sourcing Event ID (0000990501..0000990503)."
+        },
+        {
+          "name": "DESCR",
+          "description": "Event description and RFP code."
+        }
+      ]
+    }
+  ],
+  "common_joins": []
+}

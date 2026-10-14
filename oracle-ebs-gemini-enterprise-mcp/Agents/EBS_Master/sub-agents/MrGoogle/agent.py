@@ -12,7 +12,7 @@ from google.genai.types import (
 )
 
 # gemini 3 endpoints are currently only accessible in global, so we need to set this env var for the agent to work properly.
-os.environ['GOOGLE_CLOUD_LOCATION'] = 'global'
+os.environ.setdefault('GOOGLE_CLOUD_LOCATION', 'us-central1')
 
 _BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 _DEBUG = os.environ.get("DEBUG", "false").lower() == "true"

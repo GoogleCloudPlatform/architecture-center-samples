@@ -13,6 +13,7 @@ SEMANTIC_MAP_FILES = [
     "po_semantic_map.json",
     "om_semantic_map.json",
     "hr_semantic_map.json",
+    "gov_public_sector_semantic_map.json",
     # "security_semantic_map.json",
 ]
 

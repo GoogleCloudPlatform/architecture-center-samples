@@ -1,0 +1,5 @@
+{
+  "display_name": "PeopleSoft SQL Agent",
+  "description": "A helpful assistant for user questions about Oracle PeopleSoft data.",
+  "service_account": "peoplesoft-service-account@PROJECT_ID.iam.gserviceaccount.com"
+}

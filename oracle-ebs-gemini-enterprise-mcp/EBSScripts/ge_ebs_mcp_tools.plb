@@ -1,3 +1,4 @@
+SET DEFINE OFF
 create or replace package body ge_ebs_mcp_tools
 as
 
@@ -36,9 +37,9 @@ PRAGMA AUTONOMOUS_TRANSACTION;
     l_program_unit varchar2(100) := 'ebs_initialize_context';
 
     l_email_address       VARCHAR2(240) := p_email_address;
-    l_operating_unit VARCHAR2(240) := p_operating_unit;
-    l_responsibility VARCHAR2(240) := p_responsibility;
-    l_application_short_name VARCHAR2(240) := p_application_short_name;
+    l_operating_unit VARCHAR2(240) := CASE WHEN UPPER(TRIM(p_operating_unit)) = 'NULL' THEN NULL ELSE TRIM(p_operating_unit) END;
+    l_responsibility VARCHAR2(240) := CASE WHEN UPPER(TRIM(p_responsibility)) = 'NULL' THEN NULL ELSE TRIM(p_responsibility) END;
+    l_application_short_name VARCHAR2(240) := CASE WHEN UPPER(TRIM(p_application_short_name)) = 'NULL' THEN NULL ELSE TRIM(p_application_short_name) END;
     l_user_id             NUMBER := -1;
     l_resp_id             NUMBER := -1;
     l_resp_appl_id        NUMBER := -1;
@@ -187,7 +188,8 @@ BEGIN
          WHERE  1=1
            AND furg.user_id = l_user_id
            AND    fa.application_short_name NOT IN ('SYSADMIN', 'FND', 'XDO', 'ALR')
-           ORDER BY application_short_name
+           AND    EXISTS (SELECT 1 FROM fnd_mo_product_init fmpi WHERE fmpi.application_short_name = fa.application_short_name AND fmpi.status = 'Y')
+           ORDER BY CASE WHEN fa.application_short_name IN ('INV', 'SQLAP', 'PO', 'ONT', 'AR') THEN 0 ELSE 1 END, application_short_name
            FETCH FIRST 1 ROW ONLY;
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
@@ -257,14 +259,14 @@ BEGIN
     END;
     ELSE
     BEGIN
-        SELECT
-            operating_unit
+        SELECT organization_id
         INTO l_ou_id
-        FROM
-            org_organization_definitions
-        WHERE
-            upper(organization_name) = upper(l_operating_unit)
-            FETCH FIRST 1 ROW ONLY;
+        FROM (
+            SELECT organization_id FROM hr_operating_units WHERE upper(name) = upper(l_operating_unit)
+            UNION ALL
+            SELECT operating_unit AS organization_id FROM org_organization_definitions WHERE upper(organization_name) = upper(l_operating_unit) OR upper(organization_code) = upper(l_operating_unit)
+        )
+        FETCH FIRST 1 ROW ONLY;
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
             mcp_toolbox_log('Organization not found '||l_operating_unit,'ERROR',l_email_address,l_program_unit);
@@ -1098,4 +1100,406 @@ FUNCTION create_ap_invoice (
             RETURN l_return_value;
     END create_ap_invoice;
 
+    FUNCTION create_expense_report (
+        p_report_number       IN VARCHAR2,
+        p_purpose_description IN VARCHAR2,
+        p_week_end_date       IN VARCHAR2 DEFAULT NULL,
+        p_expense_lines_json  IN VARCHAR2,
+        p_receipt_ocr_text    IN VARCHAR2 DEFAULT NULL,
+        p_employee_id         IN NUMBER   DEFAULT NULL
+    ) RETURN VARCHAR2
+    IS
+        PRAGMA AUTONOMOUS_TRANSACTION;
+
+        l_program_unit     VARCHAR2(100) := 'create_expense_report';
+        l_email_address    VARCHAR2(240) := get_email();
+        l_sqlerrm          VARCHAR2(4000);
+
+        l_user_id          NUMBER := NVL(NULLIF(fnd_global.user_id, -1), 1318); -- Default OPERATIONS (1318)
+        l_resp_id          NUMBER := NVL(NULLIF(fnd_global.resp_id, -1), 50554); -- Payables, Vision Operations (USA)
+        l_resp_appl_id     NUMBER := NVL(NULLIF(fnd_global.resp_appl_id, -1), 200); -- SQLAP
+        l_org_id           NUMBER := NVL(NULLIF(fnd_global.org_id, -1), 204); -- Vision Operations (204)
+        l_sob_id           NUMBER := 1;
+        l_emp_id           NUMBER;
+        l_template_id      NUMBER := 10024; -- Vision Operations WebExpense Template
+        l_ccid             NUMBER;
+        l_week_end         DATE;
+        l_report_header_id NUMBER;
+        l_rowid            VARCHAR2(100);
+        l_total            NUMBER := 0;
+        l_line_count       NUMBER := 0;
+        l_line_idx         NUMBER := 0;
+        l_bool             BOOLEAN;
+        l_media_id         NUMBER;
+        l_folio_clob       CLOB;
+        l_audit_tag        VARCHAR2(200);
+        l_line_rec         APPS.AP_EXPENSE_REPORT_LINES_ALL%ROWTYPE;
+        l_web_param_id     NUMBER;
+        l_cat_code         VARCHAR2(80);
+        l_start_dt         DATE;
+        l_end_dt           DATE;
+        l_return_value     VARCHAR2(4000);
+    BEGIN
+        -- 1. Ensure Oracle Applications & MOAC Context are initialized
+        IF NVL(fnd_global.user_id, -1) <= 0 THEN
+            APPS.FND_GLOBAL.APPS_INITIALIZE(l_user_id, l_resp_id, l_resp_appl_id);
+            APPS.MO_GLOBAL.INIT('SQLAP');
+            APPS.MO_GLOBAL.SET_POLICY_CONTEXT('S', l_org_id);
+        END IF;
+
+        mcp_toolbox_log(
+            'Starting create_expense_report for p_report_number=' || NVL(p_report_number, 'NULL')
+            || ', p_purpose_description=' || NVL(p_purpose_description, 'NULL'),
+            'INFO', l_email_address, l_program_unit
+        );
+
+        -- 2. Resolve Employee ID (Default to Jamie Frost PERSON_ID=32 in Vision Operations)
+        IF p_employee_id IS NOT NULL AND p_employee_id > 0 THEN
+            l_emp_id := p_employee_id;
+        ELSE
+            BEGIN
+                SELECT employee_id INTO l_emp_id
+                FROM fnd_user
+                WHERE user_id = l_user_id;
+            EXCEPTION
+                WHEN OTHERS THEN l_emp_id := NULL;
+            END;
+            l_emp_id := NVL(l_emp_id, 32);
+        END IF;
+
+        -- 3. Resolve Week End Date (YYYY-MM-DD or SYSDATE)
+        BEGIN
+            IF p_week_end_date IS NOT NULL AND UPPER(TRIM(p_week_end_date)) != 'NULL' AND LENGTH(TRIM(p_week_end_date)) >= 10 THEN
+                l_week_end := TO_DATE(SUBSTR(TRIM(p_week_end_date), 1, 10), 'YYYY-MM-DD');
+            ELSE
+                l_week_end := TRUNC(SYSDATE);
+            END IF;
+        EXCEPTION
+            WHEN OTHERS THEN
+                l_week_end := TRUNC(SYSDATE);
+        END;
+
+        -- 4. Resolve Default Expense GL Code Combination ID for Vision Operations
+        SELECT MIN(CODE_COMBINATION_ID)
+        INTO l_ccid
+        FROM APPS.AP_EXPENSE_REPORT_LINES_ALL
+        WHERE REPORT_HEADER_ID = 35989;
+
+        IF l_ccid IS NULL THEN
+            SELECT MIN(CODE_COMBINATION_ID)
+            INTO l_ccid
+            FROM APPS.GL_CODE_COMBINATIONS
+            WHERE CHART_OF_ACCOUNTS_ID = 101 AND ENABLED_FLAG = 'Y';
+        END IF;
+
+        -- 5. Validate and Sum Line Items from JSON Payload
+        SELECT NVL(SUM(jt.amount), 0), COUNT(*)
+        INTO l_total, l_line_count
+        FROM JSON_TABLE(p_expense_lines_json, '$[*]'
+            COLUMNS (
+                amount NUMBER PATH '$.amount'
+            )
+        ) jt
+        WHERE jt.amount IS NOT NULL;
+
+        IF l_line_count = 0 THEN
+            l_return_value := '{"STATUS":"ERROR","MESSAGE":"p_expense_lines_json must be a non-empty JSON array of objects containing amount and description, e.g. [{\"amount\":370.00,\"category\":\"ACCOMMODATIONS\",\"description\":\"Hotel Lodging\",\"justification\":\"Conference hotel\"}]"}';
+            RETURN l_return_value;
+        END IF;
+
+        -- 6. Generate Next Report Header ID & Insert Header via Official Oracle OIE / Payables APIs
+        l_bool := APPS.AP_WEB_DB_EXPRPT_PKG.GetNextExpReportID(l_report_header_id);
+        l_rowid := NULL;
+
+        APPS.AP_EXPENSE_REPORT_HEADERS_PKG.Insert_Row(
+            X_Rowid                        => l_rowid,
+            X_Report_Header_Id             => l_report_header_id,
+            X_Employee_Id                  => l_emp_id,
+            X_Week_End_Date                => l_week_end,
+            X_Creation_Date                => SYSDATE,
+            X_Created_By                   => l_user_id,
+            X_Last_Update_Date             => SYSDATE,
+            X_Last_Updated_By              => l_user_id,
+            X_Vouchno                      => 0,
+            X_Total                        => l_total,
+            X_Vendor_Id                    => NULL,
+            X_Vendor_Site_Id               => NULL,
+            X_Expense_Check_Address_Flag   => 'H',
+            X_Reference_1                  => NULL,
+            X_Reference_2                  => NULL,
+            X_Invoice_Num                  => p_report_number,
+            X_Expense_Report_Id            => l_template_id,
+            X_Accts_Pay_Code_Combinat_Id   => l_ccid,
+            X_Set_Of_Books_Id              => l_sob_id,
+            X_Source                       => 'WebExpense',
+            X_Purgeable_Flag               => 'N',
+            X_Accounting_Date              => l_week_end,
+            X_Employee_Ccid                => l_ccid,
+            X_Description                  => p_purpose_description,
+            X_Reject_Code                  => NULL,
+            X_Hold_Lookup_Code             => NULL,
+            X_Attribute_Category           => NULL,
+            X_Attribute1                   => NULL,
+            X_Attribute2                   => NULL,
+            X_Attribute3                   => NULL,
+            X_Attribute4                   => NULL,
+            X_Attribute5                   => NULL,
+            X_Default_Currency_Code        => 'USD',
+            X_Default_Exchange_Rate_Type   => 'Corporate',
+            X_Default_Exchange_Rate        => 1,
+            X_Default_Exchange_Date        => l_week_end,
+            X_Payment_Currency_Code        => 'USD',
+            X_Payment_Cross_Rate_Type      => NULL,
+            X_Payment_Cross_Rate_Date      => l_week_end,
+            X_Payment_Cross_Rate           => 1,
+            X_Apply_Advances_Flag          => 'N',
+            X_Prepay_Num                   => NULL,
+            X_Prepay_Dist_Num              => NULL,
+            X_Maximum_Amount_To_Apply      => NULL,
+            X_Prepay_Gl_Date               => NULL,
+            X_Advance_Invoice_To_Apply     => NULL,
+            X_Last_Update_Login            => 0,
+            X_Voucher_Num                  => NULL,
+            X_Attribute11                  => NULL,
+            X_Attribute12                  => NULL,
+            X_Attribute13                  => NULL,
+            X_Attribute14                  => NULL,
+            X_Attribute6                   => NULL,
+            X_Attribute7                   => NULL,
+            X_Attribute8                   => NULL,
+            X_Attribute9                   => NULL,
+            X_Attribute10                  => NULL,
+            X_Attribute15                  => NULL,
+            X_Doc_Category_Code            => NULL,
+            X_Awt_Group_Id                 => NULL,
+            X_Org_Id                       => l_org_id,
+            X_Workflow_Approved_Flag       => 'M',
+            X_global_attribute_category    => NULL,
+            X_global_attribute1            => NULL,
+            X_global_attribute2            => NULL,
+            X_global_attribute3            => NULL,
+            X_global_attribute4            => NULL,
+            X_global_attribute5            => NULL,
+            X_global_attribute6            => NULL,
+            X_global_attribute7            => NULL,
+            X_global_attribute8            => NULL,
+            X_global_attribute9            => NULL,
+            X_global_attribute10           => NULL,
+            X_global_attribute11           => NULL,
+            X_global_attribute12           => NULL,
+            X_global_attribute13           => NULL,
+            X_global_attribute14           => NULL,
+            X_global_attribute15           => NULL,
+            X_global_attribute16           => NULL,
+            X_global_attribute17           => NULL,
+            X_global_attribute18           => NULL,
+            X_global_attribute19           => NULL,
+            X_global_attribute20           => NULL,
+            X_calling_sequence             => 'GE_EBS_MCP_TOOLS.create_expense_report',
+            X_Report_Submitted_date        => SYSDATE
+        );
+
+        l_bool := APPS.AP_WEB_DB_EXPRPT_PKG.SetWkflApprvdFlagAndSource(
+            p_report_header_id => l_report_header_id,
+            p_flag             => 'M',
+            p_source           => 'WebExpense'
+        );
+        l_bool := APPS.AP_WEB_DB_EXPRPT_PKG.SetAmtDuesAndTotal(
+            p_report_header_id      => l_report_header_id,
+            p_amt_due_ccard_company => 0,
+            p_amt_due_employee      => l_total,
+            p_total                 => l_total
+        );
+
+        -- 7. Insert Expense Lines via Official Oracle OIE AP_WEB_DB_EXPLINE_PKG.InsertLine API
+        FOR r_line IN (
+            SELECT
+                jt.amount,
+                jt.description,
+                jt.justification,
+                jt.category,
+                jt.start_date,
+                jt.end_date
+            FROM JSON_TABLE(p_expense_lines_json, '$[*]'
+                COLUMNS (
+                    amount        NUMBER        PATH '$.amount',
+                    description   VARCHAR2(240) PATH '$.description',
+                    justification VARCHAR2(240) PATH '$.justification',
+                    category      VARCHAR2(80)  PATH '$.category',
+                    start_date    VARCHAR2(30)  PATH '$.start_date',
+                    end_date      VARCHAR2(30)  PATH '$.end_date'
+                )
+            ) jt
+            WHERE jt.amount IS NOT NULL
+        ) LOOP
+            l_line_idx := l_line_idx + 1;
+
+            IF UPPER(NVL(r_line.category, '')) LIKE '%AIR%' OR UPPER(NVL(r_line.category, '')) LIKE '%FLIGHT%' THEN
+                l_web_param_id := 10005;
+                l_cat_code     := 'AIRFARE';
+            ELSIF UPPER(NVL(r_line.category, '')) LIKE '%ACCOM%' OR UPPER(NVL(r_line.category, '')) LIKE '%HOTEL%' OR UPPER(NVL(r_line.category, '')) LIKE '%LODG%' THEN
+                l_web_param_id := 10006;
+                l_cat_code     := 'ACCOMMODATIONS';
+            ELSIF UPPER(NVL(r_line.category, '')) LIKE '%PARK%' OR UPPER(NVL(r_line.category, '')) LIKE '%TAXI%' OR UPPER(NVL(r_line.category, '')) LIKE '%UBER%' OR UPPER(NVL(r_line.category, '')) LIKE '%TRANS%' THEN
+                l_web_param_id := 10007;
+                l_cat_code     := 'MISC';
+            ELSE
+                l_web_param_id := 10009;
+                l_cat_code     := 'MEALS';
+            END IF;
+
+            BEGIN
+                IF r_line.start_date IS NOT NULL AND LENGTH(TRIM(r_line.start_date)) >= 10 THEN
+                    l_start_dt := TO_DATE(SUBSTR(TRIM(r_line.start_date), 1, 10), 'YYYY-MM-DD');
+                ELSE
+                    l_start_dt := l_week_end;
+                END IF;
+            EXCEPTION
+                WHEN OTHERS THEN l_start_dt := l_week_end;
+            END;
+
+            BEGIN
+                IF r_line.end_date IS NOT NULL AND LENGTH(TRIM(r_line.end_date)) >= 10 THEN
+                    l_end_dt := TO_DATE(SUBSTR(TRIM(r_line.end_date), 1, 10), 'YYYY-MM-DD');
+                ELSE
+                    l_end_dt := l_start_dt;
+                END IF;
+            EXCEPTION
+                WHEN OTHERS THEN l_end_dt := l_start_dt;
+            END;
+
+            l_line_rec := NULL;
+            l_line_rec.report_header_id         := l_report_header_id;
+            l_line_rec.distribution_line_number := l_line_idx;
+            l_line_rec.amount                   := r_line.amount;
+            l_line_rec.submitted_amount         := r_line.amount;
+            l_line_rec.daily_amount             := r_line.amount;
+            l_line_rec.receipt_currency_amount  := r_line.amount;
+            l_line_rec.currency_code            := 'USD';
+            l_line_rec.receipt_currency_code    := 'USD';
+            l_line_rec.receipt_conversion_rate  := 1;
+            l_line_rec.line_type_lookup_code    := 'ITEM';
+            l_line_rec.item_description         := NVL(r_line.description, 'Expense Line ' || l_line_idx);
+            l_line_rec.justification            := NVL(r_line.justification, r_line.description);
+            l_line_rec.web_parameter_id         := l_web_param_id;
+            l_line_rec.category_code            := l_cat_code;
+            l_line_rec.code_combination_id      := l_ccid;
+            l_line_rec.set_of_books_id          := l_sob_id;
+            l_line_rec.org_id                   := l_org_id;
+            l_line_rec.start_expense_date       := l_start_dt;
+            l_line_rec.end_expense_date         := l_end_dt;
+            l_line_rec.itemization_parent_id    := -1;
+            l_line_rec.creation_date            := SYSDATE;
+            l_line_rec.created_by               := l_user_id;
+            l_line_rec.last_update_date         := SYSDATE;
+            l_line_rec.last_updated_by          := l_user_id;
+            l_line_rec.last_update_login        := 0;
+
+            APPS.AP_WEB_DB_EXPLINE_PKG.InsertLine(expense_line_rec => l_line_rec);
+        END LOOP;
+
+        -- 8. Generate GL Account Distributions via Official Oracle OIE Distribution API
+        APPS.AP_WEB_DB_EXPDIST_PKG.updateDistAcctValuesForForms(
+            p_report_header_id => l_report_header_id
+        );
+
+        -- 9. Attach Extracted OCR Receipt / Form Transcript via Official Oracle AOL Attachment API
+        l_media_id := NULL;
+        l_folio_clob := NVL(
+            NULLIF(TRIM(p_receipt_ocr_text), 'NULL'),
+            'GEMINI ENTERPRISE MULTIMODAL EXPENSE SUBMISSION: Report #' || p_report_number
+            || ' | Purpose: ' || p_purpose_description
+            || ' | Total Claimed: $' || TO_CHAR(l_total, 'FM999,999,990.00')
+            || ' | Lines: ' || l_line_idx
+        );
+        APPS.FND_WEBATTCH.ADD_ATTACHMENT(
+            seq_num              => '10',
+            category_id          => '1',
+            document_description => 'Attached Receipt Folio / Form OCR Transcript (' || p_report_number || ')',
+            datatype_id          => '2',
+            text                 => l_folio_clob,
+            file_name            => p_report_number || '_FOLIO_OCR.txt',
+            url                  => NULL,
+            function_name        => 'OIE_AUD_AUDIT_PAGE',
+            entity_name          => 'AP_EXPENSE_REPORT_HEADERS',
+            pk1_value            => TO_CHAR(l_report_header_id),
+            pk2_value            => NULL,
+            pk3_value            => NULL,
+            pk4_value            => NULL,
+            pk5_value            => NULL,
+            media_id             => l_media_id,
+            user_id              => TO_CHAR(l_user_id)
+        );
+
+        IF l_media_id IS NULL THEN
+            SELECT MAX(d.media_id)
+              INTO l_media_id
+              FROM APPS.fnd_attached_documents ad
+              JOIN APPS.fnd_documents d ON d.document_id = ad.document_id
+             WHERE ad.entity_name = 'AP_EXPENSE_REPORT_HEADERS'
+               AND ad.pk1_value = TO_CHAR(l_report_header_id);
+        END IF;
+
+        -- 10. Start Official OIE Expense Report Workflow, Run Audit Rule Engine & Enqueue for Audit
+        APPS.AP_WEB_EXPENSE_WF.StartExpenseReportProcess(
+            p_report_header_id => l_report_header_id,
+            p_preparer_id      => l_emp_id,
+            p_employee_id      => l_emp_id,
+            p_document_number  => p_report_number,
+            p_total            => l_total,
+            p_new_total        => l_total,
+            p_reimb_curr       => 'USD',
+            p_cost_center      => '110',
+            p_purpose          => p_purpose_description,
+            p_approver_id      => NULL,
+            p_week_end_date    => l_week_end,
+            p_workflow_flag    => 'M',
+            p_submit_from_oie  => APPS.AP_WEB_EXPENSE_WF.C_SUBMIT_FROM_OIE,
+            p_event_raised     => 'N'
+        );
+
+        l_audit_tag := APPS.AP_WEB_AUDIT_PROCESS.process_expense_report(
+            p_report_header_id => l_report_header_id
+        );
+
+        APPS.AP_WEB_AUDIT_QUEUE_UTILS.enqueue_for_audit(
+            p_report_header_id => l_report_header_id
+        );
+
+        COMMIT;
+
+        l_return_value := JSON_OBJECT(
+            'STATUS'                  VALUE 'SUCCESS',
+            'REPORT_HEADER_ID'        VALUE l_report_header_id,
+            'EXPENSE_REPORT_NUMBER'   VALUE p_report_number,
+            'EMPLOYEE_ID'             VALUE l_emp_id,
+            'OPERATING_UNIT_ORG_ID'   VALUE l_org_id,
+            'WEEK_END_DATE'           VALUE TO_CHAR(l_week_end, 'YYYY-MM-DD'),
+            'TOTAL_AMOUNT_USD'        VALUE l_total,
+            'LINES_CREATED'           VALUE l_line_idx,
+            'DISTRIBUTIONS_CREATED'   VALUE l_line_idx,
+            'EXPENSE_STATUS_CODE'     VALUE 'PENDMGR',
+            'AUDIT_CODE'              VALUE 'PAPERLESS_AUDIT',
+            'AUDIT_RULE_TAG'          VALUE l_audit_tag,
+            'ATTACHMENT_MEDIA_ID'     VALUE l_media_id,
+            'MESSAGE'                 VALUE 'Expense report ' || p_report_number || ' created, submitted to OIE workflow, evaluated by audit rules, and enqueued in Expenses Audit strictly via official Oracle PL/SQL APIs.'
+        );
+
+        mcp_toolbox_log('Successfully created OIE Expense Report ' || p_report_number || ' (ID=' || l_report_header_id || ')', 'INFO', l_email_address, l_program_unit);
+        RETURN l_return_value;
+
+    EXCEPTION
+        WHEN OTHERS THEN
+            ROLLBACK;
+            l_sqlerrm := SQLERRM;
+            mcp_toolbox_log('Unexpected Error in create_expense_report: ' || l_sqlerrm, 'ERROR', l_email_address, l_program_unit);
+            l_return_value := JSON_OBJECT(
+                'STATUS'  VALUE 'ERROR',
+                'MESSAGE' VALUE 'Unexpected Error in create_expense_report: ' || l_sqlerrm
+            );
+            RETURN l_return_value;
+    END create_expense_report;
+
 end ge_ebs_mcp_tools;
+
+/
