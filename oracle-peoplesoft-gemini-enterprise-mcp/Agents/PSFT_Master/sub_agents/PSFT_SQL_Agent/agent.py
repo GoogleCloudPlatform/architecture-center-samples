@@ -220,32 +220,35 @@ _mcp_sql_init_error = None
 mcp_sql_toolset = None
 _max_retries = 3
 _retry_delay = 2
-for _attempt in range(_max_retries):
-    try:
-        with _telemetry_span("mcp_sql_toolset_init", {"url": MCP_SERVER_SQL_URL, "attempt": _attempt}):
-            if not MCP_SERVER_SQL_URL:
-                raise ValueError("MCP_SERVER_SQL_URL environment variable is required but not set.")
-            mcp_sql_toolset = McpToolset(
-                connection_params=StreamableHTTPConnectionParams(
-                    url=MCP_SERVER_SQL_URL,
-                    timeout=30.0,
-                ),
-                header_provider=_make_oidc_header_provider(MCP_SERVER_SQL_URL),
-            )
-            logger.info(f"Initialized Mcp SQL Toolset with URL: {MCP_SERVER_SQL_URL}")
-            if _TELEMETRY_CLIENT:
-                _TELEMETRY_CLIENT.log_event("mcp_sql_toolset_initialized", {
-                    "url": MCP_SERVER_SQL_URL
-                })
-            _mcp_sql_init_error = None
-            break
-    except Exception as e:
-        _mcp_sql_init_error = str(e)
-        logger.warning(f"Attempt {_attempt + 1} to initialize SQL MCP toolset failed: {e}")
-        if _attempt < _max_retries - 1:
-            time.sleep(_retry_delay * (2 ** _attempt))
+
+if not MCP_SERVER_SQL_URL:
+    _mcp_sql_init_error = "MCP_SERVER_SQL_URL environment variable is required but not set."
+    logger.error(_mcp_sql_init_error)
+else:
+    for _attempt in range(_max_retries):
+        try:
+            with _telemetry_span("mcp_sql_toolset_init", {"url": MCP_SERVER_SQL_URL, "attempt": _attempt}):
+                mcp_sql_toolset = McpToolset(
+                    connection_params=StreamableHTTPConnectionParams(
+                        url=MCP_SERVER_SQL_URL,
+                        timeout=30.0,
+                    ),
+                    header_provider=_make_oidc_header_provider(MCP_SERVER_SQL_URL),
+                )
+                logger.info(f"Initialized Mcp SQL Toolset with URL: {MCP_SERVER_SQL_URL}")
+                if _TELEMETRY_CLIENT:
+                    _TELEMETRY_CLIENT.log_event("mcp_sql_toolset_initialized", {
+                        "url": MCP_SERVER_SQL_URL
+                    })
+                _mcp_sql_init_error = None
+                break
+        except Exception as e:
+            _mcp_sql_init_error = str(e)
+            logger.warning(f"Attempt {_attempt + 1} to initialize SQL MCP toolset failed: {e}")
+            if _attempt < _max_retries - 1:
+                time.sleep(_retry_delay * (2 ** _attempt))
 if mcp_sql_toolset is None:
-    logger.error(f"Failed to initialize SQL MCP toolset after {_max_retries} attempts: {_mcp_sql_init_error}")
+    logger.error(f"Failed to initialize SQL MCP toolset: {_mcp_sql_init_error}")
     if _TELEMETRY_CLIENT:
         _TELEMETRY_CLIENT.log_event("mcp_sql_toolset_init_failed", {
             "url": MCP_SERVER_SQL_URL,

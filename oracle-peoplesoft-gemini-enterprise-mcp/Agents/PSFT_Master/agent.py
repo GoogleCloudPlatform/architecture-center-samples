@@ -323,9 +323,12 @@ def get_session_user_context(tool_context: ToolContext):
         if os.environ.get("DEBUG", "false").lower() == "true":
             email = os.environ.get("DEFAULT_PSFT_USER_EMAIL", "").strip()
         if not email:
-            raise RuntimeError(
-                "Unable to resolve authenticated user email from session state."
-            )
+            return {
+                "ok": False,
+                "source_agent": "PSFT_Master",
+                "error_code": "AUTH_FAILED",
+                "message": "Unable to resolve authenticated user email from session state.",
+            }
         safe_context = _build_safe_user_context(email)
         _set_state_value(tool_context, _USER_ID_STATE_KEY, email)
         _set_state_value(tool_context, _USER_CONTEXT_STATE_KEY, safe_context)
@@ -384,8 +387,8 @@ def get_user_id(tool_context: ToolContext):
             except Exception:
                 state_dict = {}
 
-        auth_id = os.environ.get("GOOGLE_CLOUD_AUTH_ID", "psft-fscm-master-auth")
-        auth_key = next((k for k in state_dict.keys() if auth_id and k.startswith(auth_id)), None)
+        auth_id = os.environ.get("GOOGLE_CLOUD_AUTH_ID", "psft-fscm-master-auth").strip()
+        auth_key = next((k for k in state_dict.keys() if auth_id and k.startswith(auth_id)), None) if auth_id else None
         
         # google.adk.sessions.state.State object has a get() method 
         # that can be used to retrieve the value of a specific key from the state.
@@ -444,9 +447,12 @@ def get_user_id(tool_context: ToolContext):
             if os.environ.get("DEBUG", "false").lower() == "true":
                 email = os.environ.get("DEFAULT_PSFT_USER_EMAIL", "").strip()
             if not email:
-                raise RuntimeError(
-                    "Authentication failed: Unable to resolve authenticated user email from session or OAuth token."
-                )
+                return {
+                    "ok": False,
+                    "source_agent": "PSFT_Master",
+                    "error_code": "AUTH_FAILED",
+                    "message": "Authentication failed: Unable to resolve authenticated user email from session or OAuth token.",
+                }
         else:
             if _TELEMETRY_CLIENT:
                 _TELEMETRY_CLIENT.log_event("user_context_resolved", {

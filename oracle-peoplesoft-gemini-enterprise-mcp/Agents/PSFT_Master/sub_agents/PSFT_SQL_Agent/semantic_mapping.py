@@ -47,10 +47,10 @@ def load_semantic_maps(base_dir: str) -> list:
 def build_semantic_context(semantic_maps: list) -> str:
     """Builds a prompt-ready string from a list of semantic map dicts."""
     logger.debug("Building semantic context string from loaded maps...")
-    context = (
+    parts = [
         "Use the following semantic map to understand the database schema and "
         "relationships when generating SQL or answering data questions:\n\n"
-    )
+    ]
 
     for smap in semantic_maps:
         try:
@@ -63,32 +63,33 @@ def build_semantic_context(semantic_maps: list) -> str:
             module_name = smap.get("module", "Unknown")
             logger.debug(f"Processing semantic map for module: {module_name}")
 
-            context += f"Module: {module_name}\n"
-            context += f"Description: {smap.get('description', '')}\n"
-            context += "Tables:\n"
+            parts.append(f"Module: {module_name}\n")
+            parts.append(f"Description: {smap.get('description', '')}\n")
+            parts.append("Tables:\n")
             for table in smap.get("tables", []):
                 table_name = table.get("table_name", "Unknown Table")
-                context += (
+                parts.append(
                     f"  - {table_name} ({table.get('business_name', '')}): "
                     f"{table.get('description', '')}\n"
                 )
-                context += "    Columns:\n"
+                parts.append("    Columns:\n")
                 for col in table.get("columns", []):
                     col_name = col.get("name", "Unknown Column")
-                    context += f"      * {col_name}: {col.get('description', '')}\n"
-            context += "Common Joins:\n"
+                    parts.append(f"      * {col_name}: {col.get('description', '')}\n")
+            parts.append("Common Joins:\n")
             for join in smap.get("common_joins", []):
-                context += (
+                parts.append(
                     f"  - {join.get('description', '')}: {join.get('join_condition', '')}\n"
                 )
             if smap.get("example_queries"):
-                context += "Example Queries:\n"
+                parts.append("Example Queries:\n")
                 for eq in smap.get("example_queries", []):
-                    context += f"  - {eq.get('description', '')}: {eq.get('sql', '')}\n"
-            context += "\n"
+                    parts.append(f"  - {eq.get('description', '')}: {eq.get('sql', '')}\n")
+            parts.append("\n")
         except Exception as e:
             logger.error(f"Error processing semantic map entry: {e}", exc_info=True)
             continue
 
+    context = "".join(parts)
     logger.debug(f"Finished building semantic context. Length: {len(context)} characters.")
     return context

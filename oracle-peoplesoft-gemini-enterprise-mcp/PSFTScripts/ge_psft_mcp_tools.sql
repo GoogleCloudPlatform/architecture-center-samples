@@ -288,6 +288,9 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     v_vendor    VARCHAR2(10) := LPAD(SUBSTR(NVL(TRIM(p_vendor_id), 'USA0000002'), 1, 10), 10, '0');
     v_result    VARCHAR2(1000);
   BEGIN
+    IF TRIM(p_invoice_num) IS NULL THEN
+      RAISE_APPLICATION_ERROR(-20003, 'Invoice number cannot be empty.');
+    END IF;
     IF v_amt IS NULL OR v_amt <= 0 THEN
       RAISE_APPLICATION_ERROR(-20002, 'Invalid voucher amount: ' || p_amount);
     END IF;
