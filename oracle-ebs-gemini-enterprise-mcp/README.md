@@ -137,10 +137,10 @@ cd EBSScripts
 # 1. Create the least-privilege APPS_AI database user and role (run as SYSTEM / DBA)
 sqlplus system/<SYSTEM_PASSWORD>@<EBS_HOST>:1521/<EBS_SID> @create_apps_ai.sql
 
-# 2. Create the audit table (APPS.GGLTOOLBOX$MCP_LOG) and compile APPS.GE_EBS_MCP_TOOLS (run as APPS)
+# 2. Create the audit table (APPS.GGLTOOLBOX$MCP_LOG), compile APPS.GE_EBS_MCP_TOOLS, and grant EXECUTE privileges to APPS_AI (run as APPS)
 sqlplus apps/<APPS_PASSWORD>@<EBS_HOST>:1521/<EBS_SID> @install_all_mcp_db.sql
 
-# 3. Grant restricted SELECT and EXECUTE privileges to APPS_AI (run as APPS)
+# 3. Grant restricted SELECT privileges on curated module views to APPS_AI (run as APPS)
 sqlplus apps/<APPS_PASSWORD>@<EBS_HOST>:1521/<EBS_SID> @GrantToApps_AIRESTRICTED.sql
 
 # 4. Install read-only analytical views and (optional) seed synthetic test records via official Oracle PL/SQL APIs (run as APPS)
@@ -239,7 +239,7 @@ make deploy_mcp_server PROJECT_ID=your-gcp-project-id REGION=us-central1
    ```bash
    curl -s -X POST "${MCP_URL}" \
      -H "Content-Type: application/json" \
-     -H "Authorization: Bearer $(gcloud auth print-identity-token --audiences="${SERVICE_URL}")" \
+     -H "Authorization: Bearer $(gcloud auth print-identity-token --audiences="${MCP_URL%/mcp}")" \
      -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | jq '.result.tools[].name'
    ```
    You should see all **21 Oracle EBS MCP tools** returned.
