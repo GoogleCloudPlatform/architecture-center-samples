@@ -473,7 +473,7 @@ def make_request(path, data=None, extra_headers=None):
     try:
         with urllib.request.urlopen(req) as resp:
             body = resp.read().decode("utf-8")
-            return resp.status, body, None
+            return resp.getcode(), body, None
     except urllib.error.HTTPError as e:
         err_body = e.read().decode("utf-8")
         return e.code, err_body, e
