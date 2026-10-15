@@ -1,0 +1,70 @@
+{
+  "module": "PeopleSoft Accounts Payable (AP)",
+  "description": "PeopleSoft FSCM 9.2 Accounts Payable vouchers, voucher lines, payments, and supplier master tables.",
+  "tables": [
+    {
+      "table_name": "SYSADM.PS_VOUCHER",
+      "business_name": "AP Voucher Header",
+      "description": "Stores Accounts Payable voucher headers by BUSINESS_UNIT and VOUCHER_ID.",
+      "columns": [
+        {
+          "name": "BUSINESS_UNIT",
+          "description": "AP Business Unit (e.g., US001)."
+        },
+        {
+          "name": "VOUCHER_ID",
+          "description": "8-character Voucher ID (e.g., 00990811)."
+        },
+        {
+          "name": "INVOICE_ID",
+          "description": "Supplier invoice number (e.g., HM-4409-V2)."
+        },
+        {
+          "name": "INVOICE_DT",
+          "description": "Invoice date."
+        },
+        {
+          "name": "VENDOR_ID",
+          "description": "10-character Supplier ID (e.g., 0000000001)."
+        },
+        {
+          "name": "GROSS_AMT",
+          "description": "Total gross voucher amount."
+        },
+        {
+          "name": "ENTRY_STATUS",
+          "description": "Entry status (P = Postable, R = Recycled)."
+        }
+      ]
+    },
+    {
+      "table_name": "SYSADM.PS_VENDOR",
+      "business_name": "Supplier Master",
+      "description": "Stores supplier/vendor records by SETID and VENDOR_ID.",
+      "columns": [
+        {
+          "name": "SETID",
+          "description": "SetID (e.g., SHARE)."
+        },
+        {
+          "name": "VENDOR_ID",
+          "description": "10-character Supplier ID."
+        },
+        {
+          "name": "NAME1",
+          "description": "Primary supplier name."
+        },
+        {
+          "name": "VENDOR_STATUS",
+          "description": "Supplier status (A = Active)."
+        }
+      ]
+    }
+  ],
+  "common_joins": [
+    {
+      "description": "Join Vouchers to Suppliers",
+      "join_condition": "PS_VOUCHER.VENDOR_SETID = PS_VENDOR.SETID AND PS_VOUCHER.VENDOR_ID = PS_VENDOR.VENDOR_ID"
+    }
+  ]
+}

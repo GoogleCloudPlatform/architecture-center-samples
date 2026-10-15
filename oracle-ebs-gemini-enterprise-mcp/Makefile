@@ -30,7 +30,7 @@ init: ## Initialize Terraform backend
 	PROJECT_NUMBER=$$(gcloud projects describe $(PROJECT_ID) --format="value(projectNumber)"); \
 	BUCKET_NAME="gs://$(PROJECT_ID)-$${PROJECT_NUMBER}-terraform-state"; \
 	if ! gcloud storage ls -b $$BUCKET_NAME >/dev/null 2>&1; then \
-		gcloud storage buckets create $$BUCKET_NAME --location=US --uniform-bucket-level-access; \
+		gcloud storage buckets create $$BUCKET_NAME --location=$(REGION) --uniform-bucket-level-access; \
 		sleep 10; \
 	fi; \
 	terraform -chdir=$(TF_DIR) init -reconfigure \

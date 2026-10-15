@@ -1,6 +1,6 @@
 # Oracle EBS MCP Server (`mcp-toolbox-ebs`) — Artifact Registry & Cloud Run Deployment Guide
 
-This directory contains the containerized **Oracle E-Business Suite (EBS) Model Context Protocol (MCP) Server** built on Google's **GenAI Toolbox for Databases (`genai-toolbox`)** and pre-configured with **21 Oracle EBS ERP and Public Sector MCP tools** (`tools.yaml`).
+This directory contains the containerized **Oracle E-Business Suite (EBS) Model Context Protocol (MCP) Server** built on Google's **GenAI Toolbox for Databases (`genai-toolbox`)** and pre-configured with **21 Oracle E-Business Suite (EBS) MCP tools** (`tools.yaml`).
 
 ## Key Capabilities
 
@@ -51,20 +51,43 @@ export IMAGE_URL="${REGION}-docker.pkg.dev/${PROJECT_ID}/${AR_REPO_NAME}/${SERVI
 
 gcloud builds submit . \
     --tag "${IMAGE_URL}" \
-    --project "${PROJECT_ID}"
+    --project "${PROJECT_ID}" \
+    --region "${REGION}" \
+    --default-buckets-behavior=regional-user-owned-bucket
+# Optional for Assured Workloads: append --service-account="projects/${PROJECT_ID}/serviceAccounts/${SERVICE_ACCOUNT_EMAIL}"
 ```
 
 ### 3. Store Oracle EBS Credentials & Tool Definitions in Secret Manager
 
 ```bash
-printf "%s" "${EBS_DB_CONNECTION_STRING}" | gcloud secrets create "${SERVICE_NAME}-db-conn" --data-file=- --project="${PROJECT_ID}"
-printf "%s" "${EBS_DB_USER}"              | gcloud secrets create "${SERVICE_NAME}-db-user" --data-file=- --project="${PROJECT_ID}"
-printf "%s" "${EBS_DB_PASSWORD}"          | gcloud secrets create "${SERVICE_NAME}-db-pass" --data-file=- --project="${PROJECT_ID}"
-gcloud secrets create "${SERVICE_NAME}-secret" --data-file=tools.yaml --project="${PROJECT_ID}"
+# Create regional secrets (uses official gcloud CLI flags --replication-policy="user-managed" --locations="${REGION}" per 'gcloud secrets create --help')
+printf "%s" "${EBS_DB_CONNECTION_STRING}" | gcloud secrets create "${SERVICE_NAME}-db-conn" \
+    --replication-policy="user-managed" \
+    --locations="${REGION}" \
+    --data-file=- \
+    --project="${PROJECT_ID}"
+printf "%s" "${EBS_DB_USER}"              | gcloud secrets create "${SERVICE_NAME}-db-user" \
+    --replication-policy="user-managed" \
+    --locations="${REGION}" \
+    --data-file=- \
+    --project="${PROJECT_ID}"
+printf "%s" "${EBS_DB_PASSWORD}"          | gcloud secrets create "${SERVICE_NAME}-db-pass" \
+    --replication-policy="user-managed" \
+    --locations="${REGION}" \
+    --data-file=- \
+    --project="${PROJECT_ID}"
+gcloud secrets create "${SERVICE_NAME}-secret" \
+    --replication-policy="user-managed" \
+    --locations="${REGION}" \
+    --data-file=tools.yaml \
+    --project="${PROJECT_ID}"
 
-gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
-    --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
-    --role="roles/secretmanager.secretAccessor"
+for SECRET_ID in "${SERVICE_NAME}-db-conn" "${SERVICE_NAME}-db-user" "${SERVICE_NAME}-db-pass" "${SERVICE_NAME}-secret"; do
+    gcloud secrets add-iam-policy-binding "${SECRET_ID}" \
+        --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
+        --role="roles/secretmanager.secretAccessor" \
+        --project="${PROJECT_ID}"
+done
 ```
 
 ### 4. Deploy to Cloud Run
@@ -79,11 +102,21 @@ gcloud run deploy "${SERVICE_NAME}" \
     --args="--config=/app/tools.yaml","--address=0.0.0.0","--port=8080","--log-level=DEBUG" \
     --network "${VPC_NAME}" \
     --subnet "${SUBNET_NAME}" \
-    --allow-unauthenticated
+    --vpc-egress "${VPC_EGRESS:-private-ranges-only}" \
+    --ingress "${INGRESS:-all}" \
+    --no-allow-unauthenticated
 ```
 
-### 5. Retrieve the MCP Server URL
+### 5. Retrieve & Verify the Authenticated MCP Server URL
+
+Since the service is deployed with `--no-allow-unauthenticated`, include an OIDC ID token scoped to the Cloud Run service URL (`--audiences="${SERVICE_URL}"`) in the `Authorization` header when making requests:
 
 ```bash
-echo "$(gcloud run services describe ${SERVICE_NAME} --project ${PROJECT_ID} --region ${REGION} --format 'value(status.url)')/mcp"
+export SERVICE_URL="$(gcloud run services describe ${SERVICE_NAME} --project ${PROJECT_ID} --region ${REGION} --format 'value(status.url)')"
+export MCP_URL="${SERVICE_URL}/mcp"
+echo "${MCP_URL}"
+curl -s -X POST "${MCP_URL}" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $(gcloud auth print-identity-token --audiences="${SERVICE_URL}")" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```

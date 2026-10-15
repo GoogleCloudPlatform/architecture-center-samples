@@ -1,0 +1,30 @@
+{
+  "module": "PeopleSoft General Ledger (GL)",
+  "description": "PeopleSoft FSCM 9.2 General Ledger journal headers and lines.",
+  "tables": [
+    {
+      "table_name": "SYSADM.PS_JRNL_HEADER",
+      "business_name": "GL Journal Header",
+      "description": "Stores General Ledger journal entries by BUSINESS_UNIT, JOURNAL_ID, and JOURNAL_DATE.",
+      "columns": [
+        {
+          "name": "BUSINESS_UNIT",
+          "description": "GL Business Unit (e.g., US001, EGV05)."
+        },
+        {
+          "name": "JOURNAL_ID",
+          "description": "Journal ID."
+        },
+        {
+          "name": "JOURNAL_DATE",
+          "description": "Journal date."
+        },
+        {
+          "name": "JRNL_HDR_STATUS",
+          "description": "Journal status (P = Posted, V = Valid)."
+        }
+      ]
+    }
+  ],
+  "common_joins": []
+}

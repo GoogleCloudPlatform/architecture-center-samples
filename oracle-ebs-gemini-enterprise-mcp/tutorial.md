@@ -1,8 +1,6 @@
 # Deploy Oracle EBS MCP Server for Gemini Enterprise to Google Cloud
 
-Welcome to the interactive **Oracle E-Business Suite (EBS) Gemini Enterprise MCP Server** deployment walkthrough. This guide walks you through deploying the 21-tool Oracle EBS MCP server (`mcp-toolbox-ebs`) to **Google Artifact Registry** and **Google Cloud Run** (with credentials secured in **Google Cloud Secret Manager**) so it can power the **6 Gemini Enterprise Public Sector Skills**.
-
----
+Welcome to the interactive **Oracle E-Business Suite (EBS) Gemini Enterprise MCP Server** deployment walkthrough. This guide walks you through deploying the 21-tool Oracle EBS MCP server (`mcp-toolbox-ebs`) to **Google Artifact Registry** and **Google Cloud Run** (with credentials secured in **Google Cloud Secret Manager**) so you can connect it directly to **Gemini Enterprise**.
 
 ## Step 1: Select Your Google Cloud Project & Region
 
@@ -20,11 +18,9 @@ Verify your active project:
 echo "Deploying into Project: $PROJECT_ID (Region: $REGION)"
 ```
 
----
-
 ## Step 2: Enable Required Google Cloud APIs
 
-Enable Cloud Run, Artifact Registry, Cloud Build, Secret Manager, Compute Engine, and Vertex AI APIs:
+Enable Cloud Run, Artifact Registry, Cloud Build, Secret Manager, and Compute Engine APIs:
 
 ```bash
 gcloud services enable \
@@ -33,11 +29,8 @@ gcloud services enable \
     cloudbuild.googleapis.com \
     secretmanager.googleapis.com \
     compute.googleapis.com \
-    aiplatform.googleapis.com \
     --project="$PROJECT_ID"
 ```
-
----
 
 ## Step 3: Install Oracle EBS Database Objects (DBA Step)
 
@@ -49,11 +42,9 @@ Before starting the Cloud Run service, run the SQL and PL/SQL installation scrip
 2. **Compile PL/SQL Wrapper Package & Audit Table** (as `APPS`):
    - `EBSScripts/ge_ebs_mcp_tools.pls`
    - `EBSScripts/ge_ebs_mcp_tools.plb`
-3. **Install Public Sector Read-Only Views & Official API Seed Script** (as `APPS`, optional for Public Sector skills):
+3. **Install Read-Only Analytical Views & Official API Seed Script** (as `APPS`):
    - `EBSScripts/install_gov_public_sector_views.sql`
    - `EBSScripts/create_v2_reports_via_oracle_apis.sql`
-
----
 
 ## Step 4: Configure & Deploy the Oracle EBS MCP Server to Artifact Registry & Cloud Run
 
@@ -85,8 +76,6 @@ Run the automated deployment script to:
 ./deploy.sh
 ```
 
----
-
 ## Step 5: Connect Your Cloud Run MCP Endpoint to Gemini Enterprise
 
 Once `./deploy.sh` finishes, it prints your **MCP Endpoint URL**:
@@ -95,8 +84,7 @@ Once `./deploy.sh` finishes, it prints your **MCP Endpoint URL**:
 https://mcp-toolbox-ebs-<hash>-uc.a.run.app/mcp
 ```
 
-1. **Register the BYO-MCP Endpoint in Gemini Enterprise:** Register the `/mcp` endpoint directly in your Gemini Enterprise / Vertex AI Agent Builder console.
-2. **Invoke the 6 Gemini Enterprise Public Sector Skills:** In the Gemini Enterprise web app, open the **Skills** gallery or type `/` in chat (`/plain-language-notice-generator`, `/redaction-and-foia-compliance`, `/policy-and-statute-assistant`, `/document-intake-cleanup-and-validation`, `/rfp-vendor-evaluation-scorer`, `/expense-auditor`) to ground your workflows in live Oracle E-Business Suite R12.2 data.
+1. **Register the BYO-MCP Endpoint in Gemini Enterprise:** Register the `/mcp` endpoint directly in your Gemini Enterprise console.
+2. **Query & Act on Oracle EBS Data in Gemini Enterprise:** In the Gemini Enterprise web app, invoke your connected Oracle EBS MCP tools to query and act on live Oracle E-Business Suite R12.2 data.
 
 Congratulations! Your Oracle EBS Gemini Enterprise MCP Server is now live.
-
