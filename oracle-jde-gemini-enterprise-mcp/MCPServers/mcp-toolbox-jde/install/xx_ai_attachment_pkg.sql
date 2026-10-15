@@ -125,7 +125,9 @@ CREATE OR REPLACE PACKAGE BODY xx_ai_attachment_pkg AS
         BEGIN
             SELECT gdtxft INTO l_data
               FROM &&jde_data_schema..f00165
-             WHERE TRIM(gdobnm) = UPPER(TRIM(p_object)) AND TRIM(gdtxky) = TRIM(p_key) AND gdmoseqn = p_seq;
+             WHERE LENGTH(TRIM(p_object)) <= 10   -- GDOBNM is CHAR(10): RPAD would cut a longer name onto a real object
+               AND gdobnm = RPAD(UPPER(TRIM(p_object)), 10)   -- no TRIM on the columns, so the F00165_0 index is used
+               AND gdtxky = TRIM(p_key) AND gdmoseqn = p_seq;
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
                 g_status := 'NOT_FOUND';

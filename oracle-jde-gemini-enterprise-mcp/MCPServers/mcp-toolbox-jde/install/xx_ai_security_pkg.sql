@@ -95,7 +95,7 @@ CREATE OR REPLACE PACKAGE BODY xx_ai_security_pkg AS
                 IF l_active = 'N' THEN
                     RAISE_APPLICATION_ERROR(-20013, 'E-mail address switched off: ' || SUBSTR(l_id, 1, 100));
                 END IF;
-                SELECT COUNT(*) INTO l_count FROM &&jde_sys_schema..f0092 WHERE TRIM(uluser) = l_user;
+                SELECT COUNT(*) INTO l_count FROM &&jde_sys_schema..f0092 WHERE uluser = RPAD(l_user, 10);   -- l_user is at most 10 characters
                 IF l_count = 0 THEN
                     RAISE_APPLICATION_ERROR(-20011, 'Mapped JD Edwards user does not exist for ' || SUBSTR(l_id, 1, 100));
                 END IF;
@@ -105,7 +105,7 @@ CREATE OR REPLACE PACKAGE BODY xx_ai_security_pkg AS
             SELECT COUNT(DISTINCT u), MIN(u) INTO l_count, l_user
               FROM (SELECT TO_CHAR(TRIM(a.auuser)) u
                       FROM &&jde_sys_schema..f00926 a
-                      JOIN &&jde_sys_schema..f0092 p ON TRIM(p.uluser) = TRIM(a.auuser)
+                      JOIN &&jde_sys_schema..f0092 p ON p.uluser = a.auuser   -- both CHAR(10): compared as is, so the index is used
                      WHERE UPPER(TRIM(a.auemla)) = l_key
                     UNION
                     SELECT TO_CHAR(TRIM(u.uluser))
@@ -116,7 +116,8 @@ CREATE OR REPLACE PACKAGE BODY xx_ai_security_pkg AS
         ELSE
             SELECT COUNT(DISTINCT TRIM(uluser)), MIN(TO_CHAR(TRIM(uluser))) INTO l_count, l_user
               FROM &&jde_sys_schema..f0092
-             WHERE TRIM(uluser) = l_key;
+             WHERE LENGTH(l_key) <= 10   -- ULUSER is CHAR(10): RPAD would cut a longer id onto a real user
+               AND uluser = RPAD(l_key, 10);
         END IF;
         IF l_count = 0 THEN
             RAISE_APPLICATION_ERROR(-20011, 'No JD Edwards user for ' || SUBSTR(l_id, 1, 100));
