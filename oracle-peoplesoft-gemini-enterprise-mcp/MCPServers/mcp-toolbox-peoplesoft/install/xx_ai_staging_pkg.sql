@@ -140,9 +140,9 @@ CREATE OR REPLACE PACKAGE BODY sysadm.xx_ai_staging_pkg AS
                         DBMS_SQL.BIND_VARIABLE(l_cur, ':b' || k, TO_DATE(SUBSTR(l_obj.get_string(l_keys(k)), 1, 10), 'YYYY-MM-DD'));
                     ELSIF l_types(l_col) LIKE 'TIMESTAMP%' THEN
                         IF NOT l_el.is_string THEN
-                            RAISE_APPLICATION_ERROR(-20001, p_record || ' row ' || (i + 1) || ': ' || l_col || ' needs a string "YYYY-MM-DDTHH24:MI:SS"');
+                            RAISE_APPLICATION_ERROR(-20001, p_record || ' row ' || (i + 1) || ': ' || l_col || ' needs a string "YYYY-MM-DDTHH24:MI:SS" (fractional seconds and a time zone suffix are ignored)');
                         END IF;
-                        DBMS_SQL.BIND_VARIABLE(l_cur, ':b' || k, TO_TIMESTAMP(l_obj.get_string(l_keys(k)), 'YYYY-MM-DD"T"HH24:MI:SS'));
+                        DBMS_SQL.BIND_VARIABLE(l_cur, ':b' || k, TO_TIMESTAMP(SUBSTR(l_obj.get_string(l_keys(k)), 1, 19), 'YYYY-MM-DD"T"HH24:MI:SS'));
                     ELSIF l_el.is_string THEN
                         DBMS_SQL.BIND_VARIABLE(l_cur, ':b' || k, l_obj.get_string(l_keys(k)));   -- get_string: without the JSON quotes
                     ELSE

@@ -170,8 +170,9 @@ fi
 
 if [ -z "${REGION}" ]; then
     REGION="$(get_env_val GOOGLE_CLOUD_REGION)"
+    [ -n "${REGION}" ] || REGION="$(get_env_val GOOGLE_CLOUD_LOCATION)"
     if [ -z "${REGION}" ] || [ "${REGION}" = "global" ]; then
-        REGION="northamerica-northeast2"
+        REGION="us-central1"   # same default as deploy_mcp_server.sh and destroy_mcp_server.sh
     fi
 fi
 
