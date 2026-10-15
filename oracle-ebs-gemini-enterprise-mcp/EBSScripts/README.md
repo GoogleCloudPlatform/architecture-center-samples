@@ -18,21 +18,29 @@ This directory contains the SQL and PL/SQL scripts required to configure the Ora
 
 ## 2. Quick-Start Installation
 
-### Step 1: Install Core PL/SQL Package and Audit Logging Table
-Connect to the Oracle EBS database (`EBSDB`) as `APPS` and run `install_all_mcp_db.sql`:
+### Step 1: Create Least-Privilege `APPS_AI` User & Role
+Connect to the Oracle EBS database (`EBSDB`) as `SYSTEM` / `SYSDBA` and run `create_apps_ai.sql`:
+
+```bash
+sqlplus system/<system_password>@<ebs_db_host>:1521/EBSDB @create_apps_ai.sql
+```
+
+### Step 2: Install Core PL/SQL Package, Audit Logging Table & `APPS_AI` Grants
+Connect to the Oracle EBS database (`EBSDB`) as `APPS`, run `install_all_mcp_db.sql` (which creates `APPS.GGLTOOLBOX$MCP_LOG` and compiles `APPS.GE_EBS_MCP_TOOLS` before granting execution rights), and run `GrantToApps_AIRESTRICTED.sql`:
 
 ```bash
 sqlplus apps/<apps_password>@<ebs_db_host>:1521/EBSDB @install_all_mcp_db.sql
+sqlplus apps/<apps_password>@<ebs_db_host>:1521/EBSDB @GrantToApps_AIRESTRICTED.sql
 ```
 
-### Step 2: Install Read-Only Analytical Views (100% Oracle Support-Compliant)
+### Step 3: Install Read-Only Analytical Views (100% Oracle Support-Compliant)
 To create the 7 read-only `APPS.VW_GOV_*` views consumed by the parameterized SQL MCP tools (pure `CREATE OR REPLACE VIEW` DDL with zero base-table DML):
 
 ```bash
 sqlplus apps/<apps_password>@<ebs_db_host>:1521/EBSDB @install_gov_public_sector_views.sql
 ```
 
-### Step 3 (Optional — Demo / Sandbox Environments): Load Synthetic `-V2` Expense Reports & Invoices via Official Oracle APIs
+### Step 4 (Optional — Demo / Sandbox Environments): Load Synthetic `-V2` Expense Reports & Invoices via Official Oracle APIs
 To populate synthetic evaluation Expense Reports (`EXP-ATL-9921-V2`, `EXP-DEN-5521-V2`, `EXP-CHI-8812-V2`) and AP Invoices (`HM-4409-V2`, `V-2026-301-V2`, `MS-1049-V2`) strictly using Oracle-approved PL/SQL packages and Open Interfaces:
 
 ```bash
