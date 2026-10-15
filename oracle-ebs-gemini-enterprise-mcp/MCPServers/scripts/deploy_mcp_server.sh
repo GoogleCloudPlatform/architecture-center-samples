@@ -20,15 +20,15 @@
 #
 # The config must NOT contain credentials. It references them as "${DB_PASSWORD}"
 # etc.; the Toolbox substitutes them at startup. Secret values are read from the environment
-# variable of the same name, then <system>/.env.database, then a silent prompt, and are sent to Secret Manager over stdin -
+# variable of the same name, then mcp-toolbox-<system>/.env.database, then a silent prompt, and are sent to Secret Manager over stdin -
 # never on a command line, in .env, or on screen. If source.yaml still has hardcoded
 # credentials, the script offers to move them into Secret Manager and rewrite the file.
 #
 # One isolated deployment per target system. --system {ebs,peoplesoft,jde} is REQUIRED (no
 # default; 'ps' is accepted as an alias of peoplesoft) and selects:
-#   - the env file        <system>/.env     (the repo-root .env is never read or written)
+#   - the env file        mcp-toolbox-<system>/.env     (the repo-root .env is never read or written)
 #   - the service name    mcp-toolbox-<ebs|ps|jde>
-#   - the config folder   <system>/tools/   (source.yaml + one yaml per toolset)
+#   - the config folder   mcp-toolbox-<system>/tools/   (source.yaml + one yaml per toolset)
 #   - the secrets         <service-name>-<var>, and the GCS path <service-name>/tools/
 # so each system gets its own env file, Cloud Run service, secrets and config, and a deploy of
 # one can never touch another. Same conventions as deploy_agent.sh: blank settings are detected and fixed or explained, a read-only
@@ -91,33 +91,33 @@ usage() {
 Usage: ./scripts/deploy_mcp_server.sh --system {ebs|peoplesoft|jde} [OPTIONS]
 
 Deploys the MCP Toolbox for ONE target system to private Cloud Run. Each system has its own
-env file (<system>/.env), service, secrets and tools file, so deployments are fully isolated.
+env file (mcp-toolbox-<system>/.env), service, secrets and tools file, so deployments are fully isolated.
 Every action that changes anything asks for confirmation first (-y/--yes skips the prompts).
 
 Required:
   --system SYSTEM         Target system: ebs | peoplesoft (alias: ps) | jde. No default.
   --variant NAME          Optional. Keep a separate deployment of the same system, for example
-                          "sec" and "agent": its own <system>/.env.<NAME>, service name
+                          "sec" and "agent": its own mcp-toolbox-<system>/.env.<NAME>, service name
                           mcp-toolbox-<ebs|ps|jde>-<NAME> and secrets. DB credentials fall back to
-                          <system>/.env.database unless <system>/.env.<NAME>.database exists.
-                          Reads ./<system>/.env (ebs/.env, peoplesoft/.env, jde/.env; the root
+                          mcp-toolbox-<system>/.env.database unless mcp-toolbox-<system>/.env.<NAME>.database exists.
+                          Reads ./mcp-toolbox-<system>/.env (mcp-toolbox-ebs/.env, mcp-toolbox-peoplesoft/.env, mcp-toolbox-jde/.env; the root
                           .env is never used). Create one with --init-env.
 
 Options:
-  --project ID            GCP project ID           (default: <system>/.env, then active gcloud project)
+  --project ID            GCP project ID           (default: mcp-toolbox-<system>/.env, then active gcloud project)
   --region REGION         Cloud Run region         (default: GOOGLE_CLOUD_REGION, then GOOGLE_CLOUD_LOCATION, then ${DEFAULT_REGION})
   --service-account SA    Runtime service account  (default: <ebs|ps|jde>-service-account@<project>.iam.gserviceaccount.com)
   --service-name NAME     Cloud Run service name   (default: mcp-toolbox-<ebs|ps|jde>)
-  --bucket, --config-bucket BUCKET  GCS bucket for the config folder (default: MCP_TOOLBOX_BUCKET in <system>/.env, or auto-discovered)
+  --bucket, --config-bucket BUCKET  GCS bucket for the config folder (default: MCP_TOOLBOX_BUCKET in mcp-toolbox-<system>/.env, or auto-discovered)
   --secret-name NAME      [Legacy] Secret Manager secret holding the old tools.yaml (default: <service-name>-secrets)
   --image URL             Toolbox container image
-  --tools-dir PATH        config folder to deploy  (default: <system>/tools, or <system>/tools_<variant> with --variant)
+  --tools-dir PATH        config folder to deploy  (default: mcp-toolbox-<system>/tools, or mcp-toolbox-<system>/tools_<variant> with --variant)
                           (--tools-file is still accepted: tools_sec.yaml is read as the folder tools_sec)
   --network NAME          VPC network for Direct VPC egress (to reach the database)
   --subnet NAME           Subnet in that network and region
 
 Setup:
-  --init-env              Create <system>/.env from .env.example, replacing its {{...}}
+  --init-env              Create mcp-toolbox-<system>/.env from .env.example, replacing its {{...}}
                           placeholders ({{SYSTEM}}, {{SYSTEM_SHORT}}, {{SYSTEM_UPPER}}) for the
                           chosen system, then exit. Asks before overwriting (-y to skip; -n previews).
 
@@ -139,10 +139,10 @@ Checks and fixes:
   -h, --help              Show this help
 
 Database credentials (DB_CONNECTION_STRING, DB_USER, DB_PASSWORD, ...) are read from the
-environment, then <system>/.env.database (created by --init-env, mode 600), then a hidden prompt,
+environment, then mcp-toolbox-<system>/.env.database (created by --init-env, mode 600), then a hidden prompt,
 so a fully unattended deploy needs that file filled in.
 
-Settings read from <system>/.env (written back when you agree):
+Settings read from mcp-toolbox-<system>/.env (written back when you agree):
   GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_PROJECT_NUMBER, GOOGLE_CLOUD_REGION,
   GOOGLE_CLOUD_SERVICE_ACCOUNT, GOOGLE_CLOUD_NETWORK, GOOGLE_CLOUD_SUBNET,
   MCP_TOOLBOX_SERVICE_NAME, MCP_TOOLBOX_BUCKET, MCP_TOOLBOX_SECRET_NAME,
@@ -200,16 +200,17 @@ VARIANT="$(printf '%s' "${VARIANT}" | tr 'A-Z' 'a-z')"
 VARIANT_SUFFIX="${VARIANT:+-${VARIANT}}"         # -sec   (service and secret names)
 VARIANT_EXT="${VARIANT:+.${VARIANT}}"            # .sec   (env file names)
 SYSARGS="--system ${SYSTEM}${VARIANT:+ --variant ${VARIANT}}"
+SYSTEM_DIR="mcp-toolbox-${SYSTEM}"   # per-system config folder under MCPServers/ (.env, tools*/)
 DEFAULT_SERVICE_NAME="mcp-toolbox-${SYSTEM_SHORT}${VARIANT_SUFFIX}"
 DEFAULT_SA_NAME="${SYSTEM_SHORT}-service-account"
-# This repo keeps the config in the folder <system>/tools/ (source.yaml + one yaml per toolset).
-# With --variant NAME the default is <system>/tools_NAME/ (generate it with
+# This repo keeps the config in the folder mcp-toolbox-<system>/tools/ (source.yaml + one yaml per toolset).
+# With --variant NAME the default is mcp-toolbox-<system>/tools_NAME/ (generate it with
 # sync_sql_to_yaml.py --system <system> --out tools_NAME).
-DEFAULT_TOOLS_DIR="${SYSTEM}/tools${VARIANT:+_${VARIANT}}"
-# Existing config folders <system>/tools and <system>/tools_*, repo-relative: the default first, then tools, then the rest
+DEFAULT_TOOLS_DIR="${SYSTEM_DIR}/tools${VARIANT:+_${VARIANT}}"
+# Existing config folders mcp-toolbox-<system>/tools and mcp-toolbox-<system>/tools_*, repo-relative: the default first, then tools, then the rest
 tools_dir_candidates() {
     local f rel seen=" "
-    for f in "${REPO_ROOT}/${DEFAULT_TOOLS_DIR}" "${REPO_ROOT}/${SYSTEM}/tools" "${REPO_ROOT}/${SYSTEM}"/tools_*; do
+    for f in "${REPO_ROOT}/${DEFAULT_TOOLS_DIR}" "${REPO_ROOT}/${SYSTEM_DIR}/tools" "${REPO_ROOT}/${SYSTEM_DIR}"/tools_*; do
         [ -f "${f}/source.yaml" ] || continue
         rel="${f#${REPO_ROOT}/}"
         [[ "${seen}" == *" ${rel} "* ]] && continue
@@ -217,11 +218,11 @@ tools_dir_candidates() {
     done
 }
 # Deliberately ignores DEPLOY_ENV_FILE and the plain .env: one env file per system.
-ENV_FILE="${REPO_ROOT}/${SYSTEM}/.env${VARIANT_EXT}"
-DB_ENV_FILE="${REPO_ROOT}/${SYSTEM}/.env${VARIANT_EXT}.database"   # DB_CONNECTION_STRING / DB_USER / DB_PASSWORD (optional)
+ENV_FILE="${REPO_ROOT}/${SYSTEM_DIR}/.env${VARIANT_EXT}"
+DB_ENV_FILE="${REPO_ROOT}/${SYSTEM_DIR}/.env${VARIANT_EXT}.database"   # DB_CONNECTION_STRING / DB_USER / DB_PASSWORD (optional)
 # A variant without its own credentials file shares the system's
-if [ -n "${VARIANT}" ] && [ ! -f "${DB_ENV_FILE}" ] && [ -f "${REPO_ROOT}/${SYSTEM}/.env.database" ]; then
-    DB_ENV_FILE="${REPO_ROOT}/${SYSTEM}/.env.database"
+if [ -n "${VARIANT}" ] && [ ! -f "${DB_ENV_FILE}" ] && [ -f "${REPO_ROOT}/${SYSTEM_DIR}/.env.database" ]; then
+    DB_ENV_FILE="${REPO_ROOT}/${SYSTEM_DIR}/.env.database"
 fi
 # Older layout kept these at the repo root as .env.<system> and .env.<system>.database
 LEGACY_ENV_FILE="${REPO_ROOT}/.env.${SYSTEM}"
@@ -261,8 +262,8 @@ if [ "${INIT_ENV}" = true ]; then
     if grep -n '{{[A-Z_]*}}' "${ENV_FILE}" >&2; then die "Unreplaced placeholders remain in ${ENV_FILE}."; fi
     chmod 600 "${ENV_FILE}"
     DB_TEMPLATE="${REPO_ROOT}/.env.example.database"
-    if [ -n "${VARIANT}" ] && [ ! -f "${REPO_ROOT}/${SYSTEM}/.env${VARIANT_EXT}.database" ]; then
-        info "Variant '${VARIANT}' shares ${SYSTEM}/.env.database; create ${SYSTEM}/.env${VARIANT_EXT}.database only if it needs its own credentials."
+    if [ -n "${VARIANT}" ] && [ ! -f "${REPO_ROOT}/${SYSTEM_DIR}/.env${VARIANT_EXT}.database" ]; then
+        info "Variant '${VARIANT}' shares ${SYSTEM_DIR}/.env.database; create ${SYSTEM_DIR}/.env${VARIANT_EXT}.database only if it needs its own credentials."
     elif [ -f "${DB_ENV_FILE}" ]; then
         info "${DB_ENV_FILE##*/} already exists; left unchanged."
     elif [ -f "${DB_TEMPLATE}" ]; then
@@ -325,7 +326,7 @@ if ! cli_set bucket; then
 fi
 from_env IMAGE              MCP_TOOLBOX_IMAGE             image
 from_env TOOLS_DIR          MCP_TOOLBOX_TOOLS_DIR         tools-dir
-if [ -z "${TOOLS_DIR}" ]; then   # older env files: MCP_TOOLBOX_TOOLS_FILE=<system>/tools_sec.yaml
+if [ -z "${TOOLS_DIR}" ]; then   # older env files: MCP_TOOLBOX_TOOLS_FILE=mcp-toolbox-<system>/tools_sec.yaml
     TOOLS_DIR="$(env_value MCP_TOOLBOX_TOOLS_FILE)"; TOOLS_DIR="${TOOLS_DIR%.yaml}"
 fi
 GOOGLE_CLIENT_ID="$(env_value GOOGLE_CLIENT_ID)"
@@ -631,7 +632,7 @@ PY
 }
 
 # Obtain the value for VAR: environment variable of the same name, else a silent prompt (with default from the config folder if present).
-# Value of KEY from <system>/.env.database, read literally (never sourced or expanded); empty if absent.
+# Value of KEY from mcp-toolbox-<system>/.env.database, read literally (never sourced or expanded); empty if absent.
 db_file_value() {
     [ -f "${DB_ENV_FILE}" ] || return 0
     local line v
@@ -652,7 +653,7 @@ db_file_check_perms() {
     esac
 }
 
-read_secret_value() {  # sets SECRET_VALUE: environment, then <system>/.env.database, then a prompt
+read_secret_value() {  # sets SECRET_VALUE: environment, then mcp-toolbox-<system>/.env.database, then a prompt
     SECRET_VALUE="${!1-}"
     [ -n "${SECRET_VALUE}" ] && return 0
     SECRET_VALUE="$(db_file_value "$1")"
@@ -972,7 +973,7 @@ resolve_blank_vars() {
         FOUND=true; echo "  ⚠️  the config folder (source.yaml) is missing"
         howto_tools_dir
         local tf_new="" tf_cands=() tf_f
-        # <system>/tools and <system>/tools_*, with plain tools first
+        # mcp-toolbox-<system>/tools and mcp-toolbox-<system>/tools_*, with plain tools first
         while IFS= read -r tf_f; do tf_cands+=("${tf_f}"); done < <(tools_dir_candidates)
         if [ ${#tf_cands[@]} -gt 0 ]; then
             choose_from "config folder for ${SYSTEM}" "${tf_cands[@]}" && tf_new="${CHOICE}"

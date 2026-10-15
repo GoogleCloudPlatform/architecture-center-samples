@@ -23,8 +23,8 @@ ENV_FILE="${DEPLOY_ENV_FILE:-${REPO_ROOT}/.env}"
 RED=$'\033[0;31m'; YELLOW=$'\033[0;33m'; NC=$'\033[0m'
 
 # Select a system's env file. Call it before resolve_project so the project, project number and client ID
-# come from <system>/.env (or <system>/.env.<variant>), never from the repo-root .env.
-#   use_system_env SYSTEM [VARIANT]    sets SYSTEM, SYSTEM_SHORT, VARIANT and ENV_FILE
+# come from mcp-toolbox-<system>/.env (or mcp-toolbox-<system>/.env.<variant>), never from the repo-root .env.
+#   use_system_env SYSTEM [VARIANT]    sets SYSTEM, SYSTEM_SHORT, SYSTEM_DIR, VARIANT and ENV_FILE
 use_system_env() {
     SYSTEM="$(printf '%s' "${1:-}" | tr 'A-Z' 'a-z')"
     VARIANT="$(printf '%s' "${2:-}" | tr 'A-Z' 'a-z')"
@@ -35,7 +35,8 @@ use_system_env() {
         *) die "--system {ebs|peoplesoft|jde} is required (got '${1:-}')." ;;
     esac
     [[ -z "${VARIANT}" || "${VARIANT}" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || die "--variant '${VARIANT}': use lowercase letters, digits and single hyphens."
-    ENV_FILE="${REPO_ROOT}/${SYSTEM}/.env${VARIANT:+.${VARIANT}}"
+    SYSTEM_DIR="mcp-toolbox-${SYSTEM}"
+    ENV_FILE="${REPO_ROOT}/${SYSTEM_DIR}/.env${VARIANT:+.${VARIANT}}"
     [ -f "${ENV_FILE}" ] || die "${ENV_FILE} not found. Create it: ./scripts/deploy_mcp_server.sh --system ${SYSTEM}${VARIANT:+ --variant ${VARIANT}} --init-env"
 }
 

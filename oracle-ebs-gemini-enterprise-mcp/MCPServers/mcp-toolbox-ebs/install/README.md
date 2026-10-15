@@ -4,7 +4,7 @@ Objects a DBA creates in the EBS database for the MCP Toolbox. The Toolbox's dat
 
 ## `xx_ai_security_pkg`: who is asking
 
-The PL/SQL wrapper (`ebs/templates/plsql_wrapper.sql`) calls `apps.xx_ai_security_pkg.init_user_session(:user_id)` first in every tool, where `:user_id` is the e-mail address of the signed-in user. The procedure resolves that address to an active FND user, calls `ebs_initialize_context` (which runs `fnd_global.apps_initialize`, `MO_GLOBAL.INIT` and sets the MOAC policy context), and **raises an error unless the answer is `SUCCESS`**, so a failed setup stops the query (fail closed). Errors: `-20010` no id, `-20011` no active user, `-20012` several users, `-20013` setup failed.
+The PL/SQL wrapper (`mcp-toolbox-ebs/templates/plsql_wrapper.sql`) calls `apps.xx_ai_security_pkg.init_user_session(:user_id)` first in every tool, where `:user_id` is the e-mail address of the signed-in user. The procedure resolves that address to an active FND user, calls `ebs_initialize_context` (which runs `fnd_global.apps_initialize`, `MO_GLOBAL.INIT` and sets the MOAC policy context), and **raises an error unless the answer is `SUCCESS`**, so a failed setup stops the query (fail closed). Errors: `-20010` no id, `-20011` no active user, `-20012` several users, `-20013` setup failed.
 
 The same two entry points exist in the PeopleSoft and JD Edwards packages, so every system's wrapper calls the package the same way:
 
@@ -31,7 +31,7 @@ The package now lets a signed-in user switch their own operating unit, responsib
 
 **Other changes in this version:** `ebs_initialize_context` takes `p_user_id` (was `p_email_address`) and a new `p_reinitialize` (`'Y'` skips the "already initialised" shortcut); an operating unit given by name is looked up in `HR_OPERATING_UNITS` first, as the default branch names it, then by inventory organization name as before. Reinstalling the package does not touch stored contexts.
 
-**Tools (all in `ebs/sql/`, wrapper-only):** `ebs_change_my_context` and `ebs_reset_my_context` (toolset `context_switching`, they change state) and `ebs_get_my_context`, `ebs_list_my_responsibilities`, `ebs_list_my_operating_units` (toolset `context_discovery`, read-only). They need this package: install `xx_ai_security_pkg.sql` as `APPS` (an editioned object: normal custom-code process) before deploying a `tools_agent.yaml` / `tools_sec.yaml` that contains them, or they fail with `PLS-00302`. The package logic was also run on an Oracle 23 stub with stand-ins for the EBS objects (set, refused values, stored choice on a new connection, reset of a stale pooled session, fallback of a broken stored context, unknown user).
+**Tools (all in `mcp-toolbox-ebs/sql/`, wrapper-only):** `ebs_change_my_context` and `ebs_reset_my_context` (toolset `context_switching`, they change state) and `ebs_get_my_context`, `ebs_list_my_responsibilities`, `ebs_list_my_operating_units` (toolset `context_discovery`, read-only). They need this package: install `xx_ai_security_pkg.sql` as `APPS` (an editioned object: normal custom-code process) before deploying a `tools_agent.yaml` / `tools_sec.yaml` that contains them, or they fail with `PLS-00302`. The package logic was also run on an Oracle 23 stub with stand-ins for the EBS objects (set, refused values, stored choice on a new connection, reset of a stale pooled session, fallback of a broken stored context, unknown user).
 
 ### Grants and the `ebs_execute_sql` tool
 
@@ -64,20 +64,20 @@ The Toolbox user (`APPS_AI`) can call every function it may execute through `ebs
 1. **Install (DBA).** EBS R12.2 editions code objects in `APPS`, so deploy through your normal process for custom code: an `adop` hotpatch, or the next patch cycle.
    ```sql
    -- connected as APPS
-   @ebs/install/xx_ai_attachment_pkg.sql
+   @mcp-toolbox-ebs/install/xx_ai_attachment_pkg.sql
    ```
    The script stops on the first error and can be run again (it skips the preference and policy if they exist).
 2. **Verify (as `APPS_AI`).** Read-only; it lists three recent PDF and Word files of each type with their file status, size, the start of their Base64 and the start of their text:
    ```sql
-   @ebs/install/xx_ai_attachment_pkg_verify.sql
+   @mcp-toolbox-ebs/install/xx_ai_attachment_pkg_verify.sql
    ```
    Expect `OK` and readable text for most rows. `NO_TEXT` is normal for scanned PDFs.
-3. **Switch the tools over (repo).** Done on 2026-10-12, after the package had been installed and checked: `ebs_get_attachment_text` (new version, replaces the SQL-only one) and the new `ebs_get_attachment_base64` (the counterpart of `ps_hcm_get_attachment_base64` and `jde_get_media_object_base64`) moved from this folder to `ebs/sql/`, with a sample payload for the Base64 tool in `test_live_toolbox.py`. **Consequence:** the committed `ebs/tools/` now contains two tools that need `APPS.XX_AI_ATTACHMENT_PKG`; on an EBS database without it they fail with `ORA-00904` when called, so install the package before deploying the config there.
-4. **Retire the old package (DBA).** An earlier version of this package was installed as `APPS.XX_AI_ATTACHMENT_TEXT_PKG` (functions `get_status`, `get_length`, `get_chunk`). Once the tools use `xx_ai_attachment_pkg`, drop it as `APPS`: `@ebs/install/xx_ai_attachment_text_pkg_retire.sql`. It leaves the Oracle Text policy and preference alone, because the new package uses the same ones.
+3. **Switch the tools over (repo).** Done on 2026-10-12, after the package had been installed and checked: `ebs_get_attachment_text` (new version, replaces the SQL-only one) and the new `ebs_get_attachment_base64` (the counterpart of `ps_hcm_get_attachment_base64` and `jde_get_media_object_base64`) moved from this folder to `mcp-toolbox-ebs/sql/`, with a sample payload for the Base64 tool in `test_live_toolbox.py`. **Consequence:** the committed `mcp-toolbox-ebs/tools/` now contains two tools that need `APPS.XX_AI_ATTACHMENT_PKG`; on an EBS database without it they fail with `ORA-00904` when called, so install the package before deploying the config there.
+4. **Retire the old package (DBA).** An earlier version of this package was installed as `APPS.XX_AI_ATTACHMENT_TEXT_PKG` (functions `get_status`, `get_length`, `get_chunk`). Once the tools use `xx_ai_attachment_pkg`, drop it as `APPS`: `@mcp-toolbox-ebs/install/xx_ai_attachment_text_pkg_retire.sql`. It leaves the Oracle Text policy and preference alone, because the new package uses the same ones.
 
 ### Rollback
-1. Revert the switch commit (it restores the previous SQL-only `ebs/sql/ebs_get_attachment_text.sql` and `.txt` and removes the Base64 tool), sync and deploy.
-2. Then, as `APPS`: `@ebs/install/xx_ai_attachment_pkg_uninstall.sql`.
+1. Revert the switch commit (it restores the previous SQL-only `mcp-toolbox-ebs/sql/ebs_get_attachment_text.sql` and `.txt` and removes the Base64 tool), sync and deploy.
+2. Then, as `APPS`: `@mcp-toolbox-ebs/install/xx_ai_attachment_pkg_uninstall.sql`.
 
 ### How it was tested
 The text functions (as `get_chunk`, `get_length` and `get_status` of the earlier `XX_AI_ATTACHMENT_TEXT_PKG`) were tested on Oracle Database Free with Oracle Text, against stub `APPS` attachment tables and an `APPS_AI` user with `SELECT` and `EXECUTE` only:

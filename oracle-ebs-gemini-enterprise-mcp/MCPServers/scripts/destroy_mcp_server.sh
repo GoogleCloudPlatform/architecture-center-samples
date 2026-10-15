@@ -11,7 +11,7 @@
 #          plus the legacy <service>-secrets), and only those named <service>-*;
 #        - deletes the config folder gs://<bucket>/<service>/ (the tools files, and the old tools.yaml).
 #      The bucket itself is never deleted: it may be shared with other services.
-#   3. Offers to blank MCP_SERVER_SQL_URL in <system>/.env when it points at the deleted service.
+#   3. Offers to blank MCP_SERVER_SQL_URL in mcp-toolbox-<system>/.env when it points at the deleted service.
 #
 # Only services marked as made by deploy_mcp_server.sh (label managed-by=oracle-mcp-1p-deploy, any name) are
 # deleted; an unmarked one (deployed before the label existed, or by hand) needs --force.
@@ -51,7 +51,7 @@ Required:
   --variant NAME          Optional: the variant that was deployed (for example sec, agent).
 
 Options:
-  --project ID            GCP project ID     (default: <system>/.env, then active gcloud project)
+  --project ID            GCP project ID     (default: mcp-toolbox-<system>/.env, then active gcloud project)
   --region REGION         Cloud Run region   (default: GOOGLE_CLOUD_REGION, then GOOGLE_CLOUD_LOCATION, then ${DEFAULT_REGION})
   --service-name NAME     Service to delete  (default: MCP_TOOLBOX_SERVICE_NAME, then mcp-toolbox-<ebs|ps|jde>[-<variant>])
   --bucket BUCKET         Bucket holding the config folder (default: the one mounted by the service)
