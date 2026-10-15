@@ -1436,14 +1436,24 @@ if [ "${ROTATE_TOOLS}" = true ]; then
     [ -n "${PROJECT}" ]       || die "No project: set GOOGLE_CLOUD_PROJECT in ${ENV_FILE#${REPO_ROOT}/} or pass --project."
     [ -n "${CONFIG_BUCKET}" ] || die "No bucket: set MCP_TOOLBOX_BUCKET in ${ENV_FILE#${REPO_ROOT}/} or pass --bucket."
     tools_ok                  || die "config folder not found: no source.yaml in $(tools_path) (--tools-dir, or generate it: python3 scripts/build_and_validate.py)"
-    python3 - "$(tools_path)" <<'PY' 2>/dev/null || die "$(tools_path) is not a valid config folder (needs a source.yaml with 'sources:' and toolset files with 'tools:'); not uploading it."
-import glob, os, sys, yaml
+    ROT_RC=0
+    python3 - "$(tools_path)" <<'PY' 2>/dev/null || ROT_RC=$?
+import glob, os, sys
+try:
+    import yaml
+except ImportError:
+    sys.exit(2)   # PyYAML is not installed: skip the check below
 srcs = tools = 0
 for fn in glob.glob(os.path.join(sys.argv[1], "*.y*ml")):
     d = yaml.safe_load(open(fn)) or {}
     srcs += bool(d.get("sources")); tools += len(d.get("tools") or {})
 sys.exit(0 if srcs and tools else 1)
 PY
+    case "${ROT_RC}" in
+        0) ;;
+        2) echo "⚠️  PyYAML is not installed, so the config folder was not checked (pip install pyyaml)." >&2 ;;
+        *) die "$(tools_path) is not a valid config folder (needs a source.yaml with 'sources:' and toolset files with 'tools:'); not uploading it." ;;
+    esac
     ROT_DEST="gs://${CONFIG_BUCKET}/${SERVICE_NAME}/tools"
     info "Config folder: $(tools_path | sed "s#${REPO_ROOT}/##")  ($(ls "$(tools_path)"/*.yaml | wc -l | tr -d ' ') files)"
     info "Destination:   ${ROT_DEST}/"
