@@ -239,7 +239,7 @@ make deploy_mcp_server PROJECT_ID=your-gcp-project-id REGION=us-central1
    ```bash
    curl -s -X POST "${MCP_URL}" \
      -H "Content-Type: application/json" \
-     -H "Authorization: Bearer $(gcloud auth print-identity-token --audiences="${MCP_URL%/mcp}")" \
+     -H "Authorization: Bearer $(gcloud auth print-identity-token --audiences="${SERVICE_URL}")" \
      -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | jq '.result.tools[].name'
    ```
    You should see all **21 Oracle EBS MCP tools** returned.
