@@ -1,0 +1,25 @@
+# ==============================================================================
+# Model Context Protocol (MCP) Toolbox for Databases - source.yaml
+# Connection and authentication; the tools are in the other files of this folder (one per toolset).
+# System: Oracle E-Business Suite (EBS) R12.2
+# Target: Gemini for Government Plugin (Oct 2026)
+# Bind Variables: Oracle syntax (:param_name)
+# Connection Details: Unified connectionString (hostname:port/servicename)
+# ==============================================================================
+#
+# Authenticated parameters for the PL/SQL security wrapper (README §2.6).
+# To enable: uncomment the authServices block below, set GOOGLE_CLIENT_ID
+# in ebs/.env, then run: python3 scripts/sync_sql_to_yaml.py --system ebs --wrap
+# authServices:
+#   google-auth:
+#     type: google
+#     clientId: ${GOOGLE_CLIENT_ID}
+# PL/SQL wrapper: ebs/templates/plsql_wrapper.sql (sync_sql_to_yaml.py --wrap / --no-wrap)
+# Identity: agent (user_id is supplied by the calling agent; sync_sql_to_yaml.py --identity agent / token)
+
+sources:
+  ebs-oracle-source:
+    kind: oracle
+    connectionString: ${DB_CONNECTION_STRING:apps.example.com:1521/EBSDB}
+    user: ${DB_USER:apps_ai}
+    password: ${DB_PASSWORD:apps_ai}
