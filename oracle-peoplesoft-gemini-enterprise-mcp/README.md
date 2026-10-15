@@ -133,8 +133,8 @@ Connect to your Oracle PeopleSoft FSCM 9.2 database (`EP92U055`) and execute the
 ```bash
 cd PSFTScripts
 
-# 1. Create the least-privilege PSFT_AI database user, role, and logon trigger (run as SYS / DBA)
-sqlplus sys/<SYS_PASSWORD>@<PSFT_HOST>:1521/EP92U055 as sysdba @create_psft_ai.sql "<PSFT_AI_PASSWORD>"
+# 1. Create the least-privilege PSFT_AI database user, role, and logon trigger (run as SYS / DBA; SQL*Plus prompts for the PSFT_AI password)
+sqlplus sys/<SYS_PASSWORD>@<PSFT_HOST>:1521/EP92U055 as sysdba @create_psft_ai.sql
 
 # 2. Compile the SYSADM.GE_PSFT_MCP_TOOLS PL/SQL wrapper package and audit table (run as SYSADM)
 sqlplus SYSADM/<SYSADM_PASSWORD>@<PSFT_HOST>:1521/EP92U055 @ge_psft_mcp_tools.sql
@@ -235,7 +235,7 @@ make deploy_mcp_server PROJECT_ID=your-gcp-project-id REGION=us-central1
    ```bash
    curl -s -X POST "${MCP_URL}" \
      -H "Content-Type: application/json" \
-     -H "Authorization: Bearer $(gcloud auth print-identity-token --audiences="${SERVICE_URL}")" \
+     -H "Authorization: Bearer $(gcloud auth print-identity-token --audiences="${MCP_URL%/mcp}")" \
      -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | jq '.result.tools[].name'
    ```
    You should see all **20 Oracle PeopleSoft MCP tools** returned.

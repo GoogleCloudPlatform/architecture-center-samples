@@ -168,7 +168,9 @@ BEGIN
             FROM (
               SELECT BUSINESS_UNIT, INV_ITEM_ID
                 FROM SYSADM.PS_BU_ITEMS_INV
-               WHERE ROWNUM <= 2000
+               WHERE TRIM(BUSINESS_UNIT) IS NOT NULL
+                 AND TRIM(INV_ITEM_ID) IS NOT NULL
+                 AND ROWNUM <= 2000
             )
         )
        WHERE ROWNUM <= 500';
