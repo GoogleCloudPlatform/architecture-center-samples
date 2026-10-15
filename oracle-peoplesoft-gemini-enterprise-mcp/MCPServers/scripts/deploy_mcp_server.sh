@@ -329,6 +329,12 @@ from_env TOOLS_DIR          MCP_TOOLBOX_TOOLS_DIR         tools-dir
 if [ -z "${TOOLS_DIR}" ]; then   # older env files: MCP_TOOLBOX_TOOLS_FILE=mcp-toolbox-<system>/tools_sec.yaml
     TOOLS_DIR="$(env_value MCP_TOOLBOX_TOOLS_FILE)"; TOOLS_DIR="${TOOLS_DIR%.yaml}"
 fi
+# A config folder saved before the system folders were renamed (peoplesoft/tools_agent) lives in mcp-toolbox-<system>/ now
+case "${TOOLS_DIR}" in
+    "${SYSTEM}/"*)
+        echo "⚠️  config folder '${TOOLS_DIR}' is the pre-rename location; using '${SYSTEM_DIR}/${TOOLS_DIR#${SYSTEM}/}'. Update MCP_TOOLBOX_TOOLS_DIR in ${ENV_FILE#${REPO_ROOT}/}." >&2
+        TOOLS_DIR="${SYSTEM_DIR}/${TOOLS_DIR#${SYSTEM}/}" ;;
+esac
 GOOGLE_CLIENT_ID="$(env_value GOOGLE_CLIENT_ID)"
 MCP_SERVER_SQL_URL="$(env_value MCP_SERVER_SQL_URL)"
 
