@@ -61,7 +61,39 @@ SHOW ERRORS PACKAGE APPS.GE_EBS_MCP_TOOLS;
 @ge_ebs_mcp_tools.plb
 SHOW ERRORS PACKAGE BODY APPS.GE_EBS_MCP_TOOLS;
 
--- 4. Verify package status
+-- 4. Grant execution and audit log privileges to APPS_AI (if user/role exists)
+DECLARE
+  user_not_found EXCEPTION;
+  PRAGMA EXCEPTION_INIT(user_not_found, -1917);
+  table_not_found EXCEPTION;
+  PRAGMA EXCEPTION_INIT(table_not_found, -942);
+  object_not_found EXCEPTION;
+  PRAGMA EXCEPTION_INIT(object_not_found, -4043);
+  proc_not_found EXCEPTION;
+  PRAGMA EXCEPTION_INIT(proc_not_found, -4042);
+BEGIN
+  BEGIN
+    EXECUTE IMMEDIATE 'GRANT SELECT, INSERT ON APPS.GGLTOOLBOX$MCP_LOG TO APPS_AI';
+  EXCEPTION
+    WHEN user_not_found OR table_not_found THEN
+      DBMS_OUTPUT.PUT_LINE('WARNING: Skipping GGLTOOLBOX$MCP_LOG grant (' || SQLERRM || ').');
+  END;
+  BEGIN
+    EXECUTE IMMEDIATE 'GRANT EXECUTE ON APPS.MCP_TOOLBOX_LOG TO APPS_AI';
+  EXCEPTION
+    WHEN user_not_found OR table_not_found OR object_not_found OR proc_not_found THEN
+      DBMS_OUTPUT.PUT_LINE('WARNING: Skipping MCP_TOOLBOX_LOG grant (' || SQLERRM || ').');
+  END;
+  BEGIN
+    EXECUTE IMMEDIATE 'GRANT EXECUTE ON APPS.GE_EBS_MCP_TOOLS TO APPS_AI';
+  EXCEPTION
+    WHEN user_not_found OR table_not_found OR object_not_found OR proc_not_found THEN
+      DBMS_OUTPUT.PUT_LINE('WARNING: Skipping GE_EBS_MCP_TOOLS grant (' || SQLERRM || ').');
+  END;
+END;
+/
+
+-- 5. Verify package status
 COLUMN owner FORMAT A10
 COLUMN object_name FORMAT A25
 COLUMN object_type FORMAT A15
