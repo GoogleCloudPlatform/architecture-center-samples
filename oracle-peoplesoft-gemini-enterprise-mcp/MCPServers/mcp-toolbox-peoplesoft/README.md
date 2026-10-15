@@ -40,6 +40,13 @@ export PSFT_DB_PASSWORD="your-psft-ai-password"
 
 ### 2. Create Artifact Registry Repository & Build Image
 
+> **Assured Workloads Prerequisites:**
+> 1. **Build-time:** When building regionally (`--region "${REGION}"`) inside an Assured Workloads folder (`constraints/gcp.resourceLocations`), ensure your Cloud Build service account (`<PROJECT_NUMBER>-compute@developer.gserviceaccount.com` or custom `CLOUD_BUILD_SERVICE_ACCOUNT`) holds `roles/cloudbuild.builds.builder`.
+> 2. **Runtime:** Enable Private Google Access on your target subnet so that the zero-external-IP environment can reach Google APIs:
+>    ```bash
+>    gcloud compute networks subnets update "${SUBNET_NAME}" --region="${REGION}" --enable-private-ip-google-access --project="${PROJECT_ID}"
+>    ```
+
 ```bash
 gcloud artifacts repositories create "${AR_REPO_NAME}" \
     --repository-format=docker \
@@ -105,8 +112,16 @@ gcloud run deploy "${SERVICE_NAME}" \
     --no-allow-unauthenticated
 ```
 
-### 5. Retrieve the MCP Server URL
+### 5. Retrieve & Verify the Authenticated MCP Server URL
+
+Since the service is deployed with `--no-allow-unauthenticated`, include an OIDC ID token scoped to the Cloud Run service URL (`--audiences="${SERVICE_URL}"`) in the `Authorization` header when making requests:
 
 ```bash
-echo "$(gcloud run services describe ${SERVICE_NAME} --project ${PROJECT_ID} --region ${REGION} --format 'value(status.url)')/mcp"
+export SERVICE_URL="$(gcloud run services describe ${SERVICE_NAME} --project ${PROJECT_ID} --region ${REGION} --format 'value(status.url)')"
+export MCP_URL="${SERVICE_URL}/mcp"
+echo "${MCP_URL}"
+curl -s -X POST "${MCP_URL}" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $(gcloud auth print-identity-token --audiences="${SERVICE_URL}")" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```
