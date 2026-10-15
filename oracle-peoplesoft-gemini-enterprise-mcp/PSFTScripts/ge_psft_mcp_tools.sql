@@ -167,6 +167,10 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     v_qty    NUMBER := NVL(p_quantity, 1);
     v_result VARCHAR2(1000);
   BEGIN
+    IF TRIM(p_item) IS NULL THEN
+      RAISE_APPLICATION_ERROR(-20010, 'Item ID cannot be empty.');
+    END IF;
+
     IF v_qty <= 0 THEN
       RAISE_APPLICATION_ERROR(-20007, 'Reservation quantity must be greater than zero.');
     END IF;
@@ -274,6 +278,10 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     v_cnt    NUMBER;
     v_result VARCHAR2(1000);
   BEGIN
+    IF TRIM(p_item) IS NULL THEN
+      RAISE_APPLICATION_ERROR(-20010, 'Item ID cannot be empty.');
+    END IF;
+
     IF v_qty <= 0 THEN
       RAISE_APPLICATION_ERROR(-20007, 'On-hand quantity must be greater than zero.');
     END IF;
