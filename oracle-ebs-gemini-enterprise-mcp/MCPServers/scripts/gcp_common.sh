@@ -17,6 +17,11 @@
 
 GCP_COMMON_VERSION="1.0.0"
 
+# Label put on every Cloud Run service made by deploy_mcp_server.sh; destroy_mcp_server.sh only deletes
+# services that carry it (or any service, with --force). Also set: mcp-system=<ebs|ps|jde>, mcp-variant=<v>.
+DEPLOY_LABEL_KEY="managed-by"
+DEPLOY_LABEL_VALUE="oracle-mcp-1p-deploy"
+
 # Mask values of secret-looking env vars (KEY=value) before printing a command.
 mask_secrets() {
     sed -E 's/([A-Za-z0-9_]*(SECRET|PASSWORD|PASSWD|TOKEN|API_?KEY|PRIVATE_?KEY)[A-Za-z0-9_]*=)[^, ]*/\1****/g' <<<"$1"
