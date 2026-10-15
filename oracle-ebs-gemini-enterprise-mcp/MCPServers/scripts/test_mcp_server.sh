@@ -215,14 +215,16 @@ SERVICE_URL="${SERVICE_URL%/}"
 
 # 4. Resolve Client Secret JSON and Client ID
 find_matching_client_json() {
-    local target="$1"
+    local target; target="$(printf '%s' "$1" | tr 'A-Z' 'a-z')"
     local search_dirs=("${SCRIPT_DIR}/secrets" "${SCRIPT_DIR}" "${REPO_ROOT}")
     for d in "${search_dirs[@]}"; do
         [ -d "${d}" ] || continue
         for f in "${d}"/*client_secret*.json; do
             [ -f "${f}" ] || continue
-            local fname; fname="$(basename "${f}")"
-            if [ -n "${target}" ] && [[ "${fname}" == *"${target}"* ]]; then
+            local fname; fname="$(basename "${f}" | tr 'A-Z' 'a-z')"
+            # Files are named <system>_client_secret_<id>.json (see secrets/README.md). Match the prefix, not any
+            # part of the name: "ps" is also inside ".apps.googleusercontent.com", which every download contains.
+            if [ -n "${target}" ] && [[ "${fname}" == "${target}"_* ]]; then
                 echo "${f}"
                 return 0
             fi
@@ -236,7 +238,7 @@ if [ -z "${CLIENT_JSON}" ]; then
     if [[ "${SERVICE_NAME}" == *"ebs"* ]]; then
         CLIENT_JSON="$(find_matching_client_json "EBS" || true)"
     elif [[ "${SERVICE_NAME}" == *"ps"* ]] || [[ "${SERVICE_NAME}" == *"peoplesoft"* ]]; then
-        CLIENT_JSON="$(find_matching_client_json "PS" || true)"
+        CLIENT_JSON="$(find_matching_client_json "PS" || find_matching_client_json "PEOPLESOFT" || true)"
     elif [[ "${SERVICE_NAME}" == *"jde"* ]]; then
         CLIENT_JSON="$(find_matching_client_json "JDE" || true)"
     fi
