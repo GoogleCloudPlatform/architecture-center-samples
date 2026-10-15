@@ -639,7 +639,10 @@ db_file_value() {
     line="$(grep -E "^[[:space:]]*(export[[:space:]]+)?$1=" "${DB_ENV_FILE}" | tail -1 || true)"   # "export KEY=..." is accepted too
     [ -n "${line}" ] || return 0
     v="${line#*=}"
-    if [ "${#v}" -ge 2 ] && [ "${v:0:1}" = '"' ] && [ "${v: -1}" = '"' ]; then v="${v:1:${#v}-2}"; fi
+    if [ "${#v}" -ge 2 ]; then   # strip one pair of surrounding double or single quotes
+        if [ "${v:0:1}" = '"' ] && [ "${v: -1}" = '"' ]; then v="${v:1:${#v}-2}"
+        elif [ "${v:0:1}" = "'" ] && [ "${v: -1}" = "'" ]; then v="${v:1:${#v}-2}"; fi
+    fi
     printf '%s' "${v}"
 }
 
