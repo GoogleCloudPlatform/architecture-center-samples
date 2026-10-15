@@ -163,26 +163,28 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     PRAGMA AUTONOMOUS_TRANSACTION;
     v_res_id NUMBER;
     v_bu     VARCHAR2(10) := CASE WHEN TRIM(p_location) IS NULL OR UPPER(TRIM(p_location)) IN ('', 'NULL', 'S1', 'M1') THEN 'US001' ELSE SUBSTR(TRIM(p_location), 1, 5) END;
+    v_area   VARCHAR2(20) := NVL(TRIM(p_storage_area), 'AREA1');
+    v_qty    NUMBER := NVL(p_quantity, 1);
     v_result VARCHAR2(1000);
   BEGIN
-    IF NVL(p_quantity, 1) <= 0 THEN
+    IF v_qty <= 0 THEN
       RAISE_APPLICATION_ERROR(-20007, 'Reservation quantity must be greater than zero.');
     END IF;
 
     INSERT INTO SYSADM.PS_GOV_INV_RESERVATIONS (
       BUSINESS_UNIT, INV_ITEM_ID, STORAGE_AREA, QTY_RESERVED, OPRID, STATUS
     ) VALUES (
-      v_bu, TRIM(p_item), NVL(TRIM(p_storage_area), 'AREA1'), NVL(p_quantity, 1), 'VP1', 'ACTIVE'
+      v_bu, TRIM(p_item), v_area, v_qty, 'VP1', 'ACTIVE'
     ) RETURNING RESERVATION_ID INTO v_res_id;
 
     UPDATE SYSADM.PS_GOV_INV_BALANCES
-       SET QTY_RESERVED = NVL(QTY_RESERVED, 0) + NVL(p_quantity, 1),
-           QTY_AVAILABLE = NVL(QTY_AVAILABLE, 0) - NVL(p_quantity, 1),
-           LAST_UPDATED_DTTM = CURRENT_TIMESTAMP
+       SET QTY_RESERVED = NVL(QTY_RESERVED, 0) + v_qty,
+           QTY_AVAILABLE = NVL(QTY_AVAILABLE, 0) - v_qty,
+           LAST_UPDATED_DTTM = SYSTIMESTAMP
      WHERE BUSINESS_UNIT = v_bu
        AND INV_ITEM_ID = TRIM(p_item)
-       AND STORAGE_AREA = NVL(TRIM(p_storage_area), 'AREA1')
-       AND NVL(QTY_AVAILABLE, 0) >= NVL(p_quantity, 1);
+       AND STORAGE_AREA = v_area
+       AND NVL(QTY_AVAILABLE, 0) >= v_qty;
 
     IF SQL%ROWCOUNT = 0 THEN
       RAISE_APPLICATION_ERROR(-20001, 'Insufficient stock or item ' || TRIM(p_item) || ' not found in PS_GOV_INV_BALANCES for Business Unit ' || v_bu);
@@ -190,8 +192,8 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
 
     COMMIT;
     v_result := 'SUCCESS: Created PeopleSoft Inventory Reservation ID ' || v_res_id ||
-                ' for item ' || TRIM(p_item) || ' (Quantity: ' || NVL(p_quantity, 1) ||
-                ', Business Unit: ' || v_bu || ', Storage Area: ' || NVL(TRIM(p_storage_area), 'AREA1') || ')';
+                ' for item ' || TRIM(p_item) || ' (Quantity: ' || v_qty ||
+                ', Business Unit: ' || v_bu || ', Storage Area: ' || v_area || ')';
     write_log('INFO', 'reserve_item', 'VP1', v_result);
     RETURN v_result;
   EXCEPTION
@@ -232,7 +234,7 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     UPDATE SYSADM.PS_GOV_INV_BALANCES
        SET QTY_AVAILABLE = NVL(QTY_AVAILABLE, 0) + LEAST(NVL(QTY_RESERVED, 0), NVL(v_qty, 0)),
            QTY_RESERVED = GREATEST(0, NVL(QTY_RESERVED, 0) - NVL(v_qty, 0)),
-           LAST_UPDATED_DTTM = CURRENT_TIMESTAMP
+           LAST_UPDATED_DTTM = SYSTIMESTAMP
      WHERE BUSINESS_UNIT = v_bu
        AND INV_ITEM_ID = v_item
        AND STORAGE_AREA = v_area;
@@ -280,7 +282,7 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
       INSERT INTO SYSADM.PS_GOV_INV_BALANCES (
         BUSINESS_UNIT, INV_ITEM_ID, STORAGE_AREA, QTY_ONHAND, QTY_RESERVED, QTY_AVAILABLE, LAST_UPDATED_DTTM
       ) VALUES (
-        v_bu, TRIM(p_item), v_area, v_qty, 0, v_qty, CURRENT_TIMESTAMP
+        v_bu, TRIM(p_item), v_area, v_qty, 0, v_qty, SYSTIMESTAMP
       );
       v_cnt := 1;
     EXCEPTION
@@ -288,7 +290,7 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
         UPDATE SYSADM.PS_GOV_INV_BALANCES
            SET QTY_ONHAND = NVL(QTY_ONHAND, 0) + v_qty,
                QTY_AVAILABLE = NVL(QTY_AVAILABLE, 0) + v_qty,
-               LAST_UPDATED_DTTM = CURRENT_TIMESTAMP
+               LAST_UPDATED_DTTM = SYSTIMESTAMP
          WHERE BUSINESS_UNIT = v_bu
            AND INV_ITEM_ID = TRIM(p_item)
            AND STORAGE_AREA = v_area;
