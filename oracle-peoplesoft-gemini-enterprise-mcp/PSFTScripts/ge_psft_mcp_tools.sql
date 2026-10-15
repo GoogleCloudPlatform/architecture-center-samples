@@ -237,6 +237,10 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
        AND INV_ITEM_ID = v_item
        AND STORAGE_AREA = v_area;
 
+    IF SQL%ROWCOUNT = 0 THEN
+      RAISE_APPLICATION_ERROR(-20009, 'Inventory balance row not found in PS_GOV_INV_BALANCES for Business Unit ' || v_bu || ' and Item ' || v_item);
+    END IF;
+
     COMMIT;
     v_result := 'SUCCESS: Deleted/Cancelled PeopleSoft Inventory Reservation ID ' || v_id ||
                 ' (Item: ' || v_item || ', Released Qty: ' || v_qty || ', Business Unit: ' || v_bu || ')';
@@ -464,39 +468,7 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
 END GE_PSFT_MCP_TOOLS;
 /
 
-BEGIN
-  BEGIN
-    EXECUTE IMMEDIATE 'GRANT SELECT ON SYSADM.PSROLEDEFN TO PSFT_AI';
-  EXCEPTION
-    WHEN OTHERS THEN
-      IF SQLCODE IN (-1917, -942) THEN
-        DBMS_OUTPUT.PUT_LINE('WARNING: Skipping PSROLEDEFN grant (' || SQLERRM || ').');
-      ELSE
-        RAISE;
-      END IF;
-  END;
-  BEGIN
-    EXECUTE IMMEDIATE 'GRANT SELECT, INSERT, UPDATE, DELETE ON SYSADM.PS_GOV_INV_BALANCES TO PSFT_AI';
-  EXCEPTION
-    WHEN OTHERS THEN
-      IF SQLCODE IN (-1917, -942) THEN
-        DBMS_OUTPUT.PUT_LINE('WARNING: Skipping PS_GOV_INV_BALANCES grant (' || SQLERRM || ').');
-      ELSE
-        RAISE;
-      END IF;
-  END;
-  BEGIN
-    EXECUTE IMMEDIATE 'GRANT EXECUTE ON SYSADM.GE_PSFT_MCP_TOOLS TO PSFT_AI';
-  EXCEPTION
-    WHEN OTHERS THEN
-      IF SQLCODE IN (-1917, -942, -4042, -4043) THEN
-        DBMS_OUTPUT.PUT_LINE('WARNING: Skipping GE_PSFT_MCP_TOOLS grant (' || SQLERRM || ').');
-      ELSE
-        RAISE;
-      END IF;
-  END;
-END;
-/
+GRANT EXECUTE ON SYSADM.GE_PSFT_MCP_TOOLS TO PSFT_AI;
 
 SELECT OBJECT_NAME, OBJECT_TYPE, STATUS
   FROM ALL_OBJECTS
