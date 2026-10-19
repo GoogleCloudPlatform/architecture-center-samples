@@ -4,7 +4,7 @@ google-cloud-aiplatform==1.165.1
 google-cloud-resource-manager
 google-auth==2.58.0
 httpx
-mcp==1.29.1
+mcp==1.30.0
 matplotlib==3.11.2
 pyyaml
 opentelemetry-exporter-otlp-proto-http
