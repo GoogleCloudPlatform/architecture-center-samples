@@ -40,6 +40,13 @@ export EBS_DB_PASSWORD="your-apps-ai-password"
 
 ### 2. Create Artifact Registry Repository & Build Image
 
+> **Assured Workloads Prerequisites:**
+> 1. **Build-time:** When building regionally (`--region "${REGION}"`) inside an Assured Workloads folder (`constraints/gcp.resourceLocations`), ensure your Cloud Build service account (`<PROJECT_NUMBER>-compute@developer.gserviceaccount.com` or custom `CLOUD_BUILD_SERVICE_ACCOUNT`) holds `roles/cloudbuild.builds.builder`.
+> 2. **Runtime:** Enable Private Google Access on your target subnet so that the zero-external-IP environment can reach Google APIs:
+>    ```bash
+>    gcloud compute networks subnets update "${SUBNET_NAME}" --region="${REGION}" --enable-private-ip-google-access --project="${PROJECT_ID}"
+>    ```
+
 ```bash
 gcloud artifacts repositories create "${AR_REPO_NAME}" \
     --repository-format=docker \
