@@ -473,7 +473,7 @@ def make_request(path, data=None, extra_headers=None):
     encoded_data = data.encode("utf-8") if data is not None else None
     req = urllib.request.Request(url, data=encoded_data, headers=headers)
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             body = resp.read().decode("utf-8")
             return resp.getcode(), body, None
     except urllib.error.HTTPError as e:
