@@ -734,7 +734,8 @@ ensure_db_secrets() {
         else
             confirm "${verb} secret '${secret}'?" || { echo "Secret not confirmed. Nothing was changed." >&2; exit 1; }
             read_secret_value "${var}" || { echo "❌ No value for ${var}: export ${var}=... or run interactively." >&2; exit 1; }
-            printf '%s' "${SECRET_VALUE}" | gcloud secrets create "${secret}" --data-file=- --replication-policy=user-managed --locations="${REGION}" --project "${PROJECT}" >/dev/null
+            gcloud secrets create "${secret}" --replication-policy=user-managed --locations="${REGION}" --project "${PROJECT}" >/dev/null \
+                && printf '%s' "${SECRET_VALUE}" | gcloud secrets versions add "${secret}" --data-file=- --project "${PROJECT}" >/dev/null
         fi
         SECRET_VALUE=""
         echo "     ✅ done"
