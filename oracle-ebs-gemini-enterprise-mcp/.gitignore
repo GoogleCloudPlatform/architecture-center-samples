@@ -221,5 +221,6 @@ experiments/*
 # Auto-synced copies of utils/logging_config.py — refreshed by deploy_gcloud.sh
 MCPServers/mcp-oracle-ebs/logging_config.py
 MCPServers/mcp-oracle-sql/logging_config.py
+MCPServers/mcp-toolbox-ebs/.gcloudignore
 Agents/EBS_Master/logging_config.py
 Agents/.agent_id

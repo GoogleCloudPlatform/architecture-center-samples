@@ -110,13 +110,21 @@ gcloud services enable \
 
 | Identity / Principal | Required GCP IAM Roles | Purpose |
 | :--- | :--- | :--- |
-| **1. Deploying Engineer / CI Pipeline** | `roles/run.admin`<br>`roles/artifactregistry.admin`<br>`roles/cloudbuild.builds.editor`<br>`roles/secretmanager.admin`<br>`roles/iam.serviceAccountUser`<br>`roles/compute.networkViewer` | Creates the Artifact Registry repo (`ebs-mcp-repo`), builds the pre-configured MCP container image, provisions Secret Manager secrets, and deploys the Cloud Run MCP Server. |
+| **1. Deploying Engineer / CI Pipeline** | `roles/run.admin` *(or `roles/run.developer` + `roles/iam.securityAdmin`)*<br>`roles/artifactregistry.admin`<br>`roles/cloudbuild.builds.editor`<br>`roles/secretmanager.admin`<br>`roles/iam.serviceAccountUser`<br>`roles/compute.networkViewer` | Creates the Artifact Registry repo (`ebs-mcp-repo`), builds the pre-configured MCP container image, provisions Secret Manager secrets, and deploys the Cloud Run MCP Server. |
 | **2. Cloud Run Runtime Service Account** (`project-service-account@<PROJECT_ID>.iam.gserviceaccount.com`) | `roles/secretmanager.secretAccessor`<br>`roles/logging.logWriter`<br>`roles/monitoring.metricWriter` | Reads `tools.yaml` and Oracle EBS DB credentials (`EBS_DB_CONNECTION_STRING`, `EBS_DB_USER`, `EBS_DB_PASSWORD`) from Secret Manager at container startup and writes audit/operational logs. |
 | **3. Cloud Run Service Agent** (`service-<PROJECT_NUMBER>@serverless-robot-prod.iam.gserviceaccount.com`) | `roles/compute.networkUser` *(on the target VPC/Subnet)*<br>`roles/artifactregistry.reader` | Attaches the Cloud Run revision to your VPC subnet via Direct VPC Egress to reach Oracle EBS (`1521/tcp`) and pulls the container image from Artifact Registry. |
-| **4. Gemini Enterprise Service Account** | `roles/run.invoker` *(on the `mcp-toolbox-ebs` Cloud Run service)* | Invokes the Cloud Run MCP Server (`/mcp`) with OIDC authentication from Gemini Enterprise. |
+| **4. Cloud Build Service Account** (`<PROJECT_NUMBER>-compute@developer.gserviceaccount.com` or custom `CLOUD_BUILD_SERVICE_ACCOUNT`) | `roles/cloudbuild.builds.builder`<br>`roles/artifactregistry.writer`<br>`roles/logging.logWriter` | Required when executing regional Cloud Build (`gcloud builds submit --region=$REGION`) inside Assured Workloads projects (`constraints/gcp.resourceLocations`). |
+| **5. Gemini Enterprise Discovery Engine Service Agent** (`service-<PROJECT_NUMBER>@gcp-sa-discoveryengine.iam.gserviceaccount.com`) | `roles/run.invoker` *(on the `mcp-toolbox-ebs` Cloud Run service or at the project level)* | Invokes the authenticated Cloud Run MCP Server (`/mcp`) with OIDC authentication from Gemini Enterprise. |
 
 #### C. Network & Firewall Prerequisites
 - **VPC Connectivity:** Your Google Cloud VPC (`VPC_NAME` / `SUBNET_NAME`) must have private IP routing (via Cloud Interconnect, HA VPN, or VPC Peering) to your Oracle E-Business Suite database host.
+- **Private Google Access (Required for Assured Workloads Zero-External-IP Environments):** When `constraints/compute.vmExternalIpAccess` is enforced, enable Private Google Access on the target subnet so zero-external-IP Oracle EBS Compute Engine VMs and Cloud Run Direct VPC Egress can reach Google APIs over internal routes:
+  ```bash
+  gcloud compute networks subnets update "$SUBNET_NAME" \
+      --region="$REGION" \
+      --enable-private-ip-google-access \
+      --project="$PROJECT_ID"
+  ```
 - **Firewall Rule:** Allow TCP egress from your Cloud Run Direct VPC Egress subnet CIDR to your Oracle EBS Database Listener port (default `1521/tcp`).
 
 ### 5.2 Step 1: Prepare the Oracle E-Business Suite Database Tier (`EBSScripts/`)
@@ -129,12 +137,11 @@ cd EBSScripts
 # 1. Create the least-privilege APPS_AI database user and role (run as SYSTEM / DBA)
 sqlplus system/<SYSTEM_PASSWORD>@<EBS_HOST>:1521/<EBS_SID> @create_apps_ai.sql
 
-# 2. Grant restricted SELECT and EXECUTE privileges to APPS_AI (run as APPS)
-sqlplus apps/<APPS_PASSWORD>@<EBS_HOST>:1521/<EBS_SID> @GrantToApps_AIRESTRICTED.sql
+# 2. Create the audit table (APPS.GGLTOOLBOX$MCP_LOG), compile APPS.GE_EBS_MCP_TOOLS, and grant EXECUTE privileges to APPS_AI (run as APPS)
+sqlplus apps/<APPS_PASSWORD>@<EBS_HOST>:1521/<EBS_SID> @install_all_mcp_db.sql
 
-# 3. Compile the APPS.GE_EBS_MCP_TOOLS PL/SQL wrapper package and audit table (run as APPS)
-sqlplus apps/<APPS_PASSWORD>@<EBS_HOST>:1521/<EBS_SID> @ge_ebs_mcp_tools.pls
-sqlplus apps/<APPS_PASSWORD>@<EBS_HOST>:1521/<EBS_SID> @ge_ebs_mcp_tools.plb
+# 3. Grant restricted SELECT privileges on curated module views to APPS_AI (run as APPS)
+sqlplus apps/<APPS_PASSWORD>@<EBS_HOST>:1521/<EBS_SID> @GrantToApps_AIRESTRICTED.sql
 
 # 4. Install read-only analytical views and (optional) seed synthetic test records via official Oracle PL/SQL APIs (run as APPS)
 sqlplus apps/<APPS_PASSWORD>@<EBS_HOST>:1521/<EBS_SID> @install_gov_public_sector_views.sql
@@ -224,16 +231,18 @@ make deploy_mcp_server PROJECT_ID=your-gcp-project-id REGION=us-central1
 
 1. **Verify the Cloud Run MCP Server is healthy:**
    ```bash
-   MCP_URL=$(gcloud run services describe mcp-toolbox-ebs --project "$PROJECT_ID" --region "$REGION" --format 'value(status.url)')
-   echo "MCP Server Endpoint: ${MCP_URL}/mcp"
+   SERVICE_URL=$(gcloud run services describe mcp-toolbox-ebs --project "$PROJECT_ID" --region "$REGION" --format 'value(status.url)')
+   MCP_URL="${SERVICE_URL}/mcp"
+   echo "MCP Server Endpoint: ${MCP_URL}"
    ```
 2. **Test MCP Tool Discovery (`tools/list`):**
    ```bash
-   curl -s -X POST "${MCP_URL}/mcp" \
+   curl -s -X POST "${MCP_URL}" \
      -H "Content-Type: application/json" \
-     -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+     -H "Authorization: Bearer $(gcloud auth print-identity-token --audiences="${SERVICE_URL}")" \
      -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | jq '.result.tools[].name'
    ```
    You should see all **21 Oracle EBS MCP tools** returned.
 3. **Connect to Gemini Enterprise:**
-   - Register `${MCP_URL}/mcp` as your customer-managed MCP Server endpoint in Gemini Enterprise to enable live Oracle E-Business Suite R12.2 data access and transactional workflows.
+   - Grant `roles/run.invoker` to your Gemini Enterprise Discovery Engine Service Agent (`service-<PROJECT_NUMBER>@gcp-sa-discoveryengine.iam.gserviceaccount.com`) on the Cloud Run service (or at the project level via `gcloud projects add-iam-policy-binding`).
+   - Register `${MCP_URL}` as your customer-managed MCP Server endpoint in Gemini Enterprise to enable live Oracle E-Business Suite R12.2 data access and transactional workflows.
