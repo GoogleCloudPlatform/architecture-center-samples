@@ -1,0 +1,110 @@
+{
+  "module": "JD Edwards EnterpriseOne 9.2 Discrete Manufacturing & Shop Floor Management (JPD920 / PRODDTA)",
+  "description": "Core tables, analytical views, and JDE Orchestrator v3 services for Discrete Manufacturing in Branch/Plant M30 (Central Discrete Mfg Plant). Note: JDE stores dates in 6-digit Julian format CYYDDD (use PRODDTA.JDE_TO_DATE(col) or query the pre-built PRODDTA.VW_JDE_MFG_* views) and scales quantities and unit costs by 10,000 (10^4) and total amounts by 100 (10^2).",
+  "tables": [
+    {
+      "table_name": "PRODDTA.VW_JDE_MFG_WORK_ORDERS",
+      "business_name": "Shop-Floor Work Order Control Tower View",
+      "description": "Pre-scaled analytical view over F4801, F4101, and F0005 with human-readable dates, quantities, and schedule health flags.",
+      "columns": [
+        {"name": "WORK_ORDER_NUMBER", "description": "Work Order Document Number (F4801.WADOCO, e.g., 480010..480025)"},
+        {"name": "ORDER_TYPE", "description": "Order Type (WO)"},
+        {"name": "BRANCH_PLANT", "description": "Branch/Plant (M30)"},
+        {"name": "ASSEMBLY_ITEM", "description": "2nd Item Number (F4801.WALITM, e.g., AS-5000-SERVO, AS-6200-ROBOT, AS-7400-CTRL)"},
+        {"name": "ASSEMBLY_DESCRIPTION", "description": "Item Description"},
+        {"name": "STATUS_CODE", "description": "Work Order Status Code (10=Entered, 30=Parts/Routing Attached, 40=Released, 45=Materials Issued, 50=In Queue, 90=Completed, 99=Closed)"},
+        {"name": "STATUS_MEANING", "description": "UDC 00/W1 Status Description"},
+        {"name": "ORDER_DATE", "description": "Converted ISO Order Date"},
+        {"name": "START_DATE", "description": "Converted ISO Planned Start Date"},
+        {"name": "REQUESTED_DUE_DATE", "description": "Converted ISO Requested Due Date"},
+        {"name": "ORDER_QTY", "description": "Ordered Quantity (unscaled)"},
+        {"name": "COMPLETED_QTY", "description": "Quantity Shipped/Completed (unscaled)"},
+        {"name": "SCRAP_QTY", "description": "Quantity Canceled/Scrapped (unscaled)"},
+        {"name": "OPEN_QTY", "description": "Remaining Open Quantity"},
+        {"name": "PCT_COMPLETE", "description": "Percentage Complete (0..100)"},
+        {"name": "SCHEDULE_HEALTH", "description": "Health Indicator (LATE, AT_RISK_SHORTAGE, ON_TRACK, COMPLETED)"}
+      ]
+    },
+    {
+      "table_name": "PRODDTA.VW_JDE_MFG_PARTS_SHORTAGES",
+      "business_name": "Work Order Parts List & Material Shortage View",
+      "description": "Compares F3111 Work Order Parts List requirements against F41021 Branch/Plant M30 net available inventory and F4311 open Purchase Orders.",
+      "columns": [
+        {"name": "WORK_ORDER_NUMBER", "description": "Work Order Number (WM.WMDOCO)"},
+        {"name": "PARENT_ASSEMBLY", "description": "Parent Assembly Item Number"},
+        {"name": "COMPONENT_ITEM", "description": "Component Item Number (e.g., CM-1020-ENC, CM-1050-PCBA, CM-1060-BRG, SA-3100-GEAR)"},
+        {"name": "COMPONENT_DESCRIPTION", "description": "Component Description"},
+        {"name": "REQUIRED_QTY", "description": "Total Required Quantity on Work Order"},
+        {"name": "ISSUED_QTY", "description": "Quantity Already Issued"},
+        {"name": "REMAINING_REQ_QTY", "description": "Remaining Unissued Requirement"},
+        {"name": "PLANT_ON_HAND_QTY", "description": "Total Plant On-Hand Quantity"},
+        {"name": "PLANT_NET_AVAILABLE_QTY", "description": "Net Uncommitted Available Quantity"},
+        {"name": "SHORTAGE_QTY", "description": "Net Component Deficit Quantity"},
+        {"name": "AVAILABILITY_STATUS", "description": "SHORTAGE, ALLOCATED_tight, or AVAILABLE"},
+        {"name": "EXPEDITE_PO_NUMBER", "description": "Open Purchase Order Number in F4311 available to expedite (e.g., 430101, 430102, 430103)"},
+        {"name": "PO_PROMISED_DELIVERY_DATE", "description": "Current Promised Delivery Date on Open PO"}
+      ]
+    },
+    {
+      "table_name": "PRODDTA.VW_JDE_MFG_ROUTING_LOAD",
+      "business_name": "Work Center Routing Load & Bottleneck View",
+      "description": "Aggregates F3112 Work Order Routing operations by Work Center (F0006).",
+      "columns": [
+        {"name": "WORK_CENTER", "description": "Work Center Code (200-101, 200-102, 200-201, 200-301, 200-401)"},
+        {"name": "WORK_CENTER_NAME", "description": "Work Center Description"},
+        {"name": "OPERATION_SEQ", "description": "Operation Sequence Number (10, 20, 30, 40)"},
+        {"name": "RUN_LABOR_STD_HRS", "description": "Standard Run Labor Hours"},
+        {"name": "RUN_LABOR_ACTUAL_HRS", "description": "Actual Run Labor Hours Recorded"},
+        {"name": "RUN_MACHINE_STD_HRS", "description": "Standard Run Machine Hours"},
+        {"name": "RUN_MACHINE_ACTUAL_HRS", "description": "Actual Run Machine Hours Recorded"},
+        {"name": "REMAINING_TOTAL_LOAD_HRS", "description": "Remaining Uncompleted Hours on Operation"}
+      ]
+    },
+    {
+      "table_name": "PRODDTA.VW_JDE_MFG_COST_VARIANCES",
+      "business_name": "Production Cost Accounting & Variance View",
+      "description": "Analyzes F3102 Production Costing Ledger across Cost Types A1 (Material), B1 (Direct Labor), B2 (Setup Labor), B3 (Machine Run), and C1 (Mfg Overhead).",
+      "columns": [
+        {"name": "WORK_ORDER_NUMBER", "description": "Work Order Number"},
+        {"name": "ASSEMBLY_ITEM", "description": "Assembly Item Number"},
+        {"name": "COST_TYPE", "description": "Cost Component Code (A1, B1, B2, B3, C1)"},
+        {"name": "COST_TYPE_NAME", "description": "Cost Component Description"},
+        {"name": "STANDARD_COST_USD", "description": "Standard Frozen Cost (USD)"},
+        {"name": "ACTUAL_COST_USD", "description": "Actual Incurred Cost (USD)"},
+        {"name": "COMPLETED_COST_USD", "description": "Completed Output Cost (USD)"},
+        {"name": "SCRAP_COST_USD", "description": "Scrapped Cost (USD)"},
+        {"name": "INPUT_VARIANCE_USD", "description": "Actual minus Standard Cost Variance (Positive = Unfavorable Cost Overrun)"},
+        {"name": "VARIANCE_PCT", "description": "Variance Percentage"},
+        {"name": "VARIANCE_STATUS", "description": "UNFAVORABLE_VARIANCE, FAVORABLE_VARIANCE, or ON_STANDARD"}
+      ]
+    }
+  ],
+  "common_joins": [
+    {
+      "description": "Join Work Order Header (F4801) to Work Order Parts List (F3111)",
+      "join_condition": "F4801.WADOCO = F3111.WMDOCO"
+    },
+    {
+      "description": "Join Work Order Header (F4801) to Work Order Routing (F3112)",
+      "join_condition": "F4801.WADOCO = F3112.WLDOCO"
+    },
+    {
+      "description": "Join Work Order Header (F4801) to Production Costing (F3102)",
+      "join_condition": "F4801.WADOCO = F3102.IGDOCO"
+    },
+    {
+      "description": "Join Work Order Header (F4801) to Inventory Cardex Ledger (F4111)",
+      "join_condition": "TO_CHAR(F4801.WADOCO) = TRIM(F4111.ILDOCM)"
+    }
+  ],
+  "example_queries": [
+    {
+      "description": "Get all LATE or AT_RISK_SHORTAGE Work Orders in Branch/Plant M30",
+      "sql": "SELECT * FROM PRODDTA.VW_JDE_MFG_WORK_ORDERS WHERE BRANCH_PLANT = 'M30' AND SCHEDULE_HEALTH IN ('LATE', 'AT_RISK_SHORTAGE') ORDER BY WORK_ORDER_NUMBER"
+    },
+    {
+      "description": "Get all component shortages and open expedite POs",
+      "sql": "SELECT * FROM PRODDTA.VW_JDE_MFG_PARTS_SHORTAGES WHERE SHORTAGE_QTY > 0 ORDER BY SHORTAGE_QTY DESC"
+    }
+  ]
+}

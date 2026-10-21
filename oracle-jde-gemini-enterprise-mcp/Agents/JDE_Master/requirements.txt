@@ -1,0 +1,13 @@
+google-adk==1.39.1
+google-genai
+google-cloud-aiplatform==1.165.1
+google-cloud-resource-manager
+google-auth==2.58.0
+httpx
+mcp==1.29.1
+matplotlib==3.11.2
+pyyaml
+opentelemetry-exporter-otlp-proto-http
+opentelemetry-instrumentation-google-genai==0.7b1
+opentelemetry-instrumentation-httpx==0.62b1
+opentelemetry-instrumentation-fastapi==0.62b1

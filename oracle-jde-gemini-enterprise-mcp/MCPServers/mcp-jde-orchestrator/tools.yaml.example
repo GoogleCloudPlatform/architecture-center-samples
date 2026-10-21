@@ -1,0 +1,229 @@
+sources:
+  jde-oracle-db:
+    kind: oracle
+    host: ${JDE_DB_HOST}
+    port: ${JDE_DB_PORT}
+    serviceName: ${JDE_DB_SERVICE}
+    user: ${JDE_DB_USER}
+    password: ${JDE_DB_PASSWORD}
+
+tools:
+  jde_init:
+    kind: oracle-sql
+    source: jde-oracle-db
+    description: >-
+      [JDE Security & Identity] Initializes the JD Edwards EnterpriseOne session
+      context by mapping the Gemini Enterprise user's email address
+      (e.g., admin@negonzal.altostrat.com or negonzal@google.com) to their JDE
+      User ID (SY920.F0092), Address Book Number (PRODDTA.F0101 / F01151), Role
+      (SY920.F95921), and Branch/Plant security (PRODCTL.F00950).
+    parameters:
+      - name: email_or_user
+        type: string
+        description: "Gemini Enterprise user email or JDE User ID (e.g., 'admin@negonzal.altostrat.com')."
+      - name: branch_plant
+        type: string
+        description: "JDE Branch/Plant code (e.g., 'M30')."
+      - name: role_name
+        type: string
+        description: "JDE Role name (e.g., 'MFG_MGR')."
+      - name: environment
+        type: string
+        description: "JDE Environment (e.g., 'JPD920')."
+    statement: |
+      SELECT PRODDTA.GE_JDE_MCP_TOOLS.jde_initialize_context(:1, :2, :3, :4) AS init_result FROM DUAL
+
+  list_jde_current_context:
+    kind: oracle-sql
+    source: jde-oracle-db
+    description: >-
+      [JDE Security & Identity] Returns the currently active JD Edwards
+      EnterpriseOne user session context (JDE User ID, Address Book Number AN8,
+      Email Address, Role, Environment, and Branch/Plant).
+    parameters: []
+    statement: |
+      SELECT session_key, jde_user, address_number, alpha_name, email_address,
+             jde_role, jde_environment, branch_plant,
+             SYS_CONTEXT('USERENV', 'CLIENT_IDENTIFIER') AS oracle_client_identifier
+        FROM PRODDTA.JDE_MCP_SESSION_CTX
+       WHERE session_key = 'ACTIVE_SESSION'
+
+  list_jde_roles:
+    kind: oracle-sql
+    source: jde-oracle-db
+    description: >-
+      [JDE Security & Identity] Lists all JD Edwards EnterpriseOne User Profiles
+      (SY920.F0092), Address Book Numbers (PRODDTA.F0101), Electronic Address
+      Emails (PRODDTA.F01151), and Assigned Roles (SY920.F95921) for an email or user ID.
+    parameters:
+      - name: email_or_user
+        type: string
+        description: "Gemini Enterprise user email or JDE User ID (e.g., 'admin@negonzal.altostrat.com')."
+    statement: |
+      SELECT TRIM(u.uluser) AS jde_user, u.ulan8 AS address_number,
+             TRIM(a.abalph) AS alpha_name, e.eaemal AS email_address,
+             TRIM(u.ulrole) AS primary_role, TRIM(r.rlfrrole) AS granted_role,
+             r.rlroledesc AS role_description, TRIM(u.ulenv) AS jde_environment
+        FROM SY920.F0092 u
+        JOIN PRODDTA.F0101 a ON a.aban8 = u.ulan8
+        JOIN PRODDTA.F01151 e ON e.eaan8 = u.ulan8
+        LEFT JOIN SY920.F95921 r ON TRIM(r.rltorole) = TRIM(u.uluser)
+       WHERE UPPER(TRIM(e.eaemal)) = UPPER(TRIM(:1))
+          OR UPPER(TRIM(u.uluser)) = UPPER(TRIM(:1))
+
+  jde_execute_sql_readonly:
+    kind: oracle-execute-sql
+    source: jde-oracle-db
+    description: >-
+      Executes a read-only SQL query against the JD Edwards EnterpriseOne 9.2
+      Oracle 19c Database (JDEORCL / PRODDTA). Prefer the normalized
+      PRODDTA.VW_JDE_MFG_* views which automatically convert JDE 6-digit Julian
+      dates (CYYDDD) to ISO-8601 (YYYY-MM-DD) and scale implied decimals.
+
+  jde_query_work_order_control_tower:
+    kind: oracle-sql
+    source: jde-oracle-db
+    description: >-
+      [SQL Analytics] Queries the Discrete Manufacturing Work Order Control
+      Tower view (PRODDTA.VW_JDE_MFG_WORK_ORDERS) joining F4801, F4101, and
+      F3111 for active production orders, completion percentages, and schedule
+      health across a JDE Branch/Plant (e.g., M30).
+    parameters:
+      - name: branch_plant
+        type: string
+        description: "JDE Manufacturing Branch/Plant code (e.g., 'M30')."
+      - name: status_from
+        type: string
+        description: "Minimum Work Order Status code (e.g., '10')."
+      - name: status_to
+        type: string
+        description: "Maximum Work Order Status code (e.g., '95')."
+    statement: |
+      SELECT work_order_number,
+             order_type,
+             branch_plant,
+             parent_item_number,
+             item_description,
+             status_code,
+             status_meaning,
+             quantity_ordered,
+             quantity_completed,
+             quantity_scrapped,
+             quantity_remaining,
+             pct_complete,
+             start_date_iso,
+             requested_date_iso,
+             schedule_health,
+             shortage_component_count
+        FROM PRODDTA.VW_JDE_MFG_WORK_ORDERS
+       WHERE TRIM(branch_plant) = TRIM(:1)
+         AND status_code BETWEEN TRIM(:2) AND TRIM(:3)
+       ORDER BY requested_date_iso ASC, work_order_number ASC
+
+  jde_check_work_order_material_shortages:
+    kind: oracle-sql
+    source: jde-oracle-db
+    description: >-
+      [SQL Analytics] Cross-references Work Order Parts List requirements
+      (F3111) against Item Location On-Hand / Available balances (F41021) and
+      open Purchase Orders (F4311) via PRODDTA.VW_JDE_MFG_PARTS_SHORTAGES.
+    parameters:
+      - name: branch_plant
+        type: string
+        description: "JDE Manufacturing Branch/Plant code (e.g., 'M30')."
+      - name: work_order_number
+        type: integer
+        description: "Work Order Document Number (WADOCO), or 0 for all active work orders."
+    statement: |
+      SELECT work_order_number,
+             parent_item_number,
+             operation_seq,
+             component_item_number,
+             component_description,
+             branch_plant,
+             uom,
+             qty_required,
+             qty_issued,
+             qty_open_required,
+             qty_on_hand,
+             qty_committed,
+             qty_available_net,
+             qty_shortage,
+             shortage_status,
+             next_open_po_number,
+             next_po_promised_date_iso
+        FROM PRODDTA.VW_JDE_MFG_PARTS_SHORTAGES
+       WHERE TRIM(branch_plant) = TRIM(:1)
+         AND (:2 = 0 OR work_order_number = :2)
+       ORDER BY qty_shortage DESC, work_order_number ASC, operation_seq ASC
+
+  jde_analyze_work_center_capacity_and_bottlenecks:
+    kind: oracle-sql
+    source: jde-oracle-db
+    description: >-
+      [SQL Analytics] Evaluates discrete manufacturing Work Center load vs.
+      weekly available capacity across active routing steps (F3112 + F4801 via
+      PRODDTA.VW_JDE_MFG_ROUTING_LOAD).
+    parameters:
+      - name: branch_plant
+        type: string
+        description: "JDE Manufacturing Branch/Plant code (e.g., 'M30')."
+    statement: |
+      SELECT work_center,
+             work_center_description,
+             branch_plant,
+             open_operations_count,
+             scheduled_setup_hours,
+             scheduled_machine_hours,
+             scheduled_labor_hours,
+             completed_hours,
+             remaining_load_hours,
+             weekly_capacity_hours,
+             utilization_pct,
+             bottleneck_status
+        FROM PRODDTA.VW_JDE_MFG_ROUTING_LOAD
+       WHERE TRIM(branch_plant) = TRIM(:1)
+       ORDER BY utilization_pct DESC
+
+  jde_analyze_production_cost_variances:
+    kind: oracle-sql
+    source: jde-oracle-db
+    description: >-
+      [SQL Analytics] Queries Production Costing (F3102) via
+      PRODDTA.VW_JDE_MFG_COST_VARIANCES to compare Standard vs. Planned vs.
+      Actual Material (A1), Direct Labor (B1), Machine (B2), and Overhead
+      (C1/C2) costs and variances.
+    parameters:
+      - name: branch_plant
+        type: string
+        description: "JDE Manufacturing Branch/Plant code (e.g., 'M30')."
+      - name: work_order_number
+        type: integer
+        description: "Work Order Document Number (WADOCO), or 0 for all work orders."
+    statement: |
+      SELECT work_order_number,
+             parent_item_number,
+             item_description,
+             branch_plant,
+             cost_type,
+             cost_type_description,
+             standard_cost_usd,
+             planned_cost_usd,
+             actual_cost_usd,
+             completed_output_cost_usd,
+             scrap_cost_usd,
+             total_variance_usd,
+             variance_pct,
+             variance_severity
+        FROM PRODDTA.VW_JDE_MFG_COST_VARIANCES
+       WHERE TRIM(branch_plant) = TRIM(:1)
+         AND (:2 = 0 OR work_order_number = :2)
+       ORDER BY ABS(total_variance_usd) DESC
+
+toolsets:
+  jde_discrete_manufacturing_sql_toolset:
+    - jde_execute_sql_readonly
+    - jde_query_work_order_control_tower
+    - jde_check_work_order_material_shortages
+    - jde_analyze_work_center_capacity_and_bottlenecks
+    - jde_analyze_production_cost_variances

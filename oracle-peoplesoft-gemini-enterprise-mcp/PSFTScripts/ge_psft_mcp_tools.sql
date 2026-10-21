@@ -163,29 +163,41 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     PRAGMA AUTONOMOUS_TRANSACTION;
     v_res_id NUMBER;
     v_bu     VARCHAR2(10) := CASE WHEN TRIM(p_location) IS NULL OR UPPER(TRIM(p_location)) IN ('', 'NULL', 'S1', 'M1') THEN 'US001' ELSE SUBSTR(TRIM(p_location), 1, 5) END;
+    v_area   VARCHAR2(20) := NVL(TRIM(p_storage_area), 'AREA1');
+    v_qty    NUMBER := NVL(p_quantity, 1);
     v_result VARCHAR2(1000);
   BEGIN
+    IF TRIM(p_item) IS NULL THEN
+      RAISE_APPLICATION_ERROR(-20010, 'Item ID cannot be empty.');
+    END IF;
+
+    IF v_qty <= 0 THEN
+      RAISE_APPLICATION_ERROR(-20007, 'Reservation quantity must be greater than zero.');
+    END IF;
+
     INSERT INTO SYSADM.PS_GOV_INV_RESERVATIONS (
       BUSINESS_UNIT, INV_ITEM_ID, STORAGE_AREA, QTY_RESERVED, OPRID, STATUS
     ) VALUES (
-      v_bu, TRIM(p_item), NVL(TRIM(p_storage_area), 'AREA1'), NVL(p_quantity, 1), 'VP1', 'ACTIVE'
+      v_bu, TRIM(p_item), v_area, v_qty, 'VP1', 'ACTIVE'
     ) RETURNING RESERVATION_ID INTO v_res_id;
 
-    UPDATE SYSADM.PS_PHYSICAL_INV
-      SET QTY_RESERVED = NVL(QTY_RESERVED, 0) + NVL(p_quantity, 1),
-          QTY_AVAILABLE = NVL(QTY_AVAILABLE, 0) - NVL(p_quantity, 1)
+    UPDATE SYSADM.PS_GOV_INV_BALANCES
+       SET QTY_RESERVED = NVL(QTY_RESERVED, 0) + v_qty,
+           QTY_AVAILABLE = NVL(QTY_AVAILABLE, 0) - v_qty,
+           LAST_UPDATED_DTTM = SYSTIMESTAMP
      WHERE BUSINESS_UNIT = v_bu
        AND INV_ITEM_ID = TRIM(p_item)
-       AND NVL(QTY_AVAILABLE, 0) >= NVL(p_quantity, 1);
+       AND STORAGE_AREA = v_area
+       AND NVL(QTY_AVAILABLE, 0) >= v_qty;
 
     IF SQL%ROWCOUNT = 0 THEN
-      RAISE_APPLICATION_ERROR(-20001, 'Insufficient stock or item ' || TRIM(p_item) || ' not found in PS_PHYSICAL_INV for Business Unit ' || v_bu);
+      RAISE_APPLICATION_ERROR(-20001, 'Insufficient stock or item ' || TRIM(p_item) || ' not found in PS_GOV_INV_BALANCES for Business Unit ' || v_bu);
     END IF;
 
     COMMIT;
     v_result := 'SUCCESS: Created PeopleSoft Inventory Reservation ID ' || v_res_id ||
-                ' for item ' || TRIM(p_item) || ' (Quantity: ' || NVL(p_quantity, 1) ||
-                ', Business Unit: ' || v_bu || ', Storage Area: ' || NVL(TRIM(p_storage_area), 'AREA1') || ')';
+                ' for item ' || TRIM(p_item) || ' (Quantity: ' || v_qty ||
+                ', Business Unit: ' || v_bu || ', Storage Area: ' || v_area || ')';
     write_log('INFO', 'reserve_item', 'VP1', v_result);
     RETURN v_result;
   EXCEPTION
@@ -203,25 +215,37 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
     v_id     NUMBER := TO_NUMBER(REGEXP_REPLACE(p_reservation_id, '[^0-9]', ''));
     v_item   VARCHAR2(40);
     v_bu     VARCHAR2(10);
+    v_area   VARCHAR2(20);
     v_qty    NUMBER;
     v_result VARCHAR2(1000);
   BEGIN
-    SELECT INV_ITEM_ID, BUSINESS_UNIT, QTY_RESERVED
-      INTO v_item, v_bu, v_qty
+    IF v_id IS NULL THEN
+      RAISE_APPLICATION_ERROR(-20008, 'Invalid reservation ID: ' || p_reservation_id);
+    END IF;
+
+    SELECT INV_ITEM_ID, BUSINESS_UNIT, NVL(STORAGE_AREA, 'AREA1'), QTY_RESERVED
+      INTO v_item, v_bu, v_area, v_qty
       FROM SYSADM.PS_GOV_INV_RESERVATIONS
      WHERE RESERVATION_ID = v_id
-       AND STATUS = 'ACTIVE';
+       AND STATUS = 'ACTIVE'
+       FOR UPDATE;
 
     UPDATE SYSADM.PS_GOV_INV_RESERVATIONS
        SET STATUS = 'CANCELLED'
      WHERE RESERVATION_ID = v_id
        AND STATUS = 'ACTIVE';
 
-    UPDATE SYSADM.PS_PHYSICAL_INV
-       SET QTY_RESERVED = GREATEST(0, NVL(QTY_RESERVED, 0) - NVL(v_qty, 0)),
-           QTY_AVAILABLE = NVL(QTY_AVAILABLE, 0) + NVL(v_qty, 0)
+    UPDATE SYSADM.PS_GOV_INV_BALANCES
+       SET QTY_AVAILABLE = NVL(QTY_AVAILABLE, 0) + LEAST(NVL(QTY_RESERVED, 0), NVL(v_qty, 0)),
+           QTY_RESERVED = GREATEST(0, NVL(QTY_RESERVED, 0) - NVL(v_qty, 0)),
+           LAST_UPDATED_DTTM = SYSTIMESTAMP
      WHERE BUSINESS_UNIT = v_bu
-       AND INV_ITEM_ID = v_item;
+       AND INV_ITEM_ID = v_item
+       AND STORAGE_AREA = v_area;
+
+    IF SQL%ROWCOUNT = 0 THEN
+      RAISE_APPLICATION_ERROR(-20009, 'Inventory balance row not found in PS_GOV_INV_BALANCES for Business Unit ' || v_bu || ' and Item ' || v_item);
+    END IF;
 
     COMMIT;
     v_result := 'SUCCESS: Deleted/Cancelled PeopleSoft Inventory Reservation ID ' || v_id ||
@@ -249,19 +273,41 @@ CREATE OR REPLACE PACKAGE BODY SYSADM.GE_PSFT_MCP_TOOLS AS
   ) RETURN VARCHAR2 IS
     PRAGMA AUTONOMOUS_TRANSACTION;
     v_bu     VARCHAR2(10) := CASE WHEN TRIM(p_location) IS NULL OR UPPER(TRIM(p_location)) IN ('', 'NULL', 'S1', 'M1') THEN 'US001' ELSE SUBSTR(TRIM(p_location), 1, 5) END;
+    v_area   VARCHAR2(20) := NVL(TRIM(p_storage_area), 'AREA1');
+    v_qty    NUMBER := NVL(p_quantity, 1);
     v_cnt    NUMBER;
     v_result VARCHAR2(1000);
   BEGIN
-    UPDATE SYSADM.PS_PHYSICAL_INV
-       SET QTY_ONHAND = NVL(QTY_ONHAND, 0) + NVL(p_quantity, 1),
-           QTY_AVAILABLE = NVL(QTY_AVAILABLE, 0) + NVL(p_quantity, 1)
-     WHERE BUSINESS_UNIT = v_bu
-       AND INV_ITEM_ID = TRIM(p_item);
-    v_cnt := SQL%ROWCOUNT;
+    IF TRIM(p_item) IS NULL THEN
+      RAISE_APPLICATION_ERROR(-20010, 'Item ID cannot be empty.');
+    END IF;
+
+    IF v_qty <= 0 THEN
+      RAISE_APPLICATION_ERROR(-20007, 'On-hand quantity must be greater than zero.');
+    END IF;
+
+    BEGIN
+      INSERT INTO SYSADM.PS_GOV_INV_BALANCES (
+        BUSINESS_UNIT, INV_ITEM_ID, STORAGE_AREA, QTY_ONHAND, QTY_RESERVED, QTY_AVAILABLE, LAST_UPDATED_DTTM
+      ) VALUES (
+        v_bu, TRIM(p_item), v_area, v_qty, 0, v_qty, SYSTIMESTAMP
+      );
+      v_cnt := 1;
+    EXCEPTION
+      WHEN DUP_VAL_ON_INDEX THEN
+        UPDATE SYSADM.PS_GOV_INV_BALANCES
+           SET QTY_ONHAND = NVL(QTY_ONHAND, 0) + v_qty,
+               QTY_AVAILABLE = NVL(QTY_AVAILABLE, 0) + v_qty,
+               LAST_UPDATED_DTTM = SYSTIMESTAMP
+         WHERE BUSINESS_UNIT = v_bu
+           AND INV_ITEM_ID = TRIM(p_item)
+           AND STORAGE_AREA = v_area;
+        v_cnt := SQL%ROWCOUNT;
+    END;
     COMMIT;
-    v_result := 'SUCCESS: Added ' || NVL(p_quantity, 1) || ' on-hand quantity for item ' ||
+    v_result := 'SUCCESS: Added ' || v_qty || ' on-hand quantity for item ' ||
                 TRIM(p_item) || ' in PeopleSoft Business Unit ' || v_bu ||
-                ' (Rows updated in PS_PHYSICAL_INV: ' || v_cnt || ')';
+                ' (Rows updated in PS_GOV_INV_BALANCES: ' || v_cnt || ')';
     write_log('INFO', 'create_onhand', 'VP1', v_result);
     RETURN v_result;
   EXCEPTION
