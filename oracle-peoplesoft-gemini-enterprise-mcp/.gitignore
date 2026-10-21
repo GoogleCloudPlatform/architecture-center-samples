@@ -227,6 +227,7 @@ experiments/*
 # Auto-synced copies of utils/logging_config.py — refreshed by deploy_gcloud.sh
 MCPServers/mcp-oracle-peoplesoft/logging_config.py
 MCPServers/mcp-oracle-sql/logging_config.py
+MCPServers/mcp-toolbox-peoplesoft/.gcloudignore
 Agents/PSFT_Master/logging_config.py
 MCPServers/mcp-toolbox-peoplesoft/tools.yaml
 Agents/.agent_id
