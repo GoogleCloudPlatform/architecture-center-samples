@@ -601,9 +601,9 @@ migrate_credentials() {
     while IFS='|' read -r src key envv secret; do
         if secret_exists "${secret}"; then
             echo "     ℹ️  ${secret} already exists - keeping its value (not overwritten)"
-        else
-            yaml_literal "${src}" "${key}" | gcloud secrets create "${secret}" --data-file=- \
-                --replication-policy=user-managed --locations="${REGION}" --project "${PROJECT}" >/dev/null \
+            gcloud secrets create "${secret}" --replication-policy=user-managed --locations="${REGION}" --project "${PROJECT}" >/dev/null \
+                && yaml_literal "${src}" "${key}" | gcloud secrets versions add "${secret}" --data-file=- --project "${PROJECT}" >/dev/null \
+                || { echo "     ✖ could not create ${secret}; source.yaml left unchanged" >&2; return 1; }
                 || { echo "     ✖ could not create ${secret}; source.yaml left unchanged" >&2; return 1; }
             echo "     🔐 created ${secret}"
         fi
