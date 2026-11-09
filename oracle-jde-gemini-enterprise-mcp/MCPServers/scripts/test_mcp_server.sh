@@ -765,7 +765,7 @@ if status == 200:
             print("  3. To mint an audience-restricted token, use a service account:")
             print("     gcloud auth print-identity-token --account=<SA_EMAIL> --audiences='<CLIENT_ID>'")
         sys.exit(1)
-
+    result = resp_obj.get("result") or {}
     result = resp_obj.get("result", {})
     if result.get("isError"):
         print(red(f"\n  ❌ Tool execution returned error in result:"))
