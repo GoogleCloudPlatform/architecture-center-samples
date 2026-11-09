@@ -212,13 +212,18 @@ CREATE OR REPLACE PACKAGE BODY xx_ai_attachment_pkg AS
             -- Only whitespace (typical of a scanned, image-only file) counts as no text.
             g_text_status := CASE
                                  WHEN NVL(DBMS_LOB.GETLENGTH(g_text), 0) = 0 THEN 'NO_TEXT'
-                                 WHEN DBMS_LOB.GETLENGTH(g_text) <= 32000
-                                      AND NOT REGEXP_LIKE(DBMS_LOB.SUBSTR(g_text, 32000, 1), '[^[:space:][:cntrl:]]') THEN 'NO_TEXT'
+                                 WHEN DBMS_LOB.GETLENGTH(g_text) <= 8000
+                                      AND NOT REGEXP_LIKE(DBMS_LOB.SUBSTR(g_text, 8000, 1), '[^[:space:][:cntrl:]]') THEN 'NO_TEXT'
                                  ELSE 'OK'
                              END;
         EXCEPTION
             WHEN OTHERS THEN
+                IF DBMS_LOB.ISTEMPORARY(l_utf8) = 1 THEN
+                    DBMS_LOB.FREETEMPORARY(l_utf8);
+                END IF;
                 g_text_status := 'ERROR: ' || SUBSTR(REPLACE(SQLERRM, CHR(10), ' '), 1, 3900);
+                ROLLBACK;
+                RETURN;
         END;
         COMMIT;
     END load_text;

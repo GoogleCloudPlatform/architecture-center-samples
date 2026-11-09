@@ -74,7 +74,7 @@ require_cmd() {
 # Read KEY from the .env file (no sourcing, no eval). Prints nothing if absent/blank.
 env_value() {
     [ -f "${ENV_FILE}" ] || return 0
-    grep -E "^[[:space:]]*$1=" "${ENV_FILE}" | tail -1 | cut -d '=' -f2- | tr -d '"'\'' ' || true
+    grep -E "^[[:space:]]*$1=" "${ENV_FILE}" | tail -1 | cut -d '=' -f2- | tr -d '"'\'' \r' || true
 }
 
 # Export KEY from .env unless it is already set in the environment.
