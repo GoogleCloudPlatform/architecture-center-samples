@@ -110,7 +110,7 @@ BEGIN
         username,
         program_unit
     ) VALUES ( 'Google MCP Toolbox',
-               SUBSTR(p_log_message, 1, 4000),
+               SUBSTRB(p_log_message, 1, 4000),
                p_log_level,
                p_username,
                p_program_unit );
@@ -240,9 +240,11 @@ BEGIN
             l_user_id,
             l_user_name
           FROM apps.fnd_user u
-          WHERE upper(u.email_address) = upper(l_email_address)
-                      AND ( u.start_date IS NULL OR u.start_date <= sysdate )
-           AND ( u.end_date IS NULL OR u.end_date > sysdate );
+          WHERE ( (INSTR(l_email_address, '@') > 0 AND upper(u.email_address) = upper(l_email_address))
+               OR (INSTR(l_email_address, '@') = 0 AND u.user_name = upper(l_email_address)) )
+            AND ( u.start_date IS NULL OR u.start_date <= sysdate )
+           AND ( u.end_date IS NULL OR u.end_date > sysdate )
+          FETCH FIRST 1 ROW ONLY;
           -- (u.email_address = l_email_address or to_char(u.user_id) = l_email_address or u.user_name = l_email_address)
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
@@ -511,6 +513,10 @@ BEGIN
                               VALUES (s.email, p_ou, p_resp, p_app);
     END IF;
     COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        RAISE;
 END save_context;
 
 FUNCTION context_key(p_email VARCHAR2, p_ou VARCHAR2, p_resp VARCHAR2, p_app VARCHAR2) RETURN VARCHAR2 IS

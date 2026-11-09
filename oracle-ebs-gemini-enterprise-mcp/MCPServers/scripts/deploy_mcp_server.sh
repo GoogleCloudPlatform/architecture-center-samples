@@ -637,6 +637,7 @@ db_file_value() {
     [ -f "${DB_ENV_FILE}" ] || return 0
     local line v
     line="$(grep -E "^[[:space:]]*(export[[:space:]]+)?$1=" "${DB_ENV_FILE}" | tail -1 || true)"   # "export KEY=..." is accepted too
+    line="${line%$'\r'}"
     [ -n "${line}" ] || return 0
     v="${line#*=}"
     if [ "${#v}" -ge 2 ]; then   # strip one pair of surrounding double or single quotes
@@ -1175,11 +1176,18 @@ run_preflight() {
     fi
 
     echo "[5/7] VPC network & subnet"
-    local net_url
+    local net_url pga_enabled
     if net_url=$(gcloud compute networks subnets describe "${SUBNET}" --region "${REGION}" --project "${PROJECT}" --format='value(network.basename())' 2>/dev/null); then
         pf_ok "Subnet ${SUBNET} exists in ${REGION}"
         if [ "${net_url}" = "${NETWORK}" ]; then pf_ok "Subnet belongs to network ${NETWORK}"
         else pf_fail "Subnet ${SUBNET} belongs to network '${net_url}', not '${NETWORK}'"; fi
+        pga_enabled=$(gcloud compute networks subnets describe "${SUBNET}" --region "${REGION}" --project "${PROJECT}" --format='value(privateIpGoogleAccess)' 2>/dev/null || true)
+        if [ "${pga_enabled}" = "True" ] || [ "${pga_enabled}" = "true" ]; then
+            pf_ok "Private Google Access is enabled on subnet ${SUBNET}"
+        else
+            pf_fail "Private Google Access is disabled on subnet ${SUBNET} (required for Cloud Storage FUSE volume mounts in Assured Workloads)"
+            pf_remedy fail gcloud compute networks subnets update "${SUBNET}" --region="${REGION}" --enable-private-ip-google-access --project="${PROJECT}"
+        fi
     else
         pf_fail "Subnet ${SUBNET} not found in ${REGION}"
         pf_hint "gcloud compute networks subnets list --project ${PROJECT} --regions ${REGION}"
