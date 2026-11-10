@@ -705,10 +705,18 @@ ensure_db_secrets() {
             # hashes are compared; neither value is printed). An identical value is not worth a new version.
             read_secret_value "${var}" || { echo "❌ No value for ${var}: export ${var}=... or run interactively." >&2; exit 1; }
             local new_hash cur_hash cur_file
-            new_hash="$(printf '%s' "${SECRET_VALUE}" | shasum -a 256 | cut -d' ' -f1)"
+            if command -v sha256sum >/dev/null 2>&1; then
+                new_hash="$(printf '%s' "${SECRET_VALUE}" | sha256sum | cut -d' ' -f1)"
+            else
+                new_hash="$(printf '%s' "${SECRET_VALUE}" | shasum -a 256 | cut -d' ' -f1)"
+            fi
             cur_file="$(mktemp)"; chmod 600 "${cur_file}"
             if gcloud secrets versions access latest --secret "${secret}" --project "${PROJECT}" >"${cur_file}" 2>/dev/null; then
-                cur_hash="$(shasum -a 256 <"${cur_file}" | cut -d' ' -f1)"
+                if command -v sha256sum >/dev/null 2>&1; then
+                    cur_hash="$(sha256sum <"${cur_file}" | cut -d' ' -f1)"
+                else
+                    cur_hash="$(shasum -a 256 <"${cur_file}" | cut -d' ' -f1)"
+                fi
                 if [ "${cur_hash}" = "${new_hash}" ]; then
                     rm -f "${cur_file}"
                     echo "     ⚠️  The new value of ${var} is IDENTICAL to the current version of ${secret}; no new version added."
